@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from app.constants.messages import EMPLOYEE_EMAIL_TAKEN, VALIDATION_FAILED
+from app.constants.messages import EMPLOYEE_EMAIL_TAKEN, EMPLOYEE_NOT_FOUND, VALIDATION_FAILED
 from tests.factories import employee_payload
 
 EMPLOYEES_URL = "/api/v1/employees"
@@ -45,3 +45,19 @@ def test_create_employee_rejects_an_email_that_differs_only_in_case(client: Test
 
     assert response.status_code == 409
     assert response.json() == {"error": EMPLOYEE_EMAIL_TAKEN}
+
+
+def test_get_employee_returns_200_with_the_employee(client: TestClient) -> None:
+    created = create_employee(client)
+
+    response = client.get(f"{EMPLOYEES_URL}/{created['id']}")
+
+    assert response.status_code == 200
+    assert response.json() == {"data": created}
+
+
+def test_get_employee_returns_404_for_an_unknown_id(client: TestClient) -> None:
+    response = client.get(f"{EMPLOYEES_URL}/999")
+
+    assert response.status_code == 404
+    assert response.json() == {"error": EMPLOYEE_NOT_FOUND}

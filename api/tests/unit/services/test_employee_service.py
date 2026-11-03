@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import ConflictError
+from app.core.exceptions import ConflictError, NotFoundError
 from app.models.employee_model import EmployeeModel
 from app.repositories.employee_repository import EmployeeRepository
 from app.services.employee_service import EmployeeService
@@ -50,3 +50,19 @@ def test_create_employee_turns_a_unique_index_violation_into_a_conflict(session:
 
     with pytest.raises(ConflictError):
         service.create_employee(build_create_request(email="asha.rao@acme.com"))
+
+
+def test_get_employee_returns_the_employee(service: EmployeeService, session: Session) -> None:
+    employee = build_employee()
+    session.add(employee)
+    session.commit()
+
+    found = service.get_employee(employee.id)
+
+    assert found.id == employee.id
+    assert found.full_name == employee.full_name
+
+
+def test_get_employee_raises_not_found_for_an_unknown_id(service: EmployeeService) -> None:
+    with pytest.raises(NotFoundError):
+        service.get_employee(999)
