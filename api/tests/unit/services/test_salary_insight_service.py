@@ -7,9 +7,11 @@ from sqlalchemy.orm import Session
 from app.constants.employee_constants import Country
 from app.repositories.salary_insight_repository import SalaryInsightRepository
 from app.schemas.resources.salary_insight_resource import (
+    CountryPayrollResource,
     CountrySalaryInsightResource,
     DepartmentSalaryInsightResource,
     JobTitleSalaryInsightResource,
+    PayrollOverviewResource,
 )
 from app.services.salary_insight_service import SalaryInsightService
 from tests.factories import build_employee
@@ -159,3 +161,30 @@ def test_salary_by_department_of_an_empty_database_is_an_empty_list(
     service: SalaryInsightService,
 ) -> None:
     assert service.salary_by_department() == []
+
+
+def test_payroll_overview_gives_headcount_total_and_payroll_by_country(
+    service: SalaryInsightService, session: Session
+) -> None:
+    save_employees(
+        session,
+        paid("30000.25", country="IN"),
+        paid("20000.25", country="IN"),
+        paid("100000", country="US"),
+        paid("999999", country="US", is_active=False),
+    )
+
+    assert service.payroll_overview() == PayrollOverviewResource(
+        headcount=3,
+        total_payroll=Decimal("150000.50"),
+        payroll_by_country=[
+            CountryPayrollResource(country="IN", headcount=2, total_payroll=Decimal("50000.50")),
+            CountryPayrollResource(country="US", headcount=1, total_payroll=Decimal("100000.00")),
+        ],
+    )
+
+
+def test_payroll_overview_of_an_empty_database_is_zeros(service: SalaryInsightService) -> None:
+    assert service.payroll_overview() == PayrollOverviewResource(
+        headcount=0, total_payroll=Decimal("0.00"), payroll_by_country=[]
+    )
