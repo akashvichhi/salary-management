@@ -21,6 +21,21 @@ All salaries are annual base pay in USD. What is deliberately left out, and why,
 | Tests | pytest (backend), Vitest and React Testing Library (frontend) |
 | Hosting | One Docker container on Render |
 
+## Development
+
+Prerequisites: [uv](https://docs.astral.sh/uv/) (it installs Python 3.13 for the project) and GNU make.
+
+**API** (`api/`):
+
+```bash
+cd api
+uv sync                                  # install the pinned dependencies
+uv run uvicorn app.main:app --reload     # run the API on http://localhost:8000
+make check                               # lint, format, type check, tests with coverage
+```
+
+Copy `api/.env.example` to `api/.env` to override settings.
+
 ## Documentation
 
 | Document | What it covers |
