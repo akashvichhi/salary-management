@@ -128,6 +128,13 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** each job title has a USD range, a department and a weight (how common it is); each country has a pay factor (US 1.00, India 0.30, ...) and a weight. Names come from `scripts/data/*.txt`. All of it is in `scripts/seed_constants.py`, drawn with a fixed `random.Random(42)`, and fixed hire-date bounds instead of today's date. Every employee is built through `EmployeeCreateRequest`, then bulk-inserted in one statement. The seed is skipped when the table already has rows.
 - **Consequences:** country and job-title insights differ in believable ways. No Faker, whose output can change between versions and break "identical on every run". Emails use the reserved `example.com` domain, so no real inbox is ever named. 10,000 employees seed in about 1.5 seconds.
 
+## 19. One endpoint per insight; money rounded half-up to the cent
+
+- **Context:** the insights page shows four independent sections, and the job-title section changes with a country picker.
+- **Options:** one combined endpoint returning every section; one endpoint per insight.
+- **Decision:** four `GET` endpoints under `/salary-insights` (`overview`, `by-country`, `by-job-title?country=`, `by-department`), each `{ "data": ... }` with arrays of objects sorted by their group. Headcount, min, max and sum come from SQL `GROUP BY`; the average is the exact SQL sum divided by the headcount, not SQLite's `AVG` (a float); the median is computed in Python (decision 5). Averages and medians are rounded **half-up** to the cent (`100000.005` → `100000.01`).
+- **Consequences:** each section loads, caches and fails on its own, and changing the job-title country reloads only that table. Four requests instead of one, which is cheap on the same origin. On the 10,000 seed every endpoint answers in under 61 ms; `by-country` is the slowest because it reads one salary column for the median.
+
 ## Runtime dependencies
 
 Each runtime dependency gets one line here, with its reason, when it is added.

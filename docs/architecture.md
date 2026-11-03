@@ -115,7 +115,10 @@ sequenceDiagram
 | `POST /api/v1/employees` | Create | 201 |
 | `PATCH /api/v1/employees/{id}` | Partial update | 200 |
 | `DELETE /api/v1/employees/{id}` | Soft delete (sets `is_active` to false) | 204 |
-| `GET /api/v1/salary-insights/...` | Insights by country, by job title within a country, by department, and the org overview (paths in Open questions) | 200 |
+| `GET /api/v1/salary-insights/overview` | Org headcount, total payroll, and payroll and headcount per country | 200 |
+| `GET /api/v1/salary-insights/by-country` | Per country: headcount, min, max, average and median salary | 200 |
+| `GET /api/v1/salary-insights/by-job-title?country=IN` | Per job title within one country (required): headcount and average salary | 200 |
+| `GET /api/v1/salary-insights/by-department` | Per department: headcount and average salary | 200 |
 | `POST /api/v1/auth/login` | Log in, set the session cookie | 200 |
 | `POST /api/v1/auth/logout` | Log out, delete the session | 204 |
 | `GET /api/v1/auth/me` | Current user | 200 |
@@ -186,7 +189,7 @@ Render's free tier has no persistent disk, so the database is recreated, and the
 | # | Question |
 |---|---|
 | 1 | Create and edit: separate routes or modals on the list page? Does "view" need its own detail page, or is the edit form enough? |
-| 2 | Insights endpoints: one per insight (e.g. `/salary-insights/by-country`) or one combined response? Exact paths and response shapes |
+| 2 | ~~Insights endpoints: one per insight or combined?~~ **Answered:** one endpoint per insight, each an array of objects (the overview an object holding one); see the API outline and decision 19 |
 | 3 | ~~Job title, department and country: fixed lists or free text?~~ **Answered:** fixed lists in `constants/employee_constants.py`, matched ignoring case (decision 17). Where the dropdowns get them is decided with the frontend |
 | 4 | ~~Sort allow-list?~~ **Answered:** every column shown in the table: `full_name`, `email`, `job_title`, `department`, `country`, `salary`, `hire_date`; ties broken by `id` |
 | 5 | Search by name or email uses a substring match, which can't use an index. Is a scan of 10,000 rows fast enough? Measure in `docs/performance.md` |

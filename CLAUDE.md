@@ -136,6 +136,7 @@ api/
 │   │   ├── database.py                 engine, session factory, get_db dependency
 │   │   ├── exceptions.py               domain exceptions (NotFoundError, ConflictError, UnauthenticatedError, ...)
 │   │   ├── exception_handlers.py       maps every exception to the { "error": ... } shape
+│   │   ├── money.py                    money rules: rounding half-up to the cent
 │   │   ├── security.py                 password hashing (Argon2), session token generation and hashing
 │   │   └── origin_check_middleware.py  CSRF protection: rejects write requests from foreign origins
 │   ├── constants/
@@ -162,6 +163,7 @@ api/
 │   │   │   ├── salary_insight_resource.py
 │   │   │   └── user_resource.py
 │   │   └── common/
+│   │       ├── money_schema.py         Money: a Decimal sent as a "85000.00" string
 │   │       └── response_schema.py      DataResponse[T], PaginatedResponse[T], ErrorResponse
 │   └── api/
 │       ├── dependencies.py             wires repositories and services for Depends(), incl. get_current_user

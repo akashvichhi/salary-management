@@ -206,3 +206,21 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - I asked for A10 before A9, so the insights can be tried on realistic data.
   - The AI noticed its first `main` test left the "seed skipped" message untested and extended it.
 - **How it was verified:** `make check` (117 tests, 100% coverage); the full seed on a freshly migrated database took 1.45–1.51 s over three runs (target: under 30 s; noted for `docs/performance.md`), with 10,000 unique emails; a second run was skipped.
+
+## 2026-11-03 — Step A9: salary insights
+
+- **Prompt / instruction:** "Commit the code and start the step A9?" Asked first (question 2), I chose one endpoint per insight, and averages rounded half-up to the cent.
+- **What the AI produced:**
+  - a `refactor` commit first, moving the `Money` type and a half-up `round_to_cents` into shared modules so employees and insights use one money rule
+  - one red/green pair per insight, each tested on small hand-built data with known answers:
+    - by country: headcount, min, max, average and median, for odd and even counts, and a half-cent average
+    - by job title within a country: only the chosen country counts, and the country is required and validated
+    - by department: headcount and average across countries
+    - overview: headcount, total payroll and payroll by country
+  - every insight leaves out deleted employees and returns empty lists and zeros, not errors, on an empty database
+  - `salary_insight_repository.py` (one shared `GROUP BY` query), `salary_insight_service.py` (average from the exact sum, median in Python), resources, a request schema and the router; deleted employees are filtered by the same `is_active_employee()` as the employee list
+  - ADR 19, the API outline, and question 2 marked answered; `CLAUDE.md`'s folder tree lists the two new money modules
+- **What I changed, rejected, or corrected, and why:**
+  - I asked for the seed (A10) before the insights, so they could be checked on real volumes.
+  - The AI chose not to use SQLite's `AVG`, which returns a float, and divides the exact SQL sum instead, so no float touches money.
+- **How it was verified:** `make check` (136 tests, 100% coverage); against the 10,000-employee seed, every insight answered in under 61 ms (target: under 300 ms; noted for `docs/performance.md`), and the overview total matched a raw SQL `SUM` to the cent.
