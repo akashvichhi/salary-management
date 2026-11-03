@@ -224,3 +224,18 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - I asked for the seed (A10) before the insights, so they could be checked on real volumes.
   - The AI chose not to use SQLite's `AVG`, which returns a float, and divides the exact SQL sum instead, so no float touches money.
 - **How it was verified:** `make check` (136 tests, 100% coverage); against the 10,000-employee seed, every insight answered in under 61 ms (target: under 300 ms; noted for `docs/performance.md`), and the overview total matched a raw SQL `SUM` to the cent.
+
+## 2026-11-03 — API review checkpoint
+
+- **Prompt / instruction:** "start api review checkpoint" (the plan's review of all of `api/` against `CLAUDE.md` and `docs/requirements.md`, after A10).
+- **What the AI produced:** a review of every file in `api/`, with each suspicion checked against the 10,000-employee seed or a running server before it counted as a finding. Five fixes, each a failing test and then the fix:
+  1. **The duplicate-email check scanned the whole table.** The active filter rendered as `is_active IS 1`, but SQLite uses the partial unique index only for `is_active = 1`, the index's own condition. `EXPLAIN QUERY PLAN` went from `SCAN employees` to `SEARCH … USING INDEX uq_employees_active_email`.
+  2. **Database errors carried names and salaries into the logs.** SQLAlchemy puts query values in its error messages, which the 500 handler and uvicorn log. The engine now uses `hide_parameters=True`.
+  3. **A huge `page` or employee id returned a 500** (`OverflowError`: too large for a SQLite integer). `page` is capped at `MAX_PAGE` and ids at SQLite's largest integer, so these are now 422s.
+  4. **Responses weren't compressed,** although `CLAUDE.md` requires `GZipMiddleware`. Responses over 1 KB are now gzipped.
+  5. **Uvicorn's access log wrote full query strings,** so `?search=` text (a name or an email) reached the logs. A logging filter drops the query string and keeps method, path and status.
+- **What I changed, rejected, or corrected, and why:**
+  - The AI's first index test expected a *covering* index, which only happens when the query selects nothing but `email`. It loosened the test to "uses the index", and the red snapshot still failed on the old code.
+  - The AI's first test for the filter's fallback branch didn't reach it: a log call with no arguments still has an (empty) tuple. It switched to named arguments, which do.
+  - Noted but not changed: `search` has no maximum length (harmless for a substring match on 10,000 rows); Starlette re-raises unhandled errors so uvicorn logs a second traceback (now free of query values); `DomainValidationError` has no user yet; CORS for the separate Vite dev server arrives with the web app (W2).
+- **How it was verified:** `make check` (148 tests, 100% coverage); each red snapshot fails on the old code; a real uvicorn run showed `GET /api/v1/employees` without the query string, a gzipped list, and a 422 for a huge id.
