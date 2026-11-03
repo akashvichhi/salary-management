@@ -175,3 +175,20 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - **Time zone:** I asked for IST as the default time zone. The AI pointed out that `CLAUDE.md` said UTC and offered three options (IST on screen only, IST from the API, IST everywhere); I chose IST everywhere. The AI updated `CLAUDE.md`, the architecture, the plan, and added ADR 15. It used a fixed +05:30 offset instead of the `Asia/Kolkata` zone database, which Windows and slim Docker images don't include; Kolkata has no daylight saving, so they are the same.
   - mypy found `tests/factories.py` under two module names; the AI set `explicit_package_bases` instead of adding `__init__.py` files to the test folders.
 - **How it was verified:** `make check` (20 tests, 100% coverage); `pytest -W error::ResourceWarning`; `alembic upgrade head` and `downgrade base` against a temporary database.
+
+## 2026-11-03 — Steps A4–A8: employee create, read, update, delete and list
+
+- **Prompt / instruction:** "commit and continue with A4 to A8. I want list/create/update/delete API at once." Before starting, the AI asked three questions; I chose fixed lists for country, department and job title, sorting by every column, and soft delete.
+- **What the AI produced:**
+  - one red and one green commit per step: create (A4), duplicate email → 409 (A5), get one → 404 when missing (A6), partial update and soft delete (A7), and the list with pagination, filters, search and sort (A8)
+  - request schemas that trim text, lowercase emails, and match country, department and job title to the fixed lists ignoring case; PATCH rejects an explicit `null`
+  - salaries sent as strings (`"85000.00"`) so no float ever touches money
+  - an `is_active` column, a partial unique email index (unique among active employees only), and indexes for the new sort columns, in a second migration
+  - every repository query starts from `active_employees()`, so deleted employees never appear
+  - the list: exact filters, case-insensitive substring search on name or email with `%` and `_` matched literally, an allow-listed `sort` (`-field` for descending), `id` as the tie-breaker so pages never overlap, and `meta` built only by `PaginatedResponse.create`
+  - ADRs 16 (soft delete) and 17 (fixed lists); `email-validator` added with its reason
+- **What I changed, rejected, or corrected, and why:**
+  - A test written by the AI for two requests saving the same email at once found a real bug in its own code: the database error came from the `flush` inside the repository, outside the `try` that turned it into a 409, so the client would have got a 500. The service now wraps the whole save in one `_saving()` block.
+  - I asked to see the working code before approving any commit. The AI kept a snapshot of the code at each red and green point, so the history still shows each test before its code, and replays them as commits after my OK.
+  - Pylance warned that `@contextmanager` functions should return `Generator[None]`, not `Iterator[None]`. The AI fixed `_saving()` and updated every snapshot that contained it.
+- **How it was verified:** `make check` (106 tests, 100% coverage); each red snapshot fails only because the code is missing; `alembic upgrade head`, `downgrade` and `upgrade` again on a temporary database.

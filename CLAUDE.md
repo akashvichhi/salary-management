@@ -340,7 +340,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 ### Data and performance
 - Aggregations (min/max/avg/count per country or job title) run in **SQL** (`GROUP BY`), never by loading 10,000 rows into Python. Exception: median and percentiles, which SQLite doesn't support; compute those in Python on the filtered rows and note the decision in `docs/decisions.md`.
-- Add indexes on every column used for filtering, sorting, or grouping (`country`, `job_title`, `department`, `salary`, `email` unique), plus a **composite index on `(country, job_title)`** for "average salary per job title within a country". Every index has a one-line reason in `docs/architecture.md`.
+- Add indexes on every column used for filtering, sorting, or grouping (`country`, `job_title`, `department`, `salary`, `full_name`, `hire_date`, and `email` unique among active employees), plus a **composite index on `(country, job_title)`** for "average salary per job title within a country". Every index has a one-line reason in `docs/architecture.md`.
 - **Endpoints are plain `def`, not `async def`.** SQLAlchemy with SQLite is synchronous; FastAPI runs `def` endpoints in a thread pool, while a blocking database call inside `async def` freezes the event loop for every request. Use `async def` only for code that awaits truly async I/O.
 - **Responses are compressed** with `GZipMiddleware` (registered in `main.py`, with a `minimum_size` so tiny responses skip it).
 - The seed script uses bulk inserts and a fixed random seed, so it is fast and produces the same data every time.

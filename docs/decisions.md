@@ -107,6 +107,20 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** IST (Asia/Kolkata, UTC+05:30) for storage, the API (`+05:30` offset) and the UI, from one constant per app. It is a fixed offset, because Asia/Kolkata has no daylight saving, so no `tzdata` package is needed.
 - **Consequences:** the database, API and screen show the same times, with no conversion. Supporting users in other zones later means converting stored times, or adding a per-user zone in the UI.
 
+## 16. Soft delete
+
+- **Context:** deleting an employee removes salary history the HR manager may still need, and a mistaken delete can't be undone.
+- **Options:** hard delete; soft delete with an `is_active` flag; soft delete with a `deleted_at` timestamp.
+- **Decision:** an `is_active` flag. Every repository query starts from `active_employees()`, so a deleted employee can't leak into a list, a lookup or (later) the insights. Email is unique only among active employees (a partial unique index), so a deleted employee's email can be used again.
+- **Consequences:** rows are never removed, so the table only grows (fine at 10,000 rows). There is no restore endpoint yet; it would be one `UPDATE`. A `deleted_at` column would add when, which nobody asked for.
+
+## 17. Fixed lists for country, department and job title
+
+- **Context:** filters and insights group by these fields; free text would split "Engineer" and "engineer " into two groups.
+- **Options:** free text; fixed lists in code; lookup tables in the database.
+- **Decision:** fixed lists as `StrEnum`s in `constants/employee_constants.py`. Input is matched ignoring case and spaces and stored in the list's spelling. Filters use the same normalisation.
+- **Consequences:** clean groups and simple dropdowns. Adding a value is a code change and a deploy, not a form; lookup tables would only pay off if HR needed to edit the lists themselves.
+
 ## Runtime dependencies
 
 Each runtime dependency gets one line here, with its reason, when it is added.

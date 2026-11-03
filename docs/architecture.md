@@ -79,21 +79,24 @@ sequenceDiagram
 |---|---|---|
 | `id` | Integer | Primary key |
 | `full_name` | String | Not null, trimmed, not empty |
-| `email` | String | Not null, **unique**, stored lowercase |
-| `job_title` | String | Not null |
-| `department` | String | Not null |
+| `email` | String | Not null, **unique among active employees**, stored lowercase |
+| `job_title` | String | Not null, from the allowed list (`JobTitle` in `constants/employee_constants.py`) |
+| `department` | String | Not null, from the allowed list (`Department`) |
 | `country` | String(2) | Not null, ISO 3166-1 alpha-2, uppercase, from the allowed list |
 | `salary` | Numeric(12, 2) | Not null, greater than 0, annual USD |
 | `hire_date` | Date | Not null |
+| `is_active` | Boolean | Not null, default true. False = deleted (soft delete); hidden from every query |
 | `created_at`, `updated_at` | DateTime | Not null, IST (UTC+05:30), set by the database layer |
 
 | Index | Reason |
 |---|---|
-| `email` (unique) | Guarantees no duplicate employees; also serves the duplicate-email check |
+| `email` (unique where `is_active = 1`) | Guarantees no two active employees share an email, while a deleted employee's email can be reused; also serves the duplicate-email check |
+| `full_name` | Default sort of the list (A–Z by name) |
 | `country` | Country filter and per-country insights (`GROUP BY country`) |
 | `job_title` | Job title filter |
 | `department` | Department filter and per-department insights |
 | `salary` | Sorting the list by salary across all employees |
+| `hire_date` | Sorting the list by hire date |
 | `(country, job_title)` | Average salary per job title within a country, and the two filters combined |
 
 **Login tables** (built last):
@@ -107,11 +110,11 @@ sequenceDiagram
 
 | Method and path | Purpose | Success |
 |---|---|---|
-| `GET /api/v1/employees` | List with `page`, `per_page`, `search`, `country`, `job_title`, `department`, `sort` | 200 |
+| `GET /api/v1/employees` | List with `page`, `per_page`, `search` (part of the name or email, ignoring case), `country`, `job_title`, `department` (exact), `sort` (`field` or `-field`; any column below, default `full_name`) | 200 |
 | `GET /api/v1/employees/{id}` | One employee | 200 |
 | `POST /api/v1/employees` | Create | 201 |
 | `PATCH /api/v1/employees/{id}` | Partial update | 200 |
-| `DELETE /api/v1/employees/{id}` | Delete | 204 |
+| `DELETE /api/v1/employees/{id}` | Soft delete (sets `is_active` to false) | 204 |
 | `GET /api/v1/salary-insights/...` | Insights by country, by job title within a country, by department, and the org overview (paths in Open questions) | 200 |
 | `POST /api/v1/auth/login` | Log in, set the session cookie | 200 |
 | `POST /api/v1/auth/logout` | Log out, delete the session | 204 |
@@ -184,10 +187,10 @@ Render's free tier has no persistent disk, so the database is recreated, and the
 |---|---|
 | 1 | Create and edit: separate routes or modals on the list page? Does "view" need its own detail page, or is the edit form enough? |
 | 2 | Insights endpoints: one per insight (e.g. `/salary-insights/by-country`) or one combined response? Exact paths and response shapes |
-| 3 | Job title, department and country: fixed lists from constants, or free text? Where do the filter dropdowns get their options? |
-| 4 | Sort allow-list: which fields besides `salary` (e.g. `full_name`, `hire_date`)? |
+| 3 | ~~Job title, department and country: fixed lists or free text?~~ **Answered:** fixed lists in `constants/employee_constants.py`, matched ignoring case (decision 17). Where the dropdowns get them is decided with the frontend |
+| 4 | ~~Sort allow-list?~~ **Answered:** every column shown in the table: `full_name`, `email`, `job_title`, `department`, `country`, `salary`, `hire_date`; ties broken by `id` |
 | 5 | Search by name or email uses a substring match, which can't use an index. Is a scan of 10,000 rows fast enough? Measure in `docs/performance.md` |
 | 6 | The `country` index duplicates the leading column of `(country, job_title)`. Keep both, or drop it if `EXPLAIN QUERY PLAN` shows the composite covers it? |
-| 7 | Delete: hard delete, or soft delete with an `is_active` flag? |
+| 7 | ~~Delete: hard or soft?~~ **Answered:** soft delete with `is_active` (decision 16) |
 | 8 | Login rate limit: in memory (resets on restart, fine for one container) or a database table? |
 | 9 | Seed data: which countries, departments and job titles, and what salary ranges? |
