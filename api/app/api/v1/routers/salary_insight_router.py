@@ -4,6 +4,7 @@ from fastapi import APIRouter, Query
 
 from app.api.dependencies import SalaryInsightServiceDependency
 from app.constants.route_constants import (
+    PAYROLL_OVERVIEW_PATH,
     SALARY_BY_COUNTRY_PATH,
     SALARY_BY_DEPARTMENT_PATH,
     SALARY_BY_JOB_TITLE_PATH,
@@ -15,9 +16,19 @@ from app.schemas.resources.salary_insight_resource import (
     CountrySalaryInsightResource,
     DepartmentSalaryInsightResource,
     JobTitleSalaryInsightResource,
+    PayrollOverviewResource,
 )
 
 salary_insight_router = APIRouter(prefix=SALARY_INSIGHTS_PATH, tags=["salary insights"])
+
+
+@salary_insight_router.get(
+    PAYROLL_OVERVIEW_PATH, response_model=DataResponse[PayrollOverviewResource]
+)
+def payroll_overview(
+    service: SalaryInsightServiceDependency,
+) -> DataResponse[PayrollOverviewResource]:
+    return DataResponse(data=service.payroll_overview())
 
 
 @salary_insight_router.get(

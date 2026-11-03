@@ -22,3 +22,15 @@ class DepartmentSalaryInsightResource(BaseModel):
     department: str
     headcount: int
     average_salary: Money
+
+
+class CountryPayrollResource(BaseModel):
+    country: str
+    headcount: int
+    total_payroll: Money
+
+
+class PayrollOverviewResource(BaseModel):
+    headcount: int
+    total_payroll: Money
+    payroll_by_country: list[CountryPayrollResource]

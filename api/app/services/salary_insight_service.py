@@ -10,9 +10,11 @@ from app.repositories.salary_insight_repository import (
     SalaryStats,
 )
 from app.schemas.resources.salary_insight_resource import (
+    CountryPayrollResource,
     CountrySalaryInsightResource,
     DepartmentSalaryInsightResource,
     JobTitleSalaryInsightResource,
+    PayrollOverviewResource,
 )
 
 
@@ -65,3 +67,19 @@ class SalaryInsightService:
             )
             for stats in self.repository.salary_stats_by_department()
         ]
+
+    def payroll_overview(self) -> PayrollOverviewResource:
+        by_country = self.repository.salary_stats_by_country()
+        # The org totals add up the exact per-country SQL sums, so they always match the rows.
+        return PayrollOverviewResource(
+            headcount=sum(stats.headcount for stats in by_country),
+            total_payroll=sum((stats.total_salary for stats in by_country), Decimal(0)),
+            payroll_by_country=[
+                CountryPayrollResource(
+                    country=stats.group,
+                    headcount=stats.headcount,
+                    total_payroll=stats.total_salary,
+                )
+                for stats in by_country
+            ],
+        )
