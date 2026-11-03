@@ -15,14 +15,18 @@ from pydantic import (
 )
 
 from app.constants.employee_constants import (
+    DEFAULT_EMPLOYEE_SORT,
+    DESCENDING_SORT_PREFIX,
     FULL_NAME_MAX_LENGTH,
     SALARY_DECIMAL_PLACES,
     SALARY_MAX_DIGITS,
     Country,
     Department,
+    EmployeeSortField,
     JobTitle,
 )
-from app.constants.messages import FIELD_CANNOT_BE_NULL
+from app.constants.messages import FIELD_CANNOT_BE_NULL, INVALID_SORT
+from app.schemas.requests.pagination_request import PaginationRequest
 
 
 def match_allowed_value[E: StrEnum](allowed: type[E]) -> Callable[[object], object]:
@@ -78,3 +82,35 @@ class EmployeeUpdateRequest(BaseModel):
         if value is None:
             raise ValueError(FIELD_CANNOT_BE_NULL)
         return value
+
+
+def blank_to_none(value: str | None) -> str | None:
+    return value or None
+
+
+SearchText = Annotated[str, StringConstraints(strip_whitespace=True), AfterValidator(blank_to_none)]
+
+
+class EmployeeListRequest(PaginationRequest):
+    """Query string of the list: filters match exactly, search matches part of name or email."""
+
+    search: SearchText | None = None
+    country: CountryCode | None = None
+    job_title: JobTitleName | None = None
+    department: DepartmentName | None = None
+    sort: str = DEFAULT_EMPLOYEE_SORT.value
+
+    @field_validator("sort")
+    @classmethod
+    def check_sort_field(cls, value: str) -> str:
+        if value.removeprefix(DESCENDING_SORT_PREFIX) not in EmployeeSortField:
+            raise ValueError(INVALID_SORT)
+        return value
+
+    @property
+    def sort_field(self) -> EmployeeSortField:
+        return EmployeeSortField(self.sort.removeprefix(DESCENDING_SORT_PREFIX))
+
+    @property
+    def sort_descending(self) -> bool:
+        return self.sort.startswith(DESCENDING_SORT_PREFIX)

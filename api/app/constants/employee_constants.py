@@ -56,3 +56,19 @@ class JobTitle(StrEnum):
     SENIOR_SOFTWARE_ENGINEER = "Senior Software Engineer"
     SOFTWARE_ENGINEER = "Software Engineer"
     SUPPORT_SPECIALIST = "Support Specialist"
+
+
+class EmployeeSortField(StrEnum):
+    """The columns the list can be sorted by (an allow-list, so no other column can be reached)."""
+
+    FULL_NAME = "full_name"
+    EMAIL = "email"
+    JOB_TITLE = "job_title"
+    DEPARTMENT = "department"
+    COUNTRY = "country"
+    SALARY = "salary"
+    HIRE_DATE = "hire_date"
+
+
+DEFAULT_EMPLOYEE_SORT = EmployeeSortField.FULL_NAME
+DESCENDING_SORT_PREFIX = "-"

@@ -8,7 +8,12 @@ from app.constants.messages import EMPLOYEE_EMAIL_TAKEN, EMPLOYEE_NOT_FOUND
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.employee_model import EmployeeModel
 from app.repositories.employee_repository import EmployeeRepository
-from app.schemas.requests.employee_request import EmployeeCreateRequest, EmployeeUpdateRequest
+from app.schemas.common.response_schema import PaginatedResponse
+from app.schemas.requests.employee_request import (
+    EmployeeCreateRequest,
+    EmployeeListRequest,
+    EmployeeUpdateRequest,
+)
 from app.schemas.resources.employee_resource import EmployeeResource
 
 
@@ -22,6 +27,11 @@ class EmployeeService:
         with self._saving():
             employee = self.repository.add(EmployeeModel(**request.model_dump()))
         return EmployeeResource.model_validate(employee)
+
+    def list_employees(self, request: EmployeeListRequest) -> PaginatedResponse[EmployeeResource]:
+        employees, total_count = self.repository.list_active(request)
+        items = [EmployeeResource.model_validate(employee) for employee in employees]
+        return PaginatedResponse[EmployeeResource].create(items, total_count, request)
 
     def get_employee(self, employee_id: int) -> EmployeeResource:
         return EmployeeResource.model_validate(self._find_or_raise(employee_id))

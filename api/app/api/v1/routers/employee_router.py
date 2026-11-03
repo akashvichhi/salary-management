@@ -1,12 +1,25 @@
-from fastapi import APIRouter, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, Query, Response, status
 
 from app.api.dependencies import EmployeeServiceDependency
 from app.constants.route_constants import EMPLOYEES_PATH
-from app.schemas.common.response_schema import DataResponse
-from app.schemas.requests.employee_request import EmployeeCreateRequest, EmployeeUpdateRequest
+from app.schemas.common.response_schema import DataResponse, PaginatedResponse
+from app.schemas.requests.employee_request import (
+    EmployeeCreateRequest,
+    EmployeeListRequest,
+    EmployeeUpdateRequest,
+)
 from app.schemas.resources.employee_resource import EmployeeResource
 
 employee_router = APIRouter(prefix=EMPLOYEES_PATH, tags=["employees"])
+
+
+@employee_router.get("", response_model=PaginatedResponse[EmployeeResource])
+def list_employees(
+    request: Annotated[EmployeeListRequest, Query()], service: EmployeeServiceDependency
+) -> PaginatedResponse[EmployeeResource]:
+    return service.list_employees(request)
 
 
 @employee_router.get("/{employee_id}", response_model=DataResponse[EmployeeResource])
