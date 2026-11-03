@@ -14,6 +14,8 @@ API_ROOT = Path(__file__).resolve().parents[2]
 ALEMBIC_INI = API_ROOT / "alembic.ini"
 EMPLOYEES_TABLE = "employees"
 EXPECTED_INDEXED_COLUMNS = {
+    ("full_name",),
+    ("hire_date",),
     ("country",),
     ("job_title",),
     ("department",),

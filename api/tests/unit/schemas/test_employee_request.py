@@ -1,9 +1,11 @@
+from decimal import Decimal
 from typing import Any
 
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.requests.employee_request import EmployeeCreateRequest
+from app.constants.messages import FIELD_CANNOT_BE_NULL
+from app.schemas.requests.employee_request import EmployeeCreateRequest, EmployeeUpdateRequest
 from tests.factories import employee_payload
 
 
@@ -76,3 +78,25 @@ def test_every_field_is_required() -> None:
         EmployeeCreateRequest.model_validate({})
 
     assert len(error.value.errors()) == len(EmployeeCreateRequest.model_fields)
+
+
+def test_update_request_keeps_only_the_fields_that_were_sent() -> None:
+    request = EmployeeUpdateRequest.model_validate({"salary": "90000.00"})
+
+    assert request.model_dump(exclude_unset=True) == {"salary": Decimal("90000.00")}
+
+
+def test_update_request_normalises_like_create() -> None:
+    request = EmployeeUpdateRequest.model_validate({"email": " Asha@ACME.com ", "country": "us"})
+
+    assert request.email == "asha@acme.com"
+    assert request.country == "US"
+
+
+def test_update_request_rejects_null_for_a_field() -> None:
+    with pytest.raises(ValidationError) as error:
+        EmployeeUpdateRequest.model_validate({"full_name": None})
+
+    [detail] = error.value.errors()
+    assert detail["loc"] == ("full_name",)
+    assert FIELD_CANNOT_BE_NULL in detail["msg"]

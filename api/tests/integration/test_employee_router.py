@@ -61,3 +61,40 @@ def test_get_employee_returns_404_for_an_unknown_id(client: TestClient) -> None:
 
     assert response.status_code == 404
     assert response.json() == {"error": EMPLOYEE_NOT_FOUND}
+
+
+def test_update_employee_returns_200_with_the_changed_employee(client: TestClient) -> None:
+    created = create_employee(client)
+
+    response = client.patch(f"{EMPLOYEES_URL}/{created['id']}", json={"job_title": "qa engineer"})
+
+    assert response.status_code == 200
+    employee = response.json()["data"]
+    assert employee["job_title"] == "QA Engineer"
+    assert employee["full_name"] == created["full_name"]
+
+
+def test_update_employee_returns_422_for_a_null_field(client: TestClient) -> None:
+    created = create_employee(client)
+
+    response = client.patch(f"{EMPLOYEES_URL}/{created['id']}", json={"salary": None})
+
+    assert response.status_code == 422
+    assert [detail["field"] for detail in response.json()["details"]] == ["salary"]
+
+
+def test_delete_employee_returns_204_and_hides_the_employee(client: TestClient) -> None:
+    created = create_employee(client)
+
+    response = client.delete(f"{EMPLOYEES_URL}/{created['id']}")
+
+    assert response.status_code == 204
+    assert response.content == b""
+    assert client.get(f"{EMPLOYEES_URL}/{created['id']}").status_code == 404
+
+
+def test_delete_employee_returns_404_for_an_unknown_id(client: TestClient) -> None:
+    response = client.delete(f"{EMPLOYEES_URL}/999")
+
+    assert response.status_code == 404
+    assert response.json() == {"error": EMPLOYEE_NOT_FOUND}

@@ -55,3 +55,11 @@ def test_updating_an_employee_changes_only_updated_at(
 
     assert employee.created_at == CREATED_AT
     assert employee.updated_at == UPDATED_AT
+
+
+def test_database_allows_reusing_the_email_of_a_deleted_employee(session: Session) -> None:
+    session.add(build_employee(email="asha.rao@acme.com", is_active=False))
+    session.commit()
+
+    session.add(build_employee(full_name="New Asha", email="asha.rao@acme.com"))
+    session.commit()
