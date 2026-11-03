@@ -22,7 +22,9 @@ def apply_sqlite_pragmas(connection: DBAPIConnection, _: ConnectionPoolEntry) ->
 
 
 def create_database_engine(database_url: str) -> Engine:
-    engine = create_engine(database_url, connect_args=SQLITE_CONNECT_ARGS)
+    # hide_parameters keeps query values (names, emails, salaries) out of error messages,
+    # which the 500 handler and uvicorn write to the logs.
+    engine = create_engine(database_url, connect_args=SQLITE_CONNECT_ARGS, hide_parameters=True)
     event.listen(engine, "connect", apply_sqlite_pragmas)
     return engine
 
