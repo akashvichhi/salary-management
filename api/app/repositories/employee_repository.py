@@ -1,13 +1,17 @@
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import ColumnElement, Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.employee_model import EmployeeModel
 from app.schemas.requests.employee_request import EmployeeListRequest
 
 
+def is_active_employee() -> ColumnElement[bool]:
+    """Every query filters on this, so a soft-deleted employee can't leak into a result."""
+    return EmployeeModel.is_active.is_(True)
+
+
 def active_employees() -> Select[EmployeeModel]:
-    """Every query starts here, so a soft-deleted employee can't leak into a result."""
-    return select(EmployeeModel).where(EmployeeModel.is_active.is_(True))
+    return select(EmployeeModel).where(is_active_employee())
 
 
 class EmployeeRepository:
