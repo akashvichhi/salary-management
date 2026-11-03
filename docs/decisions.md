@@ -109,3 +109,4 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `fastapi` | The web framework (decision 1) |
 | `uvicorn` | The server that runs the FastAPI app |
 | `pydantic-settings` | Reads environment variables into one typed `Settings` class (`core/config.py`) |
+| `sqlalchemy` | The ORM and database access layer for SQLite (decisions 2 and 14) |
