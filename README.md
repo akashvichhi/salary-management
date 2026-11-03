@@ -31,11 +31,14 @@ Prerequisites: [uv](https://docs.astral.sh/uv/) (it installs Python 3.13 for the
 cd api
 uv sync                                  # install the pinned dependencies
 uv run alembic upgrade head              # create or update the local SQLite database
+make seed                                # add 10,000 sample employees (skipped if any exist)
 uv run uvicorn app.main:app --reload     # run the API on http://localhost:8000
 make check                               # lint, format, type check, tests with coverage
 ```
 
 Copy `api/.env.example` to `api/.env` to override settings.
+
+After pulling changes, run `uv run alembic upgrade head` again: a database left on an older migration fails with errors such as `no such column`.
 
 ## Documentation
 

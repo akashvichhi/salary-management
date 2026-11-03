@@ -193,4 +193,4 @@ Render's free tier has no persistent disk, so the database is recreated, and the
 | 6 | The `country` index duplicates the leading column of `(country, job_title)`. Keep both, or drop it if `EXPLAIN QUERY PLAN` shows the composite covers it? |
 | 7 | ~~Delete: hard or soft?~~ **Answered:** soft delete with `is_active` (decision 16) |
 | 8 | Login rate limit: in memory (resets on restart, fine for one container) or a database table? |
-| 9 | Seed data: which countries, departments and job titles, and what salary ranges? |
+| 9 | ~~Seed data: values and salary ranges?~~ **Answered:** the fixed lists; each job title has a USD range and a department, scaled by a per-country pay factor (decision 18) |

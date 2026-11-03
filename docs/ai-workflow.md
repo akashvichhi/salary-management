@@ -192,3 +192,17 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - I asked to see the working code before approving any commit. The AI kept a snapshot of the code at each red and green point, so the history still shows each test before its code, and replays them as commits after my OK.
   - Pylance warned that `@contextmanager` functions should return `Generator[None]`, not `Iterator[None]`. The AI fixed `_saving()` and updated every snapshot that contained it.
 - **How it was verified:** `make check` (106 tests, 100% coverage); each red snapshot fails only because the code is missing; `alembic upgrade head`, `downgrade` and `upgrade` again on a temporary database.
+
+## 2026-11-03 — Step A10: seed 10,000 employees
+
+- **Prompt / instruction:** "commit the code and start A10 before A9." Asked first (question 9), I chose salary ranges per job title scaled by a country pay factor, and names from list files.
+- **What the AI produced:**
+  - failing tests first: the same seed gives identical employees and a different seed different ones; emails are unique, and a repeated name gets `asha.rao2@`; every employee passes the API's own validation after a JSON round-trip; department and salary follow the job title and country; every job title and country has a profile; the seed is skipped when employees exist; the script prints only counts and time
+  - `scripts/seed.py` (builds employees through `EmployeeCreateRequest`, one bulk insert), `scripts/seed_constants.py` (ranges, pay factors, weights, fixed dates), and the name lists in `scripts/data/`
+  - a `make seed` target; `mypy` and coverage now include `scripts/`
+  - ADR 18, the README setup step, and question 9 marked answered
+- **What I changed, rejected, or corrected, and why:**
+  - After A8, the list returned a 500 on my machine: `no such column: employees.is_active`. My local database was still on the first migration. The fix is `uv run alembic upgrade head`; the README now says to rerun it after pulling.
+  - I asked for A10 before A9, so the insights can be tried on realistic data.
+  - The AI noticed its first `main` test left the "seed skipped" message untested and extended it.
+- **How it was verified:** `make check` (117 tests, 100% coverage); the full seed on a freshly migrated database took 1.45–1.51 s over three runs (target: under 30 s; noted for `docs/performance.md`), with 10,000 unique emails; a second run was skipped.

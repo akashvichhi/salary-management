@@ -121,6 +121,13 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** fixed lists as `StrEnum`s in `constants/employee_constants.py`. Input is matched ignoring case and spaces and stored in the list's spelling. Filters use the same normalisation.
 - **Consequences:** clean groups and simple dropdowns. Adding a value is a code change and a deploy, not a form; lookup tables would only pay off if HR needed to edit the lists themselves.
 
+## 18. Seed data: title ranges scaled by country
+
+- **Context:** the insights are only worth showing if the seed data has real patterns; the seed must also be identical on every run and fast.
+- **Options:** one salary range for everyone; one range per job title; a range per job title scaled by a per-country pay factor. Names from the Faker library, or from our own name lists.
+- **Decision:** each job title has a USD range, a department and a weight (how common it is); each country has a pay factor (US 1.00, India 0.30, ...) and a weight. Names come from `scripts/data/*.txt`. All of it is in `scripts/seed_constants.py`, drawn with a fixed `random.Random(42)`, and fixed hire-date bounds instead of today's date. Every employee is built through `EmployeeCreateRequest`, then bulk-inserted in one statement. The seed is skipped when the table already has rows.
+- **Consequences:** country and job-title insights differ in believable ways. No Faker, whose output can change between versions and break "identical on every run". Emails use the reserved `example.com` domain, so no real inbox is ever named. 10,000 employees seed in about 1.5 seconds.
+
 ## Runtime dependencies
 
 Each runtime dependency gets one line here, with its reason, when it is added.
