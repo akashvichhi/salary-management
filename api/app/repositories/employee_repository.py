@@ -13,5 +13,8 @@ class EmployeeRepository:
         self.session.flush()
         return employee
 
+    def find_by_id(self, employee_id: int) -> EmployeeModel | None:
+        return self.session.get(EmployeeModel, employee_id)
+
     def find_by_email(self, email: str) -> EmployeeModel | None:
         return self.session.scalar(select(EmployeeModel).where(EmployeeModel.email == email))

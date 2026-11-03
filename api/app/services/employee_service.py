@@ -4,8 +4,8 @@ from contextlib import contextmanager
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.constants.messages import EMPLOYEE_EMAIL_TAKEN
-from app.core.exceptions import ConflictError
+from app.constants.messages import EMPLOYEE_EMAIL_TAKEN, EMPLOYEE_NOT_FOUND
+from app.core.exceptions import ConflictError, NotFoundError
 from app.models.employee_model import EmployeeModel
 from app.repositories.employee_repository import EmployeeRepository
 from app.schemas.requests.employee_request import EmployeeCreateRequest
@@ -22,6 +22,15 @@ class EmployeeService:
         with self._saving():
             employee = self.repository.add(EmployeeModel(**request.model_dump()))
         return EmployeeResource.model_validate(employee)
+
+    def get_employee(self, employee_id: int) -> EmployeeResource:
+        return EmployeeResource.model_validate(self._find_or_raise(employee_id))
+
+    def _find_or_raise(self, employee_id: int) -> EmployeeModel:
+        employee = self.repository.find_by_id(employee_id)
+        if employee is None:
+            raise NotFoundError(EMPLOYEE_NOT_FOUND)
+        return employee
 
     def _ensure_email_is_free(self, email: str) -> None:
         if self.repository.find_by_email(email) is not None:

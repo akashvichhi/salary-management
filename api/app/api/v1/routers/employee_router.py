@@ -9,6 +9,13 @@ from app.schemas.resources.employee_resource import EmployeeResource
 employee_router = APIRouter(prefix=EMPLOYEES_PATH, tags=["employees"])
 
 
+@employee_router.get("/{employee_id}", response_model=DataResponse[EmployeeResource])
+def get_employee(
+    employee_id: int, service: EmployeeServiceDependency
+) -> DataResponse[EmployeeResource]:
+    return DataResponse(data=service.get_employee(employee_id))
+
+
 @employee_router.post(
     "", status_code=status.HTTP_201_CREATED, response_model=DataResponse[EmployeeResource]
 )
