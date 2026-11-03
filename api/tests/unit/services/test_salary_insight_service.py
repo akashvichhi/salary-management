@@ -8,6 +8,7 @@ from app.constants.employee_constants import Country
 from app.repositories.salary_insight_repository import SalaryInsightRepository
 from app.schemas.resources.salary_insight_resource import (
     CountrySalaryInsightResource,
+    DepartmentSalaryInsightResource,
     JobTitleSalaryInsightResource,
 )
 from app.services.salary_insight_service import SalaryInsightService
@@ -131,3 +132,30 @@ def test_salary_by_job_title_of_a_country_with_no_employees_is_an_empty_list(
     save_employees(session, paid("50000", country="IN"))
 
     assert service.salary_by_job_title(Country.FRANCE) == []
+
+
+def test_salary_by_department_gives_headcount_and_average_across_countries(
+    service: SalaryInsightService, session: Session
+) -> None:
+    save_employees(
+        session,
+        paid("90000", department="Engineering", country="US"),
+        paid("30000", department="Engineering", country="IN"),
+        paid("45000", department="Sales"),
+        paid("999999", department="Sales", is_active=False),
+    )
+
+    assert service.salary_by_department() == [
+        DepartmentSalaryInsightResource(
+            department="Engineering", headcount=2, average_salary=Decimal("60000.00")
+        ),
+        DepartmentSalaryInsightResource(
+            department="Sales", headcount=1, average_salary=Decimal("45000.00")
+        ),
+    ]
+
+
+def test_salary_by_department_of_an_empty_database_is_an_empty_list(
+    service: SalaryInsightService,
+) -> None:
+    assert service.salary_by_department() == []

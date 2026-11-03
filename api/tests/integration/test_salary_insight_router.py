@@ -56,3 +56,14 @@ def test_salary_by_job_title_needs_a_known_country(
     assert response.status_code == 422
     assert response.json()["error"] == VALIDATION_FAILED
     assert [detail["field"] for detail in response.json()["details"]] == ["country"]
+
+
+def test_salary_by_department_returns_an_array_with_money_as_strings(client: TestClient) -> None:
+    create_employee(client, email="a@acme.com", department="Legal", salary="70000")
+
+    response = client.get(f"{INSIGHTS_URL}/by-department")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "data": [{"department": "Legal", "headcount": 1, "average_salary": "70000.00"}]
+    }
