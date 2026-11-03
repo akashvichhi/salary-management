@@ -1,0 +1,193 @@
+# Architecture
+
+## 1. Overview
+
+One web app for one HR manager. A React single-page app (TypeScript, Vite, Mantine) talks to a FastAPI backend over a JSON API under `/api/v1`. The backend stores employees in SQLite and computes salary insights with SQL aggregation. In production, both run in **one Docker container on Render**: FastAPI serves the built React files and the API from the same origin. On startup the container migrates the database and seeds 10,000 employees if it is empty. All salaries are annual base pay in USD.
+
+## 2. System
+
+```mermaid
+flowchart LR
+    browser["Browser<br/>React SPA"]
+    subgraph container["Docker container on Render"]
+        fastapi["FastAPI"]
+        static["React build<br/>web/dist"]
+        db[("SQLite file")]
+    end
+    browser -- "/ and /assets/*" --> fastapi
+    browser -- "/api/*  JSON" --> fastapi
+    fastapi -- "serves" --> static
+    fastapi -- "SQLAlchemy" --> db
+```
+
+| Path | Served as |
+|---|---|
+| `/api/v1/*` | The API (registered first, so nothing can shadow it). Unknown paths return a JSON 404 |
+| `/api/health` | Health check for Render: `SELECT 1`, then `200` |
+| `/assets/*` | Hashed static files, cached for a year. A missing file returns a plain 404 |
+| Anything else | `index.html` with `no-cache`, so React Router handles the route |
+
+In local development, Vite serves the frontend and FastAPI serves only the API.
+
+## 3. Backend layers
+
+| Layer | Job |
+|---|---|
+| Router | Declares the route, validates input with a request schema, calls one service method, returns a resource schema |
+| Service | Business rules (e.g. unique email, employee exists), raises domain exceptions, owns the transaction |
+| Repository | Queries: filtering, sorting, pagination and `GROUP BY` aggregation |
+| Model | Table columns, indexes and constraints only |
+
+Domain exceptions map to the `{ "error": ... }` shape in one place (`core/exception_handlers.py`). Endpoints are plain `def`, because SQLAlchemy with SQLite is synchronous.
+
+**HR manager filters employees by country:**
+
+```mermaid
+sequenceDiagram
+    actor HR as HR manager
+    participant Page as Employee list page
+    participant Query as useEmployeesQuery
+    participant Client as api_client
+    participant Router as employee_router
+    participant Service as EmployeeService
+    participant Repo as EmployeeRepository
+    participant DB as SQLite
+
+    HR->>Page: selects country "IN"
+    Page->>Page: URL becomes ?country=IN&page=1
+    Page->>Query: params { country: "IN", page: 1, perPage: 20 }
+    Query->>Client: getEmployees(params)
+    Client->>Router: GET /api/v1/employees?country=IN&page=1&per_page=20
+    Router->>Router: validate EmployeeListRequest
+    Router->>Service: list_employees(request)
+    Service->>Repo: list(request)
+    Repo->>DB: SELECT ... WHERE country = 'IN' LIMIT 20 OFFSET 0, plus COUNT
+    DB-->>Repo: rows, total_count
+    Repo-->>Service: (items, total_count)
+    Service-->>Router: PaginatedResponse.create(...)
+    Router-->>Client: 200 { data, meta } in snake_case
+    Client-->>Query: keys converted to camelCase
+    Query-->>Page: rows and meta
+    Page-->>HR: table shows Indian employees
+```
+
+## 4. Data model
+
+**`employees`**
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | Integer | Primary key |
+| `full_name` | String | Not null, trimmed, not empty |
+| `email` | String | Not null, **unique**, stored lowercase |
+| `job_title` | String | Not null |
+| `department` | String | Not null |
+| `country` | String(2) | Not null, ISO 3166-1 alpha-2, uppercase, from the allowed list |
+| `salary` | Numeric(12, 2) | Not null, greater than 0, annual USD |
+| `hire_date` | Date | Not null |
+| `created_at`, `updated_at` | DateTime | Not null, UTC, set by the database layer |
+
+| Index | Reason |
+|---|---|
+| `email` (unique) | Guarantees no duplicate employees; also serves the duplicate-email check |
+| `country` | Country filter and per-country insights (`GROUP BY country`) |
+| `job_title` | Job title filter |
+| `department` | Department filter and per-department insights |
+| `salary` | Sorting the list by salary across all employees |
+| `(country, job_title)` | Average salary per job title within a country, and the two filters combined |
+
+**Login tables** (built last):
+
+| Table | Columns |
+|---|---|
+| `users` | `id`, `email` (unique, lowercase), `password_hash` (Argon2), `created_at`, `updated_at` |
+| `sessions` | `id`, `token_hash` (unique, SHA-256 of the cookie value), `user_id` (FK → `users`), `expires_at`, `created_at`, `updated_at` |
+
+## 5. API outline
+
+| Method and path | Purpose | Success |
+|---|---|---|
+| `GET /api/v1/employees` | List with `page`, `per_page`, `search`, `country`, `job_title`, `department`, `sort` | 200 |
+| `GET /api/v1/employees/{id}` | One employee | 200 |
+| `POST /api/v1/employees` | Create | 201 |
+| `PATCH /api/v1/employees/{id}` | Partial update | 200 |
+| `DELETE /api/v1/employees/{id}` | Delete | 204 |
+| `GET /api/v1/salary-insights/...` | Insights by country, by job title within a country, by department, and the org overview (paths in Open questions) | 200 |
+| `POST /api/v1/auth/login` | Log in, set the session cookie | 200 |
+| `POST /api/v1/auth/logout` | Log out, delete the session | 204 |
+| `GET /api/v1/auth/me` | Current user | 200 |
+| `GET /api/health` | Health check | 200 |
+
+Errors: 401 not logged in, 404 not found, 409 duplicate email, 422 validation, 429 too many login attempts, 500 generic message.
+
+**Success:**
+```json
+{ "data": { "id": 1, "full_name": "Asha Rao", "email": "asha.rao@acme.com", "job_title": "Engineer", "department": "Engineering", "country": "IN", "salary": "85000.00", "hire_date": "2024-03-18" } }
+```
+
+**Paginated:**
+```json
+{
+  "data": [ { "id": 1, "full_name": "Asha Rao", "salary": "85000.00" } ],
+  "meta": { "total_count": 10000, "current_page": 1, "per_page": 20, "total_pages": 500 }
+}
+```
+
+**Error:**
+```json
+{ "error": "Validation failed", "details": [ { "field": "salary", "message": "Salary must be greater than 0" } ] }
+```
+
+## 6. Frontend
+
+| Page | Purpose |
+|---|---|
+| Employee list | Search, filter, sort and page through employees; delete with confirmation |
+| Employee create and edit | One shared form (`common/employee_form/`), with server field errors shown on the inputs |
+| Salary insights | Tables and stat cards for each insight |
+| Login | Built last |
+
+Every page is lazy-loaded behind a route boundary (error boundary + skeleton). List state (page, filters, search, sort) lives in the URL.
+
+```mermaid
+flowchart LR
+    types["types/<br/>IEmployee, IPaginatedResponse"]
+    api["api/employee_api.ts<br/>one function per endpoint"]
+    client["api/api_client.ts<br/>axios + interceptors"]
+    queries["queries/employee_queries.ts<br/>React Query hooks"]
+    components["pages and components"]
+    server[("FastAPI")]
+
+    types -.-> api
+    components --> queries --> api --> client --> server
+    server --> client
+```
+
+**Case conversion happens once, in the `api_client.ts` interceptors.** Requests: camelCase keys and query params → snake_case. Responses: snake_case → camelCase. Errors become `IApiError`, with `details[].field` converted too, so it matches the form field name. Money stays a decimal string and is only formatted (USD), never calculated, on the frontend.
+
+## 7. Startup
+
+```mermaid
+flowchart LR
+    start["Container starts"] --> migrate["alembic upgrade head"]
+    migrate --> check{"employees table empty?"}
+    check -- yes --> seed["Seed 10,000 employees<br/>(fixed random seed)"]
+    check -- no --> serve
+    seed --> serve["Serve with uvicorn"]
+```
+
+Render's free tier has no persistent disk, so the database is recreated, and the seed runs again, on every restart. Edits made in the demo are lost when it restarts.
+
+## Open questions
+
+| # | Question |
+|---|---|
+| 1 | Create and edit: separate routes or modals on the list page? Does "view" need its own detail page, or is the edit form enough? |
+| 2 | Insights endpoints: one per insight (e.g. `/salary-insights/by-country`) or one combined response? Exact paths and response shapes |
+| 3 | Job title, department and country: fixed lists from constants, or free text? Where do the filter dropdowns get their options? |
+| 4 | Sort allow-list: which fields besides `salary` (e.g. `full_name`, `hire_date`)? |
+| 5 | Search by name or email uses a substring match, which can't use an index. Is a scan of 10,000 rows fast enough? Measure in `docs/performance.md` |
+| 6 | The `country` index duplicates the leading column of `(country, job_title)`. Keep both, or drop it if `EXPLAIN QUERY PLAN` shows the composite covers it? |
+| 7 | Delete: hard delete, or soft delete with an `is_active` flag? |
+| 8 | Login rate limit: in memory (resets on restart, fine for one container) or a database table? |
+| 9 | Seed data: which countries, departments and job titles, and what salary ranges? |
