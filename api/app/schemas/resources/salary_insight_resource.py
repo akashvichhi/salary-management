@@ -10,3 +10,9 @@ class CountrySalaryInsightResource(BaseModel):
     max_salary: Money
     average_salary: Money
     median_salary: Money
+
+
+class JobTitleSalaryInsightResource(BaseModel):
+    job_title: str
+    headcount: int
+    average_salary: Money

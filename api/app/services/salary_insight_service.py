@@ -2,13 +2,17 @@ from collections import defaultdict
 from decimal import Decimal
 from statistics import median
 
+from app.constants.employee_constants import Country
 from app.core.money import round_to_cents
 from app.repositories.salary_insight_repository import (
     GroupSalary,
     SalaryInsightRepository,
     SalaryStats,
 )
-from app.schemas.resources.salary_insight_resource import CountrySalaryInsightResource
+from app.schemas.resources.salary_insight_resource import (
+    CountrySalaryInsightResource,
+    JobTitleSalaryInsightResource,
+)
 
 
 def average_salary(stats: SalaryStats) -> Decimal:
@@ -39,4 +43,14 @@ class SalaryInsightService:
                 median_salary=medians[stats.group],
             )
             for stats in self.repository.salary_stats_by_country()
+        ]
+
+    def salary_by_job_title(self, country: Country) -> list[JobTitleSalaryInsightResource]:
+        return [
+            JobTitleSalaryInsightResource(
+                job_title=stats.group,
+                headcount=stats.headcount,
+                average_salary=average_salary(stats),
+            )
+            for stats in self.repository.salary_stats_by_job_title(country)
         ]
