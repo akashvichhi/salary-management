@@ -148,3 +148,15 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - I ran the tests myself and saw Starlette's warning that its test client now wants `httpx2`. The AI swapped the dev dependency `httpx` for `httpx2`, and the warning is gone.
   - `/docs` stayed blank on my machine. The AI found that Swagger UI loads from a CDN that didn't respond, while `/openapi.json` worked; left as is.
 - **How it was verified:** `make check` (4 tests, 100% coverage); `GET /api/health` on the running server returned `{"data":{"status":"ok"}}`.
+
+## 2026-11-03 — Step A2: error contract
+
+- **Prompt / instruction:** "commit and continue with next step", then "continue".
+- **What the AI produced:**
+  - failing tests first, against test-only routes, for each error type: unknown `/api/*` route → 404, invalid input → 422 with field `details`, `NotFoundError` → 404, `ConflictError` → 409, `DomainValidationError` → 422, unexpected exception → 500 with no internals in the body
+  - `core/exceptions.py` (domain errors), `core/exception_handlers.py` (one place mapping them to `{ "error": ... }`), `constants/messages.py`, and `ErrorResponse` / `FieldError` schemas
+  - domain error status codes live in one table, so a new error type needs no handler change; 500s log only the method and path, never the body
+- **What I changed, rejected, or corrected, and why:**
+  - Following my preference from A1, the AI wrote the code before asking to commit, then proposed the red and green commits separately.
+  - The AI found its own unreachable fallback branch and removed it, and noticed a `ResourceWarning` from SQLite connections left open; it now closes the engine on app shutdown, in its own `fix` commit.
+- **How it was verified:** `make check` (10 tests, 100% coverage); `pytest -W error::ResourceWarning` passes; `GET /api/nope` on the running server returned `{"error":"Not Found"}`.
