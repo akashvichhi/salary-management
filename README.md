@@ -30,6 +30,7 @@ Prerequisites: [uv](https://docs.astral.sh/uv/) (it installs Python 3.13 for the
 ```bash
 cd api
 uv sync                                  # install the pinned dependencies
+uv run alembic upgrade head              # create or update the local SQLite database
 uv run uvicorn app.main:app --reload     # run the API on http://localhost:8000
 make check                               # lint, format, type check, tests with coverage
 ```

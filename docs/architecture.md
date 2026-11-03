@@ -85,7 +85,7 @@ sequenceDiagram
 | `country` | String(2) | Not null, ISO 3166-1 alpha-2, uppercase, from the allowed list |
 | `salary` | Numeric(12, 2) | Not null, greater than 0, annual USD |
 | `hire_date` | Date | Not null |
-| `created_at`, `updated_at` | DateTime | Not null, UTC, set by the database layer |
+| `created_at`, `updated_at` | DateTime | Not null, IST (UTC+05:30), set by the database layer |
 
 | Index | Reason |
 |---|---|

@@ -43,6 +43,7 @@ salary-management/
 ### Money and data
 - **NEVER** use floats for money. Backend: `Decimal` / `Numeric(12, 2)`. Frontend: format as USD with `Intl.NumberFormat`. Every salary is in USD, so there is no currency field (see `docs/requirements.md`).
 - Dates are ISO 8601 strings on the wire (`2026-10-31`).
+- **Time zone:** the app uses **IST (Asia/Kolkata, UTC+05:30)** everywhere: stored, sent by the API (with the `+05:30` offset), and shown in the UI. It is one constant per app (backend `constants/time_constants.py`, frontend `src/constants/`). **NEVER** use the server's or the browser's local time zone.
 
 ### Security and configuration
 - **NEVER** commit secrets or `.env` files. Commit a `.env.example` listing every variable.
@@ -345,7 +346,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 - The seed script uses bulk inserts and a fixed random seed, so it is fast and produces the same data every time.
 - Schema changes go through Alembic migrations, never `create_all()` in production code.
 - **SQLite settings**, applied on every connection in `core/database.py`: `PRAGMA foreign_keys = ON` (SQLite ignores foreign keys otherwise) and `PRAGMA journal_mode = WAL` (reads aren't blocked by a write).
-- **Timestamps:** every table has `created_at` and `updated_at`, stored in **UTC**, set by the database layer (column defaults / `onupdate`), never by hand in services. The API returns them as ISO 8601 with a `Z` suffix.
+- **Timestamps:** every table has `created_at` and `updated_at`, stored in **IST** (`APP_TIMEZONE` in `constants/time_constants.py`), set by the database layer (column defaults / `onupdate`), never by hand in services. The API returns them as ISO 8601 with the `+05:30` offset (`2026-01-01T14:30:00+05:30`).
 - **Input normalisation** happens in request schemas (Pydantic validators), so the service and the database only ever see clean data:
   - trim leading and trailing spaces on every text field; reject strings that are empty after trimming
   - lowercase emails, so uniqueness can't be bypassed with `Asha@X.com` vs `asha@x.com`

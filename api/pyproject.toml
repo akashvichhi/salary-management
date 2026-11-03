@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "API for managing employee salaries and salary insights"
 requires-python = "==3.13.*"
 dependencies = [
+    "alembic==1.20.1",
     "fastapi==0.162.0",
     "pydantic-settings==2.16.2",
     "sqlalchemy==2.1.6",
@@ -33,6 +34,8 @@ select = ["E", "W", "F", "I", "N", "UP", "B", "SIM", "RUF"]
 strict = true
 python_version = "3.13"
 plugins = ["pydantic.mypy"]
+# Test folders have no __init__.py, so modules are named from the api/ root (tests.factories).
+explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

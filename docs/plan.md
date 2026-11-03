@@ -37,7 +37,7 @@ Review checkpoints: after A10 (review `api/`) and after W8 (review `web/`).
 
 ### A3. Database and employee model
 - **Goal:** engine and session dependency, SQLite pragmas, the `employees` table and its indexes, and the first Alembic migration.
-- **Tests first:** `foreign_keys` and WAL are on for every connection; a duplicate email is rejected by the database; `created_at` and `updated_at` are set in UTC; `updated_at` changes on update.
+- **Tests first:** `foreign_keys` and WAL are on for every connection; a duplicate email is rejected by the database; `created_at` and `updated_at` are set in IST; `updated_at` changes on update.
 - **Done when:** `alembic upgrade head` creates the table and every index listed in `docs/architecture.md`.
 - **Commits:** `test(employees): add failing tests for employee model` → `feat(employees): add employee model and migration`
 

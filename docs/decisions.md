@@ -100,6 +100,13 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** plain `def` endpoints. `async def` only for code that awaits truly async I/O.
 - **Consequences:** FastAPI runs these endpoints in a thread pool, so a blocking database call never freezes the event loop for other requests. Simpler than an async database stack, which would gain nothing with one user and SQLite's single writer.
 
+## 15. IST everywhere
+
+- **Context:** the HR manager works in India and asked for IST as the app's time zone.
+- **Options:** store UTC and show IST in the UI; store UTC and send IST from the API; IST everywhere.
+- **Decision:** IST (Asia/Kolkata, UTC+05:30) for storage, the API (`+05:30` offset) and the UI, from one constant per app. It is a fixed offset, because Asia/Kolkata has no daylight saving, so no `tzdata` package is needed.
+- **Consequences:** the database, API and screen show the same times, with no conversion. Supporting users in other zones later means converting stored times, or adding a per-user zone in the UI.
+
 ## Runtime dependencies
 
 Each runtime dependency gets one line here, with its reason, when it is added.
@@ -110,3 +117,4 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `uvicorn` | The server that runs the FastAPI app |
 | `pydantic-settings` | Reads environment variables into one typed `Settings` class (`core/config.py`) |
 | `sqlalchemy` | The ORM and database access layer for SQLite (decisions 2 and 14) |
+| `alembic` | Versioned schema migrations, run on startup instead of `create_all()` (decision 2) |
