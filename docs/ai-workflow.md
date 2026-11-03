@@ -132,3 +132,19 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
 - **What the AI produced:** a short README: what the app does, a status note, the stack, and links to every doc. It recommended adding one now, instead of waiting for the delivery step, so the repo has a front page and the `CLAUDE.md` rule "update `README.md` when setup changes" has a file to update.
 - **What I changed, rejected, or corrected, and why:** I removed the status note.
 - **How it was verified:** every link points to a file that exists in the repo.
+
+## 2026-11-03 — Step A1: scaffold and health check (`87e0eb0`, …)
+
+- **Prompt / instruction:** "Continue with the very first step A1", then "please define the route and make tests passing".
+- **What the AI produced:**
+  - the scaffold commit: app factory, settings in `core/config.py`, ruff, `mypy --strict`, pytest and `make check`
+  - a failing test for `GET /api/health` with an in-memory SQLite test client
+  - the health route, mounted outside `/api/v1`, with the `SELECT 1` check in `core/database.py` so the router runs no SQL
+  - `create_app(settings)` builds the engine per app, so each test gets its own database
+  - the generic `DataResponse[T]` shape, and SQLAlchemy as a pinned dependency
+- **What I changed, rejected, or corrected, and why:**
+  - I asked why a test was committed before its route. The AI explained the red/green rule in `CLAUDE.md`, and I asked it to write the route.
+  - I asked whether `/` needs a route. It doesn't: `/` is reserved for the React build (step D1), so a 404 there is correct until then.
+  - I ran the tests myself and saw Starlette's warning that its test client now wants `httpx2`. The AI swapped the dev dependency `httpx` for `httpx2`, and the warning is gone.
+  - `/docs` stayed blank on my machine. The AI found that Swagger UI loads from a CDN that didn't respond, while `/openapi.json` worked; left as is.
+- **How it was verified:** `make check` (4 tests, 100% coverage); `GET /api/health` on the running server returned `{"data":{"status":"ok"}}`.
