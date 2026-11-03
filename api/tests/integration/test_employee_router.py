@@ -1,5 +1,6 @@
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.constants.messages import (
@@ -147,3 +148,24 @@ def test_list_employees_rejects_a_page_size_above_the_maximum(client: TestClient
 
     assert response.status_code == 422
     assert [detail["field"] for detail in response.json()["details"]] == ["per_page"]
+
+
+# Larger than SQLite's biggest integer, which used to crash the query with a 500.
+TOO_LARGE_NUMBER = 10**22
+
+
+def test_list_employees_rejects_a_page_beyond_the_maximum(client: TestClient) -> None:
+    response = client.get(EMPLOYEES_URL, params={"page": TOO_LARGE_NUMBER})
+
+    assert response.status_code == 422
+    assert [detail["field"] for detail in response.json()["details"]] == ["page"]
+
+
+@pytest.mark.parametrize("method", ["GET", "PATCH", "DELETE"])
+def test_an_employee_id_beyond_the_maximum_is_a_validation_error(
+    client: TestClient, method: str
+) -> None:
+    response = client.request(method, f"{EMPLOYEES_URL}/{TOO_LARGE_NUMBER}", json={})
+
+    assert response.status_code == 422
+    assert [detail["field"] for detail in response.json()["details"]] == ["employee_id"]
