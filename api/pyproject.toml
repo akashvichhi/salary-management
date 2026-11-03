@@ -44,5 +44,8 @@ pythonpath = ["."]
 addopts = "-q --import-mode=importlib"
 
 [tool.coverage.run]
-source = ["app"]
+source = ["app", "scripts"]
 branch = true
+
+[tool.coverage.report]
+exclude_also = ['if __name__ == "__main__":']

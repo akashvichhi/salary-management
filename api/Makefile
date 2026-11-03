@@ -1,4 +1,4 @@
-.PHONY: check lint format typecheck test
+.PHONY: check lint format typecheck test seed
 
 check: lint format typecheck test
 
@@ -9,9 +9,13 @@ format:
 	uv run ruff format .
 
 typecheck:
-	uv run mypy app tests
+	uv run mypy app tests scripts
 
 # The coverage threshold lives here, not in pytest's default options,
 # so running a single test file doesn't fail on coverage.
 test:
 	uv run pytest --cov --cov-report=term-missing --cov-fail-under=90
+
+# Needs a migrated database: run `uv run alembic upgrade head` first.
+seed:
+	uv run python -m scripts.seed
