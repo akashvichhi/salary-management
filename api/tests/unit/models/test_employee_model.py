@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from datetime import datetime
 
 import pytest
@@ -6,24 +5,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.constants.time_constants import APP_TIMEZONE
-from app.core.database import create_database_engine, create_session_factory
 from app.models import base_model
-from app.models.base_model import Base
 from tests.factories import build_employee
 
-IN_MEMORY_DATABASE_URL = "sqlite://"
 CREATED_AT = datetime(2026, 1, 1, 9, 0, tzinfo=APP_TIMEZONE)
 UPDATED_AT = datetime(2026, 2, 1, 9, 0, tzinfo=APP_TIMEZONE)
-
-
-@pytest.fixture
-def session() -> Iterator[Session]:
-    engine = create_database_engine(IN_MEMORY_DATABASE_URL)
-    # Tests only: production schemas come from Alembic migrations.
-    Base.metadata.create_all(engine)
-    with create_session_factory(engine)() as db_session:
-        yield db_session
-    engine.dispose()
 
 
 def set_clock(monkeypatch: pytest.MonkeyPatch, now: datetime) -> None:

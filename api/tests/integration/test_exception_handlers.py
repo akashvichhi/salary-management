@@ -3,7 +3,7 @@ from collections.abc import Iterator
 import pytest
 from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.constants.messages import INTERNAL_SERVER_ERROR, VALIDATION_FAILED
 from app.core.config import Settings
@@ -15,10 +15,22 @@ NOT_FOUND_MESSAGE = "Thing not found"
 CONFLICT_MESSAGE = "Thing already exists"
 DOMAIN_VALIDATION_MESSAGE = "Thing is not allowed"
 INTERNAL_DETAIL = "SELECT * FROM employees -- E:/secret/path.py"
+CUSTOM_RULE_MESSAGE = "Code must start with A"
 
 
 class PayloadRequest(BaseModel):
     salary: int = Field(gt=0)
+
+
+class CustomRuleRequest(BaseModel):
+    code: str
+
+    @field_validator("code")
+    @classmethod
+    def code_starts_with_a(cls, code: str) -> str:
+        if not code.startswith("A"):
+            raise ValueError(CUSTOM_RULE_MESSAGE)
+        return code
 
 
 def build_error_router() -> APIRouter:
@@ -26,6 +38,10 @@ def build_error_router() -> APIRouter:
 
     @router.post("/validation")
     def validate_payload(payload: PayloadRequest) -> PayloadRequest:
+        return payload
+
+    @router.post("/custom-rule")
+    def validate_custom_rule(payload: CustomRuleRequest) -> CustomRuleRequest:
         return payload
 
     @router.get("/not-found")
@@ -76,6 +92,15 @@ def test_validation_error_returns_422_with_field_details(error_client: TestClien
         "error": VALIDATION_FAILED,
         "details": [{"field": "salary", "message": "Input should be greater than 0"}],
     }
+
+
+def test_custom_validation_rule_message_is_shown_without_a_prefix(
+    error_client: TestClient,
+) -> None:
+    response = error_client.post(f"{TEST_ROUTE_PREFIX}/custom-rule", json={"code": "B1"})
+
+    assert response.status_code == 422
+    assert response.json()["details"] == [{"field": "code", "message": CUSTOM_RULE_MESSAGE}]
 
 
 def test_not_found_error_returns_404_with_its_message(error_client: TestClient) -> None:
