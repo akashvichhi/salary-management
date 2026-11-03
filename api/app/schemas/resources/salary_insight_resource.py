@@ -16,3 +16,9 @@ class JobTitleSalaryInsightResource(BaseModel):
     job_title: str
     headcount: int
     average_salary: Money
+
+
+class DepartmentSalaryInsightResource(BaseModel):
+    department: str
+    headcount: int
+    average_salary: Money

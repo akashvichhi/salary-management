@@ -5,6 +5,7 @@ from fastapi import APIRouter, Query
 from app.api.dependencies import SalaryInsightServiceDependency
 from app.constants.route_constants import (
     SALARY_BY_COUNTRY_PATH,
+    SALARY_BY_DEPARTMENT_PATH,
     SALARY_BY_JOB_TITLE_PATH,
     SALARY_INSIGHTS_PATH,
 )
@@ -12,6 +13,7 @@ from app.schemas.common.response_schema import DataResponse
 from app.schemas.requests.salary_insight_request import SalaryByJobTitleRequest
 from app.schemas.resources.salary_insight_resource import (
     CountrySalaryInsightResource,
+    DepartmentSalaryInsightResource,
     JobTitleSalaryInsightResource,
 )
 
@@ -34,3 +36,13 @@ def salary_by_job_title(
     request: Annotated[SalaryByJobTitleRequest, Query()], service: SalaryInsightServiceDependency
 ) -> DataResponse[list[JobTitleSalaryInsightResource]]:
     return DataResponse(data=service.salary_by_job_title(request.country))
+
+
+@salary_insight_router.get(
+    SALARY_BY_DEPARTMENT_PATH,
+    response_model=DataResponse[list[DepartmentSalaryInsightResource]],
+)
+def salary_by_department(
+    service: SalaryInsightServiceDependency,
+) -> DataResponse[list[DepartmentSalaryInsightResource]]:
+    return DataResponse(data=service.salary_by_department())

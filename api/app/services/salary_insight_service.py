@@ -11,6 +11,7 @@ from app.repositories.salary_insight_repository import (
 )
 from app.schemas.resources.salary_insight_resource import (
     CountrySalaryInsightResource,
+    DepartmentSalaryInsightResource,
     JobTitleSalaryInsightResource,
 )
 
@@ -53,4 +54,14 @@ class SalaryInsightService:
                 average_salary=average_salary(stats),
             )
             for stats in self.repository.salary_stats_by_job_title(country)
+        ]
+
+    def salary_by_department(self) -> list[DepartmentSalaryInsightResource]:
+        return [
+            DepartmentSalaryInsightResource(
+                department=stats.group,
+                headcount=stats.headcount,
+                average_salary=average_salary(stats),
+            )
+            for stats in self.repository.salary_stats_by_department()
         ]

@@ -34,6 +34,9 @@ class SalaryInsightRepository:
     def salary_stats_by_job_title(self, country: Country) -> list[SalaryStats]:
         return self._salary_stats(EmployeeModel.job_title, EmployeeModel.country == country)
 
+    def salary_stats_by_department(self) -> list[SalaryStats]:
+        return self._salary_stats(EmployeeModel.department)
+
     def salaries_by_country(self) -> list[GroupSalary]:
         """One column per row, for the median, which SQLite can't compute."""
         query = (
