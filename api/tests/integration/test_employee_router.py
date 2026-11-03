@@ -2,7 +2,12 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from app.constants.messages import EMPLOYEE_EMAIL_TAKEN, EMPLOYEE_NOT_FOUND, VALIDATION_FAILED
+from app.constants.messages import (
+    EMPLOYEE_EMAIL_TAKEN,
+    EMPLOYEE_NOT_FOUND,
+    INVALID_SORT,
+    VALIDATION_FAILED,
+)
 from tests.factories import employee_payload
 
 EMPLOYEES_URL = "/api/v1/employees"
@@ -98,3 +103,47 @@ def test_delete_employee_returns_404_for_an_unknown_id(client: TestClient) -> No
 
     assert response.status_code == 404
     assert response.json() == {"error": EMPLOYEE_NOT_FOUND}
+
+
+def test_list_employees_returns_200_with_data_and_meta(client: TestClient) -> None:
+    created = create_employee(client)
+
+    response = client.get(EMPLOYEES_URL)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "data": [created],
+        "meta": {"total_count": 1, "current_page": 1, "per_page": 20, "total_pages": 1},
+    }
+
+
+def test_list_employees_applies_filters_search_and_sort_from_the_query(
+    client: TestClient,
+) -> None:
+    create_employee(client, full_name="Asha Rao", email="asha@acme.com", salary="50000")
+    create_employee(client, full_name="Ravi Rao", email="ravi@acme.com", salary="90000")
+    create_employee(client, full_name="Sam Rao", email="sam@acme.com", country="US")
+
+    params = {"country": "in", "search": "rao", "sort": "-salary"}
+    response = client.get(EMPLOYEES_URL, params=params)
+
+    assert [employee["full_name"] for employee in response.json()["data"]] == [
+        "Ravi Rao",
+        "Asha Rao",
+    ]
+
+
+def test_list_employees_rejects_an_unknown_sort_field(client: TestClient) -> None:
+    response = client.get(EMPLOYEES_URL, params={"sort": "password"})
+
+    assert response.status_code == 422
+    [detail] = response.json()["details"]
+    assert detail["field"] == "sort"
+    assert INVALID_SORT in detail["message"]
+
+
+def test_list_employees_rejects_a_page_size_above_the_maximum(client: TestClient) -> None:
+    response = client.get(EMPLOYEES_URL, params={"per_page": 101})
+
+    assert response.status_code == 422
+    assert [detail["field"] for detail in response.json()["details"]] == ["per_page"]

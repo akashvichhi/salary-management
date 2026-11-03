@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.employee_model import EmployeeModel
 from app.repositories.employee_repository import EmployeeRepository
-from app.schemas.requests.employee_request import EmployeeUpdateRequest
+from app.schemas.requests.employee_request import EmployeeListRequest, EmployeeUpdateRequest
 from app.services.employee_service import EmployeeService
 from tests.factories import build_create_request, build_employee
 
@@ -153,3 +153,28 @@ def test_a_deleted_employees_email_can_be_used_again(
     created = service.create_employee(build_create_request(email="asha.rao@acme.com"))
 
     assert created.id != employee.id
+
+
+def test_list_employees_returns_the_page_with_its_meta(
+    service: EmployeeService, session: Session
+) -> None:
+    for number in range(3):
+        saved_employee(session, full_name=f"Person {number}", email=f"p{number}@acme.com")
+
+    response = service.list_employees(EmployeeListRequest(page=1, per_page=2))
+
+    assert [employee.full_name for employee in response.data] == ["Person 0", "Person 1"]
+    assert response.meta.total_count == 3
+    assert response.meta.total_pages == 2
+
+
+def test_list_employees_past_the_last_page_is_empty_with_the_real_meta(
+    service: EmployeeService, session: Session
+) -> None:
+    saved_employee(session)
+
+    response = service.list_employees(EmployeeListRequest(page=5, per_page=20))
+
+    assert response.data == []
+    assert response.meta.total_count == 1
+    assert response.meta.current_page == 5

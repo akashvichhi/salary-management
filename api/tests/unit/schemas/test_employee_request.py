@@ -4,8 +4,13 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from app.constants.messages import FIELD_CANNOT_BE_NULL
-from app.schemas.requests.employee_request import EmployeeCreateRequest, EmployeeUpdateRequest
+from app.constants.employee_constants import EmployeeSortField
+from app.constants.messages import FIELD_CANNOT_BE_NULL, INVALID_SORT
+from app.schemas.requests.employee_request import (
+    EmployeeCreateRequest,
+    EmployeeListRequest,
+    EmployeeUpdateRequest,
+)
 from tests.factories import employee_payload
 
 
@@ -100,3 +105,42 @@ def test_update_request_rejects_null_for_a_field() -> None:
     [detail] = error.value.errors()
     assert detail["loc"] == ("full_name",)
     assert FIELD_CANNOT_BE_NULL in detail["msg"]
+
+
+def test_list_request_defaults_to_the_first_page_sorted_by_name() -> None:
+    request = EmployeeListRequest()
+
+    assert request.page == 1
+    assert request.per_page == 20
+    assert request.sort_field is EmployeeSortField.FULL_NAME
+    assert request.sort_descending is False
+
+
+def test_list_request_reads_a_leading_minus_as_descending() -> None:
+    request = EmployeeListRequest(sort="-salary")
+
+    assert request.sort_field is EmployeeSortField.SALARY
+    assert request.sort_descending is True
+
+
+@pytest.mark.parametrize("sort", ["password", "-", "--salary", ""])
+def test_list_request_rejects_a_sort_outside_the_allowed_fields(sort: str) -> None:
+    with pytest.raises(ValidationError) as error:
+        EmployeeListRequest(sort=sort)
+
+    assert INVALID_SORT in str(error.value)
+
+
+def test_list_request_normalises_filters_like_create() -> None:
+    request = EmployeeListRequest.model_validate(
+        {"country": "in", "department": "sales", "job_title": "data analyst", "search": "  rao "}
+    )
+
+    assert request.country == "IN"
+    assert request.department == "Sales"
+    assert request.job_title == "Data Analyst"
+    assert request.search == "rao"
+
+
+def test_list_request_treats_a_blank_search_as_no_search() -> None:
+    assert EmployeeListRequest(search="   ").search is None
