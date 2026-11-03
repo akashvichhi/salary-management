@@ -4,7 +4,15 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, BeforeValidator, EmailStr, Field, StringConstraints
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    EmailStr,
+    Field,
+    StringConstraints,
+    field_validator,
+)
 
 from app.constants.employee_constants import (
     FULL_NAME_MAX_LENGTH,
@@ -14,6 +22,7 @@ from app.constants.employee_constants import (
     Department,
     JobTitle,
 )
+from app.constants.messages import FIELD_CANNOT_BE_NULL
 
 
 def match_allowed_value[E: StrEnum](allowed: type[E]) -> Callable[[object], object]:
@@ -49,3 +58,23 @@ class EmployeeCreateRequest(BaseModel):
     country: CountryCode
     salary: Salary
     hire_date: date
+
+
+class EmployeeUpdateRequest(BaseModel):
+    """PATCH body: only the fields that are sent change."""
+
+    full_name: FullName | None = None
+    email: Email | None = None
+    job_title: JobTitleName | None = None
+    department: DepartmentName | None = None
+    country: CountryCode | None = None
+    salary: Salary | None = None
+    hire_date: date | None = None
+
+    # None is only the "not sent" default; an explicit null would blank a required column.
+    @field_validator("*", mode="before")
+    @classmethod
+    def reject_null(cls, value: object) -> object:
+        if value is None:
+            raise ValueError(FIELD_CANNOT_BE_NULL)
+        return value

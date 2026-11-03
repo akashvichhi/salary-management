@@ -8,7 +8,7 @@ from app.constants.messages import EMPLOYEE_EMAIL_TAKEN, EMPLOYEE_NOT_FOUND
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.employee_model import EmployeeModel
 from app.repositories.employee_repository import EmployeeRepository
-from app.schemas.requests.employee_request import EmployeeCreateRequest
+from app.schemas.requests.employee_request import EmployeeCreateRequest, EmployeeUpdateRequest
 from app.schemas.resources.employee_resource import EmployeeResource
 
 
@@ -26,14 +26,30 @@ class EmployeeService:
     def get_employee(self, employee_id: int) -> EmployeeResource:
         return EmployeeResource.model_validate(self._find_or_raise(employee_id))
 
+    def update_employee(self, employee_id: int, request: EmployeeUpdateRequest) -> EmployeeResource:
+        employee = self._find_or_raise(employee_id)
+        changes = request.model_dump(exclude_unset=True)
+        if "email" in changes:
+            self._ensure_email_is_free(changes["email"], allowed_owner=employee)
+        with self._saving():
+            for field, value in changes.items():
+                setattr(employee, field, value)
+        return EmployeeResource.model_validate(employee)
+
+    def delete_employee(self, employee_id: int) -> None:
+        employee = self._find_or_raise(employee_id)
+        with self._saving():
+            employee.is_active = False
+
     def _find_or_raise(self, employee_id: int) -> EmployeeModel:
-        employee = self.repository.find_by_id(employee_id)
+        employee = self.repository.find_active_by_id(employee_id)
         if employee is None:
             raise NotFoundError(EMPLOYEE_NOT_FOUND)
         return employee
 
-    def _ensure_email_is_free(self, email: str) -> None:
-        if self.repository.find_by_email(email) is not None:
+    def _ensure_email_is_free(self, email: str, allowed_owner: EmployeeModel | None = None) -> None:
+        owner = self.repository.find_active_by_email(email)
+        if owner is not None and owner is not allowed_owner:
             raise ConflictError(EMPLOYEE_EMAIL_TAKEN)
 
     @contextmanager
