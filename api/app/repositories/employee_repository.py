@@ -1,4 +1,4 @@
-from sqlalchemy import ColumnElement, Select, func, or_, select
+from sqlalchemy import ColumnElement, Select, func, or_, select, true
 from sqlalchemy.orm import Session
 
 from app.models.employee_model import EmployeeModel
@@ -6,8 +6,12 @@ from app.schemas.requests.employee_request import EmployeeListRequest
 
 
 def is_active_employee() -> ColumnElement[bool]:
-    """Every query filters on this, so a soft-deleted employee can't leak into a result."""
-    return EmployeeModel.is_active.is_(True)
+    """Every query filters on this, so a soft-deleted employee can't leak into a result.
+
+    `= 1`, not `IS 1`: SQLite uses the partial email index only when the query repeats
+    the index's own condition (`is_active = 1`) exactly.
+    """
+    return EmployeeModel.is_active == true()
 
 
 def active_employees() -> Select[EmployeeModel]:
