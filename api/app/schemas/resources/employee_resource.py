@@ -1,18 +1,8 @@
 from datetime import date, datetime
-from decimal import Decimal
-from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, PlainSerializer
+from pydantic import BaseModel, ConfigDict
 
-MONEY_QUANTUM = Decimal("0.01")
-
-
-def format_money(amount: Decimal) -> str:
-    # Always two decimals ("85000.00"), so the frontend formats without parsing floats.
-    return str(amount.quantize(MONEY_QUANTUM))
-
-
-Money = Annotated[Decimal, PlainSerializer(format_money, return_type=str)]
+from app.schemas.common.money_schema import Money
 
 
 class EmployeeResource(BaseModel):
