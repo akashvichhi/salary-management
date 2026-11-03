@@ -4,8 +4,12 @@ from typing import Any
 import pytest
 from sqlalchemy.orm import Session
 
+from app.constants.employee_constants import Country
 from app.repositories.salary_insight_repository import SalaryInsightRepository
-from app.schemas.resources.salary_insight_resource import CountrySalaryInsightResource
+from app.schemas.resources.salary_insight_resource import (
+    CountrySalaryInsightResource,
+    JobTitleSalaryInsightResource,
+)
 from app.services.salary_insight_service import SalaryInsightService
 from tests.factories import build_employee
 
@@ -97,3 +101,33 @@ def test_salary_by_country_of_an_empty_database_is_an_empty_list(
     service: SalaryInsightService,
 ) -> None:
     assert service.salary_by_country() == []
+
+
+def test_salary_by_job_title_counts_only_the_chosen_country(
+    service: SalaryInsightService, session: Session
+) -> None:
+    save_employees(
+        session,
+        paid("100000", country="IN", job_title="Software Engineer"),
+        paid("50000.01", country="IN", job_title="Software Engineer"),
+        paid("40000", country="IN", job_title="Accountant"),
+        paid("999999", country="US", job_title="Software Engineer"),
+        paid("888888", country="IN", job_title="Accountant", is_active=False),
+    )
+
+    assert service.salary_by_job_title(Country.INDIA) == [
+        JobTitleSalaryInsightResource(
+            job_title="Accountant", headcount=1, average_salary=Decimal("40000.00")
+        ),
+        JobTitleSalaryInsightResource(
+            job_title="Software Engineer", headcount=2, average_salary=Decimal("75000.01")
+        ),
+    ]
+
+
+def test_salary_by_job_title_of_a_country_with_no_employees_is_an_empty_list(
+    service: SalaryInsightService, session: Session
+) -> None:
+    save_employees(session, paid("50000", country="IN"))
+
+    assert service.salary_by_job_title(Country.FRANCE) == []
