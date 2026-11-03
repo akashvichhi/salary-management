@@ -9,6 +9,7 @@ from app.api.v1.routers.health_router import health_router
 from app.core.config import Settings, get_settings
 from app.core.database import create_database_engine, create_session_factory
 from app.core.exception_handlers import register_exception_handlers
+from app.core.logging_filters import install_access_log_filter
 
 APP_TITLE = "Salary Management API"
 # Below about 1 KB, compressing costs more time than it saves on the wire.
@@ -17,6 +18,7 @@ GZIP_MINIMUM_SIZE_BYTES = 1000
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     app_settings = settings or get_settings()
+    install_access_log_filter()
     engine = create_database_engine(app_settings.database_url)
 
     @asynccontextmanager
