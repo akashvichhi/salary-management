@@ -3,10 +3,13 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from sqlalchemy import Select, text
+from sqlalchemy.dialects import sqlite
 from sqlalchemy.orm import Session
 
 from app.constants.employee_constants import EmployeeSortField
-from app.repositories.employee_repository import EmployeeRepository
+from app.models.employee_model import EmployeeModel
+from app.repositories.employee_repository import EmployeeRepository, active_employees
 from app.schemas.requests.employee_request import EmployeeListRequest
 from tests.factories import build_employee
 
@@ -145,3 +148,17 @@ def test_every_sort_field_orders_the_list(session: Session, field: EmployeeSortF
 
     assert listed_names(session, sort=field.value) == expected
     assert listed_names(session, sort=f"-{field.value}") == list(reversed(expected))
+
+
+def query_plan(session: Session, query: Select[EmployeeModel]) -> str:
+    sql = query.compile(dialect=sqlite.dialect(), compile_kwargs={"literal_binds": True})
+    return " ".join(row[-1] for row in session.execute(text(f"EXPLAIN QUERY PLAN {sql}")))
+
+
+def test_the_duplicate_email_check_uses_the_active_email_index(session: Session) -> None:
+    query = active_employees().where(EmployeeModel.email == "asha.rao@acme.com")
+
+    # Without the index, every create and email change scans all 10,000 rows.
+    assert query_plan(session, query).startswith(
+        "SEARCH employees USING INDEX uq_employees_active_email"
+    )
