@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.v1.api_router import api_v1_router
 from app.api.v1.routers.health_router import health_router
 from app.core.config import Settings, get_settings
 from app.core.database import create_database_engine, create_session_factory
@@ -25,6 +26,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.session_factory = create_session_factory(engine)
     register_exception_handlers(app)
     app.include_router(health_router)
+    app.include_router(api_v1_router)
     return app
 
 

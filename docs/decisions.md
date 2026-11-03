@@ -118,3 +118,4 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `pydantic-settings` | Reads environment variables into one typed `Settings` class (`core/config.py`) |
 | `sqlalchemy` | The ORM and database access layer for SQLite (decisions 2 and 14) |
 | `alembic` | Versioned schema migrations, run on startup instead of `create_all()` (decision 2) |
+| `email-validator` | Checks email syntax for Pydantic's `EmailStr`; correct email parsing is far longer than a few lines of our own |

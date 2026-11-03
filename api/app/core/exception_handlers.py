@@ -23,6 +23,7 @@ DOMAIN_ERROR_STATUS_CODES: dict[type[DomainError], int] = {
 # The first item of a validation error location is where the value came from
 # ("body", "query", "path"); the rest is the field name the client sent.
 LOCATION_SOURCE_LENGTH = 1
+CUSTOM_RULE_ERROR_TYPE = "value_error"
 
 
 def status_code_for(exc: DomainError) -> int:
@@ -50,7 +51,14 @@ def error_response(
 def to_field_error(error: Mapping[str, Any]) -> FieldError:
     location: tuple[str | int, ...] = error["loc"]
     field = ".".join(str(part) for part in location[LOCATION_SOURCE_LENGTH:])
-    return FieldError(field=field, message=str(error["msg"]))
+    return FieldError(field=field, message=field_error_message(error))
+
+
+def field_error_message(error: Mapping[str, Any]) -> str:
+    # Our own validators raise ValueError; Pydantic would show "Value error, <message>".
+    if error["type"] == CUSTOM_RULE_ERROR_TYPE:
+        return str(error["ctx"]["error"])
+    return str(error["msg"])
 
 
 def handle_request_validation_error(_: Request, exc: Exception) -> JSONResponse:
