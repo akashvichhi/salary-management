@@ -111,3 +111,24 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
 - **What the AI produced:** this file.
 - **What I changed, rejected, or corrected, and why:** nothing yet; anything I change in review is added here before the commit.
 - **How it was verified:** each entry checked against the commit history (`git log`) and the review of each step.
+
+## 2026-11-03 — Step 9: implementation plan (`e8752e5`)
+
+- **Prompt / instruction:** write `docs/plan.md`: the build order as small, testable steps (API, then web, then delivery), each with its goal, the tests to write first, "done when" and the expected commits. Use only the requirements and the architecture.
+- **What the AI produced:** 26 steps in four phases, a checkpoint review after the API and after the web app, and a **Decide first** marker on the seven steps that need an open question answered.
+- **What I changed, rejected, or corrected, and why:** accepted as written. The AI flagged two choices for me to check: login as its own phase after the web app, so it can be cut without touching anything else; and test lists for error handling and login taken from the required tests in `CLAUDE.md`, beyond the two source documents.
+- **How it was verified:** every in-scope feature in the requirements maps to a step, and every open question in the architecture is assigned to the step that needs it.
+
+## 2026-11-03 — Step 10: first push
+
+- **Prompt / instruction:** "Run `git log --oneline` and `git ls-files` and show me the output, so I can confirm only the intended files are tracked. Then wait for my OK before pushing."
+- **What the AI produced:** the log and file list (6 commits, 9 files, no `.env` or database file), the author on every commit, and confirmation that the remote was still empty. After my OK, it pushed `master` to `origin`.
+- **What I changed, rejected, or corrected, and why:** nothing. The AI asked me to confirm the author email before the push, because changing it afterwards would mean rewriting published history.
+- **How it was verified:** `git ls-remote origin` shows the same commit as local `master`.
+
+## 2026-11-03 — README
+
+- **Prompt / instruction:** "Should we have a README file for the project?", then "please write a file".
+- **What the AI produced:** a short README: what the app does, a status note, the stack, and links to every doc. It recommended adding one now, instead of waiting for the delivery step, so the repo has a front page and the `CLAUDE.md` rule "update `README.md` when setup changes" has a file to update.
+- **What I changed, rejected, or corrected, and why:** I removed the status note.
+- **How it was verified:** every link points to a file that exists in the repo.
