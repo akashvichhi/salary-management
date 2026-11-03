@@ -10,6 +10,9 @@ from sqlalchemy.pool import ConnectionPoolEntry
 # request may use its connection from more than one thread.
 SQLITE_CONNECT_ARGS = {"check_same_thread": False}
 
+# The largest value an INTEGER column holds; a bigger number crashes the query.
+SQLITE_MAX_INTEGER = 2**63 - 1
+
 # SQLite ignores foreign keys unless asked, and WAL lets reads continue during a write.
 SQLITE_PRAGMAS = ("PRAGMA foreign_keys = ON", "PRAGMA journal_mode = WAL")
 
