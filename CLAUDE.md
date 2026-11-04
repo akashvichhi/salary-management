@@ -136,6 +136,7 @@ api/
 │   │   ├── database.py                 engine, session factory, get_db dependency
 │   │   ├── exceptions.py               domain exceptions (NotFoundError, ConflictError, UnauthenticatedError, ...)
 │   │   ├── exception_handlers.py       maps every exception to the { "error": ... } shape
+│   │   ├── logging_filters.py          drops query strings (search text) from access logs
 │   │   ├── money.py                    money rules: rounding half-up to the cent
 │   │   ├── security.py                 password hashing (Argon2), session token generation and hashing
 │   │   └── origin_check_middleware.py  CSRF protection: rejects write requests from foreign origins
@@ -380,7 +381,8 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 ```
 web/src/
-├── main.tsx                         entry: providers (Mantine, QueryClient, Router)
+├── main.tsx                         entry: mounts <App /> into #root
+├── app.tsx                          the providers (Mantine, QueryClient, Router) around the app; rendered by tests too
 ├── config/
 │   └── env.ts                       the ONLY file that reads import.meta.env
 ├── api/
@@ -892,26 +894,32 @@ resolve: {
   },
 },
 build: {
-  rollupOptions: {
+  // Vite 8 bundles with Rolldown: `codeSplitting.groups` replaces Rollup's `manualChunks`.
+  rolldownOptions: {
     output: {
       assetFileNames: 'assets/[hash].[ext]',
       chunkFileNames: 'assets/[hash].js',
       entryFileNames: 'assets/[hash].js',
-      manualChunks(id: string): string | undefined {
-        if (!id.includes('node_modules')) return undefined
-        if (id.includes('@tabler/icons-react')) return 'vendor-icons'
-        if (id.includes('@mantine')) return 'vendor-mantine'
-        if (id.includes('@tanstack')) return 'vendor-query'
-        if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) return 'vendor-react'
-        return undefined
+      codeSplitting: {
+        groups: [{ name: vendorChunkName, debugName: 'vendor' }],
       },
     },
   },
 },
 ```
-- The order of the `manualChunks` checks matters: `@tabler/icons-react` and `@tanstack/react-query` contain "react", so they must be checked before the generic react check.
+```ts
+function vendorChunkName(id: string): string | null {
+  if (!id.includes('node_modules')) return null
+  if (id.includes('@tabler/icons-react')) return 'vendor-icons'
+  if (id.includes('@mantine')) return 'vendor-mantine'
+  if (id.includes('@tanstack')) return 'vendor-query'
+  if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) return 'vendor-react'
+  return null
+}
+```
+- The order of the `vendorChunkName` checks matters: `@tabler/icons-react` and `@tanstack/react-query` contain "react", so they must be checked before the generic react check.
 - `tsconfig.json` `paths` must match the alias: `"@src/*": ["./src/*"]`. Use only `@src`, never a second alias, so there is one way to import.
-- If the installed Vite version uses Rolldown (Vite 8+), use its equivalent chunking option; check the Vite docs at setup time.
+- Tool versions are held back where plugins don't support the newest major yet (ESLint 9, TypeScript 6.0, Stylelint 17; see `docs/decisions.md`). Upgrade only when every plugin's peer range allows it.
 
 ### Testing
 - Vitest + React Testing Library for the important flows (employee table renders and paginates, form validation, insights display) and for pure utils (`case_converter`, `format_currency`).

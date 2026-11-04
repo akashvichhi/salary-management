@@ -135,6 +135,13 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** four `GET` endpoints under `/salary-insights` (`overview`, `by-country`, `by-job-title?country=`, `by-department`), each `{ "data": ... }` with arrays of objects sorted by their group. Headcount, min, max and sum come from SQL `GROUP BY`; the average is the exact SQL sum divided by the headcount, not SQLite's `AVG` (a float); the median is computed in Python (decision 5). Averages and medians are rounded **half-up** to the cent (`100000.005` → `100000.01`).
 - **Consequences:** each section loads, caches and fails on its own, and changing the job-title country reloads only that table. Four requests instead of one, which is cheap on the same origin. On the 10,000 seed every endpoint answers in under 61 ms; `by-country` is the slowest because it reads one salary column for the median.
 
+## 20. Frontend tool versions held back for plugin support
+
+- **Context:** at setup (W1) the newest majors were ESLint 10, TypeScript 7 (the native port) and Stylelint 18, but the plugins `CLAUDE.md` requires don't support them yet: `eslint-plugin-react` and `eslint-plugin-import` stop at ESLint 9, `typescript-eslint` needs TypeScript below 6.1, and `stylelint-declaration-strict-value` stops at Stylelint 17.
+- **Options:** the newest majors with `--legacy-peer-deps`; drop the plugins; the newest versions every plugin supports.
+- **Decision:** ESLint 9.39.5, TypeScript 6.0.3 and Stylelint 17.16.0; everything else at its newest version. Vite 8 bundles with Rolldown, so the vendor chunks use `codeSplitting.groups` instead of Rollup's `manualChunks`.
+- **Consequences:** every rule in `CLAUDE.md` works, with no forced installs. Upgrade once each plugin's peer range allows it.
+
 ## Runtime dependencies
 
 Each runtime dependency gets one line here, with its reason, when it is added.
@@ -147,3 +154,5 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `sqlalchemy` | The ORM and database access layer for SQLite (decisions 2 and 14) |
 | `alembic` | Versioned schema migrations, run on startup instead of `create_all()` (decision 2) |
 | `email-validator` | Checks email syntax for Pydantic's `EmailStr`; correct email parsing is far longer than a few lines of our own |
+| `react`, `react-dom` | The UI library; Mantine and React Query are built for it |
+| `@mantine/core`, `@mantine/hooks` | The component library and its hooks (decisions 3 and 12) |

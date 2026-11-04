@@ -38,6 +38,18 @@ make check                               # lint, format, type check, tests with 
 
 Copy `api/.env.example` to `api/.env` to override settings.
 
+**Web** (`web/`), with Node.js 22.12 or newer:
+
+```bash
+cd web
+npm ci                # install the locked dependencies
+npm run dev           # run the app on http://localhost:5173
+npm run check         # ESLint, Stylelint, type check, tests
+npm run build         # production build in web/dist
+```
+
+Copy `web/.env.example` to `web/.env` to point the app at the local API.
+
 After pulling changes, run `uv run alembic upgrade head` again: a database left on an older migration fails with errors such as `no such column`.
 
 ## Documentation

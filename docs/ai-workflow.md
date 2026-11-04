@@ -239,3 +239,18 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - The AI's first test for the filter's fallback branch didn't reach it: a log call with no arguments still has an (empty) tuple. It switched to named arguments, which do.
   - Noted but not changed: `search` has no maximum length (harmless for a substring match on 10,000 rows); Starlette re-raises unhandled errors so uvicorn logs a second traceback (now free of query values); `DomainValidationError` has no user yet; CORS for the separate Vite dev server arrives with the web app (W2).
 - **How it was verified:** `make check` (148 tests, 100% coverage); each red snapshot fails on the old code; a real uvicorn run showed `GET /api/v1/employees` without the query string, a gzipped list, and a 422 for a huge id.
+
+## 2026-11-04 — Step W1: web scaffold
+
+- **Prompt / instruction:** "continue with task W1".
+- **What the AI produced:**
+  - the scaffold commit: Vite 8, React 19, TypeScript and Mantine 9, the `@src` alias, `config/env.ts` (the only reader of `import.meta.env`), the Mantine theme on the same scale as the SCSS tokens, vendor chunks, and `app.tsx` holding the providers
+  - the tooling commit: the ESLint and Stylelint configs from `CLAUDE.md`, Vitest with jsdom (stubbing `matchMedia` and `ResizeObserver` for Mantine), the `npm run check` script, and a smoke test that the app renders its heading
+- **What I changed, rejected, or corrected, and why:**
+  - **Versions:** the newest ESLint, TypeScript and Stylelint majors break the required plugins' peer ranges. The AI checked each range and pinned the newest versions that fit (ADR 20), instead of forcing the install.
+  - Vite 8 uses Rolldown, which deprecates `manualChunks`; the AI used `codeSplitting.groups` and updated `CLAUDE.md` to match.
+  - I asked whether the "Loading Salary Management…" text in `index.html` was planned. It is required by `CLAUDE.md` (safety net 1), but the plan schedules it in W3, and the AI had added it in W1. We moved it back to W3.
+  - The AI checked that the rules fire on a probe file (`../` import, `any`, a missing return type) and that the strict-value rule accepts `spacing.$md` but rejects `15px`, so no extra plugin options are needed.
+  - Not added yet: `sass-embedded` and `classnames`, because the first SCSS module doesn't exist yet.
+  - `CLAUDE.md`'s backend tree now also lists `logging_filters.py` (from the API review).
+- **How it was verified:** `npm run check` (lint, style lint, type check, 1 test) and `npm run build`. The build gives a 1.5 KB app chunk, 51 KB Mantine and 210 KB React (66 KB gzipped).
