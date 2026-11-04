@@ -254,3 +254,17 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - Not added yet: `sass-embedded` and `classnames`, because the first SCSS module doesn't exist yet.
   - `CLAUDE.md`'s backend tree now also lists `logging_filters.py` (from the API review).
 - **How it was verified:** `npm run check` (lint, style lint, type check, 1 test) and `npm run build`. The build gives a 1.5 KB app chunk, 51 KB Mantine and 210 KB React (66 KB gzipped).
+
+## 2026-11-04 — Step W2: API client and case conversion
+
+- **Prompt / instruction:** "start with task W2".
+- **What the AI produced:**
+  - `utils/case_converter.ts`: pure functions that convert keys (never values) between snake_case and camelCase, recursing only into arrays and plain objects, so `FormData`, `Blob` and `Date` pass through untouched
+  - `api/api_client.ts`: the one axios instance. The request interceptor converts body and query-param keys to snake_case; the response interceptor converts body keys to camelCase; the error interceptor turns every failure into an `IApiError` (the API's message, a 422's `details[].field` in camelCase, or a fallback for network errors and bodies that aren't ours)
+  - `types/api_response.ts` (`IApiResponse<T>`, `IApiError`, `IFieldError`) and `constants/error_messages.ts`
+- **What I changed, rejected, or corrected, and why:**
+  - **axios version:** the newest release (1.21.0) was one week old; the AI pinned 1.20.0, the newest release at least two weeks old.
+  - **No mocking library:** the tests swap the client's adapter for a stub that records the request and answers like the network would, so no `axios-mock-adapter` or MSW dependency is needed yet.
+  - I asked to move on to W3 halfway through; the AI pointed out that the API client pair was still open and W4 needs it, so we finished W2 first.
+  - **Deferred:** `withCredentials: true` arrives with login (auth is built last), and CORS for the Vite dev server arrives in W4, the first step where the browser calls the API.
+- **How it was verified:** `npm run check` (lint, style lint, type check, 25 tests); each red snapshot fails because the module doesn't exist yet; `api/api_client.ts` is the only non-test file that imports axios.

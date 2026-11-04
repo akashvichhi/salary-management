@@ -156,3 +156,4 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `email-validator` | Checks email syntax for Pydantic's `EmailStr`; correct email parsing is far longer than a few lines of our own |
 | `react`, `react-dom` | The UI library; Mantine and React Query are built for it |
 | `@mantine/core`, `@mantine/hooks` | The component library and its hooks (decisions 3 and 12) |
+| `axios` | One HTTP client with interceptors, so case conversion and error normalisation happen in one place |
