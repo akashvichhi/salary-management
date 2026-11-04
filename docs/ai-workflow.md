@@ -268,3 +268,21 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - I asked to move on to W3 halfway through; the AI pointed out that the API client pair was still open and W4 needs it, so we finished W2 first.
   - **Deferred:** `withCredentials: true` arrives with login (auth is built last), and CORS for the Vite dev server arrives in W4, the first step where the browser calls the API.
 - **How it was verified:** `npm run check` (lint, style lint, type check, 25 tests); each red snapshot fails because the module doesn't exist yet; `api/api_client.ts` is the only non-test file that imports axios.
+
+## 2026-11-04 — Step W3: routing and error handling
+
+- **Prompt / instruction:** "continue with W3".
+- **What the AI produced:**
+  - a chore commit adding `react-router`, `react-error-boundary` and `@mantine/notifications`
+  - the stale-deploy reload: `is_chunk_load_error.ts`, and `reload_for_new_version.ts` with its `sessionStorage` loop guard (it reloads at most once per 10 seconds, and never when storage is unavailable, because an unguarded reload could loop)
+  - routing: lazy employee list and salary insights pages (placeholders until W4 and W8) behind `route_boundary.tsx` (error boundary, then `Suspense` with the page skeleton), the app shell with the main navigation, `route_paths.ts`, and redirects from `/` and unknown paths to the employee list
+  - the three boundary levels (root in `main.tsx`, app in `app.tsx`, route per page), the router's root `errorElement`, the `vite:preloadError` listener, and the static loading message and `<noscript>` in `index.html`
+  - `use_global_error_listener.ts`: logs every error outside rendering, shows at most one notification per 5 seconds, and ignores chunk-load errors and `ResizeObserver` noise
+- **What I changed, rejected, or corrected, and why:**
+  - I asked to start W3 while W2's API client pair was still open; we finished W2 first.
+  - **Versions:** `@mantine/notifications` is pinned to 9.7.4 because it requires exactly the same version as `@mantine/core`. `react-router` 8.5.0 (the newest release at least two weeks old) needs Node 22.22, so `engines` and the README now say 22.22.
+  - `window.location.reload` lives in one tiny wrapper, `utils/reload_page.ts`, so tests can mock it as a module; jsdom doesn't allow replacing `location.reload`.
+  - The app boundary sits in `app.tsx`, not `main.tsx` as `CLAUDE.md` said, because W1 put the providers in `app.tsx`; `CLAUDE.md` now matches. When the reload guard blocks a second reload, the `vite:preloadError` listener lets the error through, so the route boundary shows "A new version is available".
+  - The app name moved from the page heading into the shell header (hidden on phones so the navigation fits); each page's `h1` is now its own title.
+  - The AI's first listener test used a spy type that `tsc` rejected; it was fixed in the red commit, so that commit still type-checks.
+- **How it was verified:** `npm run check` (lint, style lint, type check, 51 tests) and `npm run build`. Each lazy page is its own chunk (about 0.2 KB), and no path string is hardcoded outside `route_paths.ts` (checked with grep).

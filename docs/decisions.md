@@ -157,3 +157,6 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `react`, `react-dom` | The UI library; Mantine and React Query are built for it |
 | `@mantine/core`, `@mantine/hooks` | The component library and its hooks (decisions 3 and 12) |
 | `axios` | One HTTP client with interceptors, so case conversion and error normalisation happen in one place |
+| `react-router` | URL-based routing with lazy pages, so refresh, the back button and shared links keep the view |
+| `react-error-boundary` | Error boundaries as components with reset support, so we write no class components (decision 13) |
+| `@mantine/notifications` | Toasts in the same design system, for mutation feedback and the global error listener |

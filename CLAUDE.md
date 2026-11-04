@@ -404,6 +404,9 @@ web/src/
 ├── constants/
 │   ├── api_endpoints.ts
 │   ├── query_keys.ts
+│   ├── error_messages.ts            every user-facing error and fallback text
+│   ├── error_handling_constants.ts  reload guard, notification interval, chunk-error and noise patterns
+│   ├── navigation_constants.ts      page titles, shared by the navigation and the page headers
 │   └── employee_constants.ts
 ├── validations/
 │   ├── employee_form_validation.ts
@@ -412,6 +415,8 @@ web/src/
 │   ├── case_converter.ts            camelCase ↔ snake_case (pure functions)
 │   ├── is_chunk_load_error.ts       detects a failed lazy-chunk download (stale deploy)
 │   ├── reload_for_new_version.ts    the ONLY place that reloads for a new version, with the loop guard
+│   ├── reload_page.ts               the one wrapper around window.location.reload (tests replace it)
+│   ├── log_render_error.ts          the boundaries' onError: console.error, no personal data
 │   └── format_currency.ts
 ├── styles/
 │   ├── global.scss                  only if needed: resets and base element styles (imported once in main.tsx)
@@ -425,13 +430,16 @@ web/src/
 ├── routes/
 │   ├── route_paths.ts               path constants and path builder functions
 │   ├── app_router.tsx               lazy-loaded route definitions
+│   ├── app_layout.tsx               the app shell: header, main navigation, <Outlet />
+│   ├── app_error_fallback.tsx       full-page fallback for the app boundary and the root errorElement
 │   ├── route_boundary.tsx           ErrorBoundary + Suspense wrapper used by every route
 │   └── protected_route.tsx          session check: full-screen loader, then the page or a redirect to login
 ├── ui/                              reusable, logic-free UI building blocks
 │   ├── form/                        text_field.tsx, select_field.tsx, ...
-│   ├── layout/                      app_shell.tsx, page_header.tsx
-│   ├── feedback/                    empty_state.tsx, error_state.tsx, error_fallback.tsx, root_error_fallback.tsx, full_screen_loader.tsx
+│   ├── layout/                      page_header.tsx
+│   ├── feedback/                    empty_state.tsx, error_state.tsx, error_fallback.tsx, root_error_boundary.tsx, root_error_fallback.tsx, full_screen_loader.tsx
 │   └── skeletons/                   table_skeleton.tsx, card_skeleton.tsx, form_skeleton.tsx, page_skeleton.tsx
+├── test_utils/                      test-only helpers, e.g. render_with_mantine.tsx
 ├── common/                          feature components shared by 2+ pages/routes
 │   └── employee_form/               e.g. employee_form.tsx used by the create and edit routes
 └── pages/                           one folder per route
@@ -709,8 +717,8 @@ Error boundaries catch **unexpected rendering errors** (bugs), so one broken com
 
 | Level | Where | Catches | Fallback |
 |---|---|---|---|
-| **Root** (last resort) | `main.tsx`: the **outermost** element, outside every provider (`MantineProvider`, `QueryClientProvider`, router) | Crashes in the providers or theme setup, and errors thrown by the app-level fallback itself | `ui/feedback/root_error_fallback.tsx`: plain, unstyled HTML (a heading, one sentence, and a "Reload" link to `/`). **NEVER** uses Mantine or anything else that could fail |
-| **App** | `main.tsx`: inside `MantineProvider`, around the router | Anything no lower boundary caught (layout, providers, router) | `ui/feedback/error_fallback.tsx`, full page, with a "Reload" button (`window.location.reload()`) |
+| **Root** (last resort) | `main.tsx` (`ui/feedback/root_error_boundary.tsx`): the **outermost** element, outside every provider (`MantineProvider`, `QueryClientProvider`, router) | Crashes in the providers or theme setup, and errors thrown by the app-level fallback itself | `ui/feedback/root_error_fallback.tsx`: plain, unstyled HTML (a heading, one sentence, and a "Reload" link to `/`). **NEVER** uses Mantine or anything else that could fail |
+| **App** | `app.tsx`: inside `MantineProvider`, around the router | Anything no lower boundary caught (layout, providers, router) | `routes/app_error_fallback.tsx` (built on `error_fallback.tsx`), full page, with a "Reload" button (`utils/reload_page.ts`) |
 | **Route** | `routes/route_boundary.tsx`: wraps **every** lazy page as `ErrorBoundary` → `Suspense` (page skeleton) → page | Errors inside one page; the app shell and navigation keep working | `error_fallback.tsx` inside the page area, with a "Try again" button (`resetErrorBoundary`) |
 
 - The route boundary resets automatically on navigation: `resetKeys={[location.pathname]}`, so leaving a broken page clears the error.
@@ -739,7 +747,7 @@ Error boundaries catch **unexpected rendering errors** (bugs), so one broken com
 - **Detect** (two paths, both required):
   - `main.tsx` listens for Vite's `vite:preloadError` event (fired when a lazy file fails to download).
   - The route boundary's `onError` checks `utils/is_chunk_load_error.ts` ("Failed to fetch dynamically imported module", "Importing a module script failed", `ChunkLoadError`).
-- **Reload:** both paths call ONE helper, `utils/reload_for_new_version.ts`, which runs `window.location.reload()`. **NEVER** call `reload()` for this anywhere else.
+- **Reload:** both paths call ONE helper, `utils/reload_for_new_version.ts`, which reloads through `utils/reload_page.ts`. **NEVER** reload for this anywhere else.
 - **Loop guard:** the helper stores the time of the reload in `sessionStorage`. If it already reloaded for this reason within the last `NEW_VERSION_RELOAD_GUARD_MS` (a constant, e.g. 10 seconds), it does **not** reload again. The route fallback shows **"A new version is available"** with a **Reload** button instead. That way a real outage (the file still missing after reloading) never causes an endless reload loop.
 - **Why reloading is safe here:** the failure happens when the user navigates to a page they haven't opened yet, so they've just left their previous page and rarely lose unsaved input.
 - **Needs the server rules** in "Serving the frontend": `index.html` with `no-cache` (so the reload fetches the new version) and a real 404 for missing assets (so the failure is detectable).

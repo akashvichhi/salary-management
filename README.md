@@ -38,7 +38,7 @@ make check                               # lint, format, type check, tests with 
 
 Copy `api/.env.example` to `api/.env` to override settings.
 
-**Web** (`web/`), with Node.js 22.12 or newer:
+**Web** (`web/`), with Node.js 22.22 or newer:
 
 ```bash
 cd web
