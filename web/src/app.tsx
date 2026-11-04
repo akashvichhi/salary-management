@@ -1,16 +1,20 @@
-import { Container, MantineProvider, Text, Title } from '@mantine/core'
+import { RouterProvider } from 'react-router'
 
-import { APP_NAME } from '@src/constants/app_constants'
+import { MantineProvider } from '@mantine/core'
+import { ErrorBoundary } from 'react-error-boundary'
+
+import { AppErrorFallback } from '@src/routes/app_error_fallback'
+import { appRouter } from '@src/routes/app_router'
 import { theme } from '@src/styles/theme'
+import { logRenderError } from '@src/utils/log_render_error'
 
-// Holds the providers; the router and pages are added in W3.
+// The providers around the app. The root error boundary sits outside them, in main.tsx.
 export function App(): React.JSX.Element {
   return (
     <MantineProvider theme={theme}>
-      <Container py="xl">
-        <Title order={1}>{APP_NAME}</Title>
-        <Text c="dimmed">Employees and salary insights for the HR team.</Text>
-      </Container>
+      <ErrorBoundary FallbackComponent={AppErrorFallback} onError={logRenderError}>
+        <RouterProvider router={appRouter} />
+      </ErrorBoundary>
     </MantineProvider>
   )
 }
