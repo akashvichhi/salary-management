@@ -1,2 +1,13 @@
 export const NETWORK_ERROR_MESSAGE: string = 'Could not reach the server. Check your connection and try again.'
 export const UNEXPECTED_ERROR_MESSAGE: string = 'Something went wrong. Please try again.'
+
+export const PAGE_ERROR_TITLE: string = 'This page could not be shown'
+export const PAGE_ERROR_MESSAGE: string = 'Something went wrong while showing this page. Try again, or open another page.'
+export const APP_ERROR_TITLE: string = 'Something went wrong'
+export const APP_ERROR_MESSAGE: string = 'The app ran into a problem. Reloading the page usually fixes it.'
+export const NEW_VERSION_TITLE: string = 'A new version is available'
+export const NEW_VERSION_MESSAGE: string = 'Reload the page to get the latest version of the app.'
+export const ROOT_ERROR_TITLE: string = 'Salary Management could not start'
+export const ROOT_ERROR_MESSAGE: string = 'Something went wrong while loading the app.'
+export const TRY_AGAIN_LABEL: string = 'Try again'
+export const RELOAD_LABEL: string = 'Reload'
