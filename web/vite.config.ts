@@ -1,7 +1,7 @@
 import path from 'node:path'
 
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 // Each vendor gets its own long-cached chunk, so an app change doesn't re-download them.
 // Order matters: '@tabler/icons-react' and '@tanstack/react-query' contain "react",
@@ -29,10 +29,14 @@ export default defineConfig({
         assetFileNames: 'assets/[hash].[ext]',
         chunkFileNames: 'assets/[hash].js',
         entryFileNames: 'assets/[hash].js',
-        codeSplitting: {
+        codeSplitting:  {
           groups: [{ name: vendorChunkName, debugName: 'vendor' }],
         },
       },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles:  ['./vitest.setup.ts'],
   },
 })
