@@ -393,3 +393,10 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - the "Invalid date" fix: the empty form held `''` for the hire date, which the picker tried to show as a date; it now starts as `null`
 - **What I changed, rejected, or corrected, and why:** the W7.3 tests didn't catch "Invalid date" because they only checked the picker after choosing a date, never the empty add form; a new test now checks that the empty form shows no date.
 - **How it was verified:** `npm run check`; the red snapshot fails only the tests that show a date or the empty hire date.
+
+## 2026-11-05 — Remove the delivery phase from the plan
+
+- **Prompt / instruction:** "Remove Phase 4: Delivery from plan"
+- **What the AI produced:** `docs/plan.md` without Phase 4 (D1–D6: Docker, Render, performance, README, video, submission) and without its row in the order table.
+- **What I changed, rejected, or corrected, and why:** I'll handle delivery outside the step-by-step plan. The rules about it in `CLAUDE.md` (serving the build, `docs/performance.md`) stay.
+- **How it was verified:** docs only; the plan's other phases are unchanged.

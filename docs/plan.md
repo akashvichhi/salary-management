@@ -15,7 +15,6 @@ The build order as small, test-first steps. One step per prompt; every commit is
 | 1. API | A1–A10 | The contract the UI depends on |
 | 2. Web | W1–W8 | Built against a working API |
 | 3. Login | L1–L2 | Lowest priority in the requirements; built on a finished app, so it can be cut if time runs short |
-| 4. Delivery | D1–D6 | Docker, Render, performance, README, video, submission |
 
 Review checkpoints: after A10 (review `api/`) and after W8 (review `web/`).
 
@@ -186,36 +185,3 @@ Review checkpoints: after A10 (review `api/`) and after W8 (review `web/`).
 - **Tests first:** an unauthenticated visit redirects to login and returns to the wanted page afterwards; the login error is the API's generic message; logout clears the cache and returns to login.
 - **Done when:** nothing about the session is readable from JavaScript.
 - **Commits:** `test(web/auth): add failing tests for login` → `feat(web/auth): add login and protected routes`
-
----
-
-## Phase 4: Delivery
-
-### D1. Serve the frontend and package with Docker
-- **Goal:** FastAPI serves the React build; a multi-stage Dockerfile; startup runs migrate → seed if empty → serve; `docker compose up` runs it locally.
-- **Tests first:** `/assets/*` has the one-year immutable cache header; a missing asset returns 404, not `index.html`; any other path returns `index.html` with `no-cache`; an unknown `/api/*` path still returns the JSON 404.
-- **Done when:** a fresh `docker compose up` shows the seeded app at one URL.
-- **Commits:** `test(api): add failing tests for frontend serving` → `feat(api): serve the React build` → `chore: add Dockerfile and compose file`
-
-### D2. Deploy to Render
-- **Goal:** a Render free web service from `master`, with the health check at `/api/health` and auto-deploy on push.
-- **Done when:** the live URL passes a manual smoke test of every in-scope feature.
-- **Commits:** `docs: add deployment notes` (if any setup needs recording)
-
-### D3. Performance
-- **Goal:** `docs/performance.md` with measured numbers on the 10,000-employee seed: seed time, list and insights response times, `EXPLAIN QUERY PLAN`, bundle sizes, and optimisations applied and skipped.
-- **Done when:** every target in `docs/requirements.md` has a measured number next to it, and open questions 5 and 6 are answered with data.
-- **Commits:** `docs: add performance measurements` (plus a `perf(...)` pair if a target is missed)
-
-### D4. README
-- **Goal:** the live URL (with the "first load after idle takes about a minute" note), how to run, how to test, demo login, screenshots, and links to every doc.
-- **Done when:** every link and command works from a fresh clone.
-- **Commits:** `docs: add README`
-
-### D5. Video demo
-- **Goal:** a 3–5 minute recording: problem, demo, architecture, tests, AI workflow. The link goes in the README.
-- **Commits:** `docs: add video link to README`
-
-### D6. Submit
-- **Goal:** check the commit history, run a fresh clone with both checks and the app, confirm the README links and that the docs match the code. Then reply to the assessment email with the repo link.
-- **Done when:** everything passes, and the live URL was opened a minute before sending, so it's awake.
