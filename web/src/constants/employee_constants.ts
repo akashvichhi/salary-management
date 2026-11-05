@@ -85,3 +85,6 @@ export const EMPLOYEE_SORT_FIELDS: Readonly<Record<TEmployeeColumn, string>> = {
   hireDate:   'hire_date',
 }
 export const DEFAULT_EMPLOYEE_SORT: string = EMPLOYEE_SORT_FIELDS.fullName
+
+// Long enough to skip the keystrokes of a word being typed, short enough to feel instant.
+export const SEARCH_DEBOUNCE_MS: number = 300
