@@ -4,12 +4,12 @@ import { useEmployeeList } from '@src/pages/employee_list/hooks/use_employee_lis
 import { PageHeader } from '@src/ui/layout/page_header'
 
 export default function EmployeeListPage(): React.JSX.Element {
-  const { page, setPage, employeesQuery } = useEmployeeList()
+  const { listState, employeesQuery } = useEmployeeList()
 
   return (
     <>
       <PageHeader title={EMPLOYEES_PAGE_TITLE} />
-      <EmployeeListContent employeesQuery={employeesQuery} page={page} onPageChange={setPage} />
+      <EmployeeListContent employeesQuery={employeesQuery} listState={listState} />
     </>
   )
 }

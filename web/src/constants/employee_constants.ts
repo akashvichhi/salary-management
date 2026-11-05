@@ -1,5 +1,7 @@
 import type { ComboboxItem } from '@mantine/core'
 
+import type { TEmployeeColumn } from '@src/types/employee'
+
 // Copies of the fixed lists in api/app/constants/employee_constants.py (decision 21).
 // Change both together; the API still validates every value.
 export const COUNTRY_OPTIONS: readonly ComboboxItem[] = [
@@ -14,6 +16,8 @@ export const COUNTRY_OPTIONS: readonly ComboboxItem[] = [
   { value: 'GB', label: 'United Kingdom' },
   { value: 'US', label: 'United States' },
 ]
+
+export const COUNTRY_CODES: readonly string[] = COUNTRY_OPTIONS.map((option: ComboboxItem): string => option.value)
 
 export const COUNTRY_NAME_BY_CODE: ReadonlyMap<string, string> = new Map(
   COUNTRY_OPTIONS.map((option: ComboboxItem): [string, string] => [option.value, option.label]),
@@ -58,7 +62,7 @@ export const JOB_TITLES: readonly string[] = [
 export const DEFAULT_PAGE: number = 1
 export const DEFAULT_PER_PAGE: number = 20
 
-export const EMPLOYEE_COLUMN_LABELS: Readonly<Record<'fullName' | 'email' | 'jobTitle' | 'department' | 'country' | 'salary' | 'hireDate', string>> = {
+export const EMPLOYEE_COLUMN_LABELS: Readonly<Record<TEmployeeColumn, string>> = {
   fullName:   'Name',
   email:      'Email',
   jobTitle:   'Job title',
@@ -67,3 +71,17 @@ export const EMPLOYEE_COLUMN_LABELS: Readonly<Record<'fullName' | 'email' | 'job
   salary:     'Salary',
   hireDate:   'Hire date',
 }
+
+export const PER_PAGE_OPTIONS: readonly number[] = [10, 20, 50, 100]
+
+// Sent to the API as values, so they stay in snake_case (the case converter only touches keys).
+export const EMPLOYEE_SORT_FIELDS: Readonly<Record<TEmployeeColumn, string>> = {
+  fullName:   'full_name',
+  email:      'email',
+  jobTitle:   'job_title',
+  department: 'department',
+  country:    'country',
+  salary:     'salary',
+  hireDate:   'hire_date',
+}
+export const DEFAULT_EMPLOYEE_SORT: string = EMPLOYEE_SORT_FIELDS.fullName

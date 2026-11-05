@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 
-import { Group, Loader, Pagination, Stack, Text, VisuallyHidden } from '@mantine/core'
+import { Group, Loader, Pagination, Select, Stack, Text, VisuallyHidden } from '@mantine/core'
 import type { UseQueryResult } from '@tanstack/react-query'
 
-import { DEFAULT_PER_PAGE } from '@src/constants/employee_constants'
+import { PER_PAGE_OPTIONS } from '@src/constants/employee_constants'
 import {
   employeeCountLabel,
   EMPLOYEES_EMPTY_MESSAGE,
@@ -11,37 +11,46 @@ import {
   EMPLOYEES_LOAD_ERROR_TITLE,
   EMPLOYEES_LOADING_LABEL,
   EMPLOYEES_UPDATING_LABEL,
+  ROWS_PER_PAGE_LABEL,
 } from '@src/constants/employee_messages'
 import { TRY_AGAIN_LABEL } from '@src/constants/error_messages'
 import { APP_LOCALE } from '@src/constants/time_constants'
+import type { IListUrlState } from '@src/hooks/use_list_url_state'
 import { EmployeeTable } from '@src/pages/employee_list/components/employee_table'
 import type { IApiError } from '@src/types/api_response'
-import type { IEmployee } from '@src/types/employee'
+import type { IEmployee, TEmployeeFilterKey } from '@src/types/employee'
 import type { IPaginatedResponse } from '@src/types/pagination'
 import { EmptyState } from '@src/ui/feedback/empty_state'
 import { ErrorState } from '@src/ui/feedback/error_state'
 import { TableSkeleton } from '@src/ui/skeletons/table_skeleton'
 
 interface IEmployeeListContentProps {
-  page:           number
-  onPageChange:   (page: number) => void
+  listState:      IListUrlState<TEmployeeFilterKey>
   employeesQuery: UseQueryResult<IPaginatedResponse<IEmployee>, IApiError>
 }
 
 const countFormatter: Intl.NumberFormat = new Intl.NumberFormat(APP_LOCALE)
+const PER_PAGE_SELECT_DATA: string[] = PER_PAGE_OPTIONS.map(String)
+const PER_PAGE_SELECT_WIDTH: number = 96
 
 // One of: skeleton (first load), error with retry, empty state, or the table with pagination.
-export function EmployeeListContent({
-  page,
-  onPageChange,
-  employeesQuery,
-}: IEmployeeListContentProps): React.JSX.Element {
+export function EmployeeListContent({ listState, employeesQuery }: IEmployeeListContentProps): React.JSX.Element {
+  const { page, perPage, setPage, setPerPage } = listState
   const { data, error, isPending, isPlaceholderData, refetch } = employeesQuery
+
   const handleRetry: () => void = useCallback((): void => {
     void refetch()
   }, [refetch])
 
-  if (isPending) return <TableSkeleton label={EMPLOYEES_LOADING_LABEL} rowCount={DEFAULT_PER_PAGE} />
+  const handlePageChange: (nextPage: number) => void = useCallback((nextPage: number): void => {
+    setPage(nextPage)
+  }, [setPage])
+
+  const handlePerPageChange: (value: string | null) => void = useCallback((value: string | null): void => {
+    if (value) setPerPage(Number(value))
+  }, [setPerPage])
+
+  if (isPending) return <TableSkeleton label={EMPLOYEES_LOADING_LABEL} rowCount={perPage} />
 
   if (error) {
     return (
@@ -70,11 +79,19 @@ export function EmployeeListContent({
         )}
       </Group>
       <EmployeeTable employees={data.data} />
-      {data.meta.totalPages > 1 && (
-        <Group justify="center">
-          <Pagination total={data.meta.totalPages} value={page} onChange={onPageChange} />
-        </Group>
-      )}
+      <Group justify="space-between">
+        {data.meta.totalPages > 1 ? (
+          <Pagination total={data.meta.totalPages} value={page} onChange={handlePageChange} />
+        ) : <span />}
+        <Select
+          allowDeselect={false}
+          data={PER_PAGE_SELECT_DATA}
+          label={ROWS_PER_PAGE_LABEL}
+          value={String(perPage)}
+          w={PER_PAGE_SELECT_WIDTH}
+          onChange={handlePerPageChange}
+        />
+      </Group>
     </Stack>
   )
 }

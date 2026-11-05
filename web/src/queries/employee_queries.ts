@@ -4,11 +4,11 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import { getEmployees } from '@src/api/employee_api'
 import { employeeKeys } from '@src/constants/query_keys'
 import type { IApiError } from '@src/types/api_response'
-import type { IEmployee } from '@src/types/employee'
-import type { IPaginatedResponse, IPaginationParams } from '@src/types/pagination'
+import type { IEmployee, IEmployeeListParams } from '@src/types/employee'
+import type { IPaginatedResponse } from '@src/types/pagination'
 
 export function useEmployeesQuery(
-  params: IPaginationParams,
+  params: IEmployeeListParams,
 ): UseQueryResult<IPaginatedResponse<IEmployee>, IApiError> {
   return useQuery<IPaginatedResponse<IEmployee>, IApiError>({
     queryKey:        employeeKeys.list(params),
