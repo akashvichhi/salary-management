@@ -1,7 +1,9 @@
 import { Button, Group, Select, SimpleGrid, Stack, TextInput } from '@mantine/core'
+import { DatePickerInput } from '@mantine/dates'
 
 import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
 import { CANCEL_LABEL, SAVE_EMPLOYEE_LABEL } from '@src/constants/employee_messages'
+import { DATE_INPUT_FORMAT } from '@src/constants/time_constants'
 import { useEmployeeForm } from '@src/pages/employee_list/hooks/use_employee_form'
 import type { IEmployee, IEmployeeSelectOptions } from '@src/types/employee'
 
@@ -52,7 +54,13 @@ export function EmployeeForm({ employee, options, onDone }: IEmployeeFormProps):
             leftSection={CURRENCY_SYMBOL}
             {...form.getInputProps('salary')}
           />
-          <TextInput withAsterisk label={EMPLOYEE_COLUMN_LABELS.hireDate} type="date" {...form.getInputProps('hireDate')} />
+          {/* Mantine 9 gives the date as a "YYYY-MM-DD" string, the shape the API takes, with no time zone. */}
+          <DatePickerInput
+            withAsterisk
+            label={EMPLOYEE_COLUMN_LABELS.hireDate}
+            valueFormat={DATE_INPUT_FORMAT}
+            {...form.getInputProps('hireDate')}
+          />
         </SimpleGrid>
         <Group gap="sm" justify="flex-end">
           <Button disabled={isSaving} variant="default" onClick={onDone}>{CANCEL_LABEL}</Button>
