@@ -2,5 +2,5 @@
 export const APP_TIMEZONE: string = 'Asia/Kolkata'
 export const APP_LOCALE: string = 'en-US'
 export const APP_CURRENCY: string = 'USD'
-// How the date picker shows a date (a dayjs format), matching formatDate's "Mar 15, 2024".
-export const DATE_INPUT_FORMAT: string = 'MMM D, YYYY'
+// How every date is shown, in tables and date inputs alike (a dayjs format): "15/03/2024".
+export const APP_DATE_FORMAT: string = 'DD/MM/YYYY'

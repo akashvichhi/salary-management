@@ -3,7 +3,6 @@ import { DatePickerInput } from '@mantine/dates'
 
 import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
 import { CANCEL_LABEL, SAVE_EMPLOYEE_LABEL } from '@src/constants/employee_messages'
-import { DATE_INPUT_FORMAT } from '@src/constants/time_constants'
 import { useEmployeeForm } from '@src/pages/employee_list/hooks/use_employee_form'
 import type { IEmployee, IEmployeeSelectOptions } from '@src/types/employee'
 
@@ -58,7 +57,6 @@ export function EmployeeForm({ employee, options, onDone }: IEmployeeFormProps):
           <DatePickerInput
             withAsterisk
             label={EMPLOYEE_COLUMN_LABELS.hireDate}
-            valueFormat={DATE_INPUT_FORMAT}
             {...form.getInputProps('hireDate')}
           />
         </SimpleGrid>

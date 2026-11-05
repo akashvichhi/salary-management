@@ -1,11 +1,9 @@
-import { APP_LOCALE, APP_TIMEZONE } from '@src/constants/time_constants'
+import dayjs from 'dayjs'
 
-const dateFormatter: Intl.DateTimeFormat = new Intl.DateTimeFormat(APP_LOCALE, {
-  dateStyle: 'medium',
-  timeZone:  APP_TIMEZONE,
-})
+import { APP_DATE_FORMAT } from '@src/constants/time_constants'
 
-// "2024-03-15" parses as UTC midnight, which is the same calendar day in IST.
+// For a date with no time ("2024-03-15"): dayjs reads it as that calendar day, so no time zone can
+// move it to the day before or after.
 export function formatDate(isoDate: string): string {
-  return dateFormatter.format(new Date(isoDate))
+  return dayjs(isoDate).format(APP_DATE_FORMAT)
 }

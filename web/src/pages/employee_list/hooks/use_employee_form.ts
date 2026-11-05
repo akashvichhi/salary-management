@@ -23,7 +23,8 @@ const EMPTY_FORM_VALUES: IEmployeeFormValues = {
   department: null,
   country:    null,
   salary:     '',
-  hireDate:   '',
+  // null, not '': the date picker would show an empty string as "Invalid date".
+  hireDate:   null,
 }
 
 function toFormValues(employee: IEmployee): IEmployeeFormValues {
@@ -31,7 +32,7 @@ function toFormValues(employee: IEmployee): IEmployeeFormValues {
   return { fullName, email, jobTitle, department, country, salary, hireDate }
 }
 
-// Runs after validation, so every Select already holds a value.
+// Runs after validation, so every Select and the date picker already hold a value.
 function toPayload(values: IEmployeeFormValues): IEmployeeCreatePayload {
   return {
     fullName:   values.fullName.trim(),
@@ -40,7 +41,7 @@ function toPayload(values: IEmployeeFormValues): IEmployeeCreatePayload {
     department: values.department ?? '',
     country:    values.country ?? '',
     salary:     values.salary.trim(),
-    hireDate:   values.hireDate,
+    hireDate:   values.hireDate ?? '',
   }
 }
 

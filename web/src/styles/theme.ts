@@ -1,5 +1,8 @@
 import { createTheme, rem } from '@mantine/core'
 import type { MantineThemeOverride } from '@mantine/core'
+import { DateInput, DatePickerInput } from '@mantine/dates'
+
+import { APP_DATE_FORMAT } from '@src/constants/time_constants'
 
 // The same scale as the SCSS tokens in CLAUDE.md, so `gap="md"` equals `spacing.$md`.
 // Change both together.
@@ -25,5 +28,10 @@ export const theme: MantineThemeOverride = createTheme({
     md: '62em',
     lg: '75em',
     xl: '88em',
+  },
+  // Every date input shows the app's one date format, unless a page asks for another.
+  components: {
+    DateInput:       DateInput.extend({ defaultProps: { valueFormat: APP_DATE_FORMAT } }),
+    DatePickerInput: DatePickerInput.extend({ defaultProps: { valueFormat: APP_DATE_FORMAT } }),
   },
 })
