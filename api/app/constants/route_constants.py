@@ -1,5 +1,6 @@
 API_V1_PREFIX = "/api/v1"
 EMPLOYEES_PATH = "/employees"
+EMPLOYEE_OPTIONS_PATH = "/employee-options"
 SALARY_INSIGHTS_PATH = "/salary-insights"
 SALARY_BY_COUNTRY_PATH = "/by-country"
 SALARY_BY_JOB_TITLE_PATH = "/by-job-title"

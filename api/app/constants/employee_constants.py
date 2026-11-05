@@ -1,5 +1,5 @@
-"""The allowed values for employee fields. The seed data uses these lists; the web app keeps a
-copy for its dropdowns in web/src/constants/employee_constants.ts (decision 21), so change both."""
+"""The allowed values for employee fields: the one source of truth for validation, the seed data
+and the web app's dropdowns, which load them from GET /api/v1/employee-options (decision 21)."""
 
 from enum import StrEnum
 
@@ -21,6 +21,20 @@ class Country(StrEnum):
     UNITED_ARAB_EMIRATES = "AE"
     UNITED_KINGDOM = "GB"
     UNITED_STATES = "US"
+
+
+COUNTRY_NAMES: dict[Country, str] = {
+    Country.AUSTRALIA: "Australia",
+    Country.CANADA: "Canada",
+    Country.FRANCE: "France",
+    Country.GERMANY: "Germany",
+    Country.INDIA: "India",
+    Country.NETHERLANDS: "Netherlands",
+    Country.SINGAPORE: "Singapore",
+    Country.UNITED_ARAB_EMIRATES: "United Arab Emirates",
+    Country.UNITED_KINGDOM: "United Kingdom",
+    Country.UNITED_STATES: "United States",
+}
 
 
 class Department(StrEnum):
