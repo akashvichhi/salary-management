@@ -167,6 +167,7 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `pydantic-settings` | Reads environment variables into one typed `Settings` class (`core/config.py`) |
 | `sqlalchemy` | The ORM and database access layer for SQLite (decisions 2 and 14) |
 | `alembic` | Versioned schema migrations, run on startup instead of `create_all()` (decision 2) |
+| `argon2-cffi` | Argon2 password hashing for the HR manager's login; a safe password hash is not something to write ourselves |
 | `email-validator` | Checks email syntax for Pydantic's `EmailStr`; correct email parsing is far longer than a few lines of our own |
 | `react`, `react-dom` | The UI library; Mantine and React Query are built for it |
 | `@mantine/core`, `@mantine/hooks` | The component library and its hooks (decisions 3 and 12) |
