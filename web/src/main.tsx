@@ -7,6 +7,7 @@ import { RootErrorBoundary } from '@src/ui/feedback/root_error_boundary'
 import { reloadForNewVersion } from '@src/utils/reload_for_new_version'
 
 import '@mantine/core/styles.css'
+import '@mantine/dates/styles.css'
 import '@mantine/notifications/styles.css'
 
 // Vite fires this when a lazy file fails to download, usually because a deploy replaced it.
