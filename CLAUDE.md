@@ -43,6 +43,7 @@ salary-management/
 ### Money and data
 - **NEVER** use floats for money. Backend: `Decimal` / `Numeric(12, 2)`. Frontend: format as USD with `Intl.NumberFormat`. Every salary is in USD, so there is no currency field (see `docs/requirements.md`).
 - Dates are ISO 8601 strings on the wire (`2026-10-31`).
+- **Date format:** every date is shown as `DD/MM/YYYY` (`APP_DATE_FORMAT` in `web/src/constants/time_constants.ts`), in tables and date inputs alike.
 - **Time zone:** the app uses **IST (Asia/Kolkata, UTC+05:30)** everywhere: stored, sent by the API (with the `+05:30` offset), and shown in the UI. It is one constant per app (backend `constants/time_constants.py`, frontend `src/constants/`). **NEVER** use the server's or the browser's local time zone.
 
 ### Security and configuration
@@ -423,7 +424,7 @@ web/src/
 │   ├── log_render_error.ts          the boundaries' onError: console.error, no personal data
 │   ├── show_notification.ts         the one place notifications are shown (success and error)
 │   ├── format_currency.ts
-│   └── format_date.ts               ISO date → "Mar 15, 2024" in IST
+│   └── format_date.ts               ISO date → "15/03/2024" (APP_DATE_FORMAT, also the date inputs' default in theme.ts)
 ├── styles/
 │   ├── global.scss                  only if needed: resets and base element styles (imported once in main.tsx)
 │   ├── theme.ts                     Mantine theme: same spacing / font / breakpoint scale as the tokens

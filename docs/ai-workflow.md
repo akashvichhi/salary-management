@@ -382,3 +382,14 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - This replaces W6's native `type="date"` input, which looks different in every browser and doesn't match the other Mantine inputs.
   - The picker opens on the current month, so the form tests fake only `Date` (to January 2025): the calendar is the same on every run, and timers still run for the async waits.
 - **How it was verified:** `npm run check` (116 tests); the red snapshot fails only the tests that pick or show the hire date.
+
+## 2026-11-05 — Step W7.4: one date format, DD/MM/YYYY
+
+- **Prompt / instruction:** "Add employee modal shows "Invalid date". Use the format dd/mm/YYYY. Create a constant for this and if possible make this default format across the app"
+- **What the AI produced:**
+  - `APP_DATE_FORMAT = 'DD/MM/YYYY'` in `time_constants.ts`, the one place the format is set
+  - `formatDate` (the table) formats with it through dayjs, instead of `Intl`'s "Mar 15, 2024"
+  - the Mantine theme makes it the default `valueFormat` of every `DateInput` and `DatePickerInput`, so a new date input needs no format of its own
+  - the "Invalid date" fix: the empty form held `''` for the hire date, which the picker tried to show as a date; it now starts as `null`
+- **What I changed, rejected, or corrected, and why:** the W7.3 tests didn't catch "Invalid date" because they only checked the picker after choosing a date, never the empty add form; a new test now checks that the empty form shows no date.
+- **How it was verified:** `npm run check`; the red snapshot fails only the tests that show a date or the empty hire date.
