@@ -14,6 +14,10 @@ export async function createEmployee(payload: IEmployeeCreatePayload): Promise<I
   return data.data
 }
 
+export async function deleteEmployee(id: number): Promise<void> {
+  await apiClient.delete(API_ENDPOINTS.employeeById(id))
+}
+
 export async function updateEmployee(id: number, payload: TEmployeeUpdatePayload): Promise<IEmployee> {
   const { data } = await apiClient.patch<IApiResponse<IEmployee>>(API_ENDPOINTS.employeeById(id), payload)
   return data.data

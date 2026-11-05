@@ -26,6 +26,18 @@ export function editEmployeeLabel(fullName: string): string {
 
 export const EMPLOYEE_CREATED_MESSAGE: string = 'Employee added'
 export const EMPLOYEE_UPDATED_MESSAGE: string = 'Employee updated'
+export const EMPLOYEE_DELETED_MESSAGE: string = 'Employee deleted'
+
+export const DELETE_EMPLOYEE_TITLE: string = 'Delete employee'
+export const DELETE_LABEL: string = 'Delete'
+
+export function deleteEmployeeLabel(fullName: string): string {
+  return `Delete ${fullName}`
+}
+
+export function deleteEmployeeConfirmMessage(fullName: string): string {
+  return `Delete ${fullName}? They will no longer appear in the employee list or the salary insights.`
+}
 
 export const FULL_NAME_REQUIRED_MESSAGE: string = 'Enter the employee’s name'
 export const FULL_NAME_TOO_LONG_MESSAGE: string = 'Name must be at most 100 characters'

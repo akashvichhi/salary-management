@@ -1,6 +1,7 @@
 import { MemoryRouter } from 'react-router'
 
 import { MantineProvider } from '@mantine/core'
+import { ModalsProvider } from '@mantine/modals'
 import { Notifications } from '@mantine/notifications'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
@@ -20,7 +21,9 @@ export function renderWithProviders(ui: React.ReactElement, { route = '/' }: IRe
     <QueryClientProvider client={queryClient}>
       <MantineProvider env="test" theme={theme}>
         <Notifications />
-        <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+        <ModalsProvider>
+          <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+        </ModalsProvider>
       </MantineProvider>
     </QueryClientProvider>,
   )
