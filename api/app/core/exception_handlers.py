@@ -13,6 +13,7 @@ from app.core.exceptions import (
     DomainError,
     DomainValidationError,
     NotFoundError,
+    TooManyRequestsError,
     UnauthenticatedError,
 )
 from app.schemas.common.response_schema import ErrorResponse, FieldError
@@ -25,6 +26,7 @@ DOMAIN_ERROR_STATUS_CODES: dict[type[DomainError], int] = {
     NotFoundError: status.HTTP_404_NOT_FOUND,
     ConflictError: status.HTTP_409_CONFLICT,
     DomainValidationError: status.HTTP_422_UNPROCESSABLE_CONTENT,
+    TooManyRequestsError: status.HTTP_429_TOO_MANY_REQUESTS,
 }
 
 # The first item of a validation error location is where the value came from

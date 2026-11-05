@@ -4,8 +4,13 @@ from datetime import timedelta
 
 from sqlalchemy.orm import Session
 
-from app.constants.messages import INVALID_CREDENTIALS, NOT_AUTHENTICATED
-from app.core.exceptions import UnauthenticatedError
+from app.constants.messages import (
+    INVALID_CREDENTIALS,
+    NOT_AUTHENTICATED,
+    TOO_MANY_LOGIN_ATTEMPTS,
+)
+from app.core.exceptions import TooManyRequestsError, UnauthenticatedError
+from app.core.login_rate_limiter import LoginRateLimiter
 from app.core.security import (
     generate_session_token,
     hash_password,
@@ -37,19 +42,28 @@ class AuthService:
         session: Session,
         user_repository: UserRepository,
         session_repository: SessionRepository,
+        rate_limiter: LoginRateLimiter,
         session_ttl: timedelta,
     ) -> None:
         self.session = session
         self.user_repository = user_repository
         self.session_repository = session_repository
+        self.rate_limiter = rate_limiter
         self.session_ttl = session_ttl
 
-    def login(self, request: LoginRequest) -> LoginResult:
+    def login(self, request: LoginRequest, client_ip: str) -> LoginResult:
+        # Per email and IP, so guessing one account's password is slowed down without
+        # letting someone else lock the HR manager out from their own address.
+        rate_limit_key = f"{request.email}|{client_ip}"
+        if self.rate_limiter.is_blocked(rate_limit_key):
+            raise TooManyRequestsError(TOO_MANY_LOGIN_ATTEMPTS)
         user = self.user_repository.find_by_email(request.email)
         password_hash = user.password_hash if user else UNKNOWN_USER_PASSWORD_HASH
         password_matches = verify_password(password_hash, request.password.get_secret_value())
         if user is None or not password_matches:
+            self.rate_limiter.record_failure(rate_limit_key)
             raise UnauthenticatedError(INVALID_CREDENTIALS)
+        self.rate_limiter.reset(rate_limit_key)
         return LoginResult(user=user, session_token=self._start_session(user))
 
     def logout(self, session_token: str | None) -> None:

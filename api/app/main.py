@@ -7,10 +7,12 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from app.api.v1.api_router import api_v1_router
 from app.api.v1.routers.health_router import health_router
+from app.constants.auth_constants import LOGIN_FAILURE_WINDOW, LOGIN_MAX_FAILURES
 from app.core.config import Settings, get_settings
 from app.core.database import create_database_engine, create_session_factory
 from app.core.exception_handlers import register_exception_handlers
 from app.core.logging_filters import install_access_log_filter
+from app.core.login_rate_limiter import LoginRateLimiter
 from app.core.origin_check_middleware import OriginCheckMiddleware
 
 APP_TITLE = "Salary Management API"
@@ -34,6 +36,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title=APP_TITLE, lifespan=lifespan)
     app.state.settings = app_settings
     app.state.session_factory = create_session_factory(engine)
+    app.state.login_rate_limiter = LoginRateLimiter(LOGIN_MAX_FAILURES, LOGIN_FAILURE_WINDOW)
     # Added first, so it runs last: after CORS has answered any preflight request.
     app.add_middleware(OriginCheckMiddleware, allowed_origins=app_settings.allowed_origins)
     app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE_BYTES)

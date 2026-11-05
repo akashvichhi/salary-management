@@ -15,6 +15,10 @@ class UnauthenticatedError(DomainError):
     """Not logged in, or the session is unknown or expired."""
 
 
+class TooManyRequestsError(DomainError):
+    pass
+
+
 class NotFoundError(DomainError):
     pass
 

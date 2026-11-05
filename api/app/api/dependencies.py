@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.core.database import get_db
+from app.core.login_rate_limiter import LoginRateLimiter
 from app.models.user_model import UserModel
 from app.repositories.employee_repository import EmployeeRepository
 from app.repositories.salary_insight_repository import SalaryInsightRepository
@@ -47,13 +48,20 @@ def get_app_settings(request: Request) -> Settings:
 SettingsDependency = Annotated[Settings, Depends(get_app_settings)]
 
 
+def get_login_rate_limiter(request: Request) -> LoginRateLimiter:
+    """One limiter per app, so its counts last across requests (and tests start clean)."""
+    rate_limiter: LoginRateLimiter = request.app.state.login_rate_limiter
+    return rate_limiter
+
+
 def get_auth_service(
-    session: Annotated[Session, Depends(get_db)], settings: SettingsDependency
+    request: Request, session: Annotated[Session, Depends(get_db)], settings: SettingsDependency
 ) -> AuthService:
     return AuthService(
         session,
         UserRepository(session),
         SessionRepository(session),
+        rate_limiter=get_login_rate_limiter(request),
         session_ttl=timedelta(hours=settings.session_ttl_hours),
     )
 

@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 
-from app.core.login_rate_limiter import LoginRateLimiter
-
 from app.constants.time_constants import APP_TIMEZONE
+from app.core.login_rate_limiter import LoginRateLimiter
 
 MAX_FAILURES = 3
 WINDOW = timedelta(minutes=15)

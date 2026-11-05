@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Request, Response, status
 
+from app.api.client_ip import client_ip
 from app.api.dependencies import (
     AuthServiceDependency,
     CurrentUserDependency,
@@ -18,11 +19,12 @@ auth_router = APIRouter(prefix=AUTH_PATH, tags=["auth"])
 @auth_router.post(LOGIN_PATH, response_model=DataResponse[UserResource])
 def login(
     body: LoginRequest,
+    request: Request,
     response: Response,
     service: AuthServiceDependency,
     settings: SettingsDependency,
 ) -> DataResponse[UserResource]:
-    result = service.login(body)
+    result = service.login(body, client_ip(request))
     set_session_cookie(response, result.session_token, settings)
     return DataResponse(data=UserResource.model_validate(result.user))
 
