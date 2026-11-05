@@ -1,0 +1,8 @@
+export const LOGIN_PAGE_TITLE: string = 'Log in'
+export const EMAIL_LABEL: string = 'Email'
+export const PASSWORD_LABEL: string = 'Password'
+export const LOGIN_BUTTON_LABEL: string = 'Log in'
+export const LOGOUT_BUTTON_LABEL: string = 'Log out'
+export const PASSWORD_REQUIRED_MESSAGE: string = 'Enter your password'
+export const SESSION_CHECK_LABEL: string = 'Checking your session'
+export const SESSION_CHECK_ERROR_TITLE: string = 'Could not check your session'

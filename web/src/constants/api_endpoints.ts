@@ -6,6 +6,9 @@ interface IApiEndpoints {
   salaryByCountry:    string
   salaryByJobTitle:   string
   salaryByDepartment: string
+  login:              string
+  logout:             string
+  currentUser:        string
 }
 
 export const API_ENDPOINTS: IApiEndpoints = {
@@ -16,4 +19,7 @@ export const API_ENDPOINTS: IApiEndpoints = {
   salaryByCountry:    'api/v1/salary-insights/by-country',
   salaryByJobTitle:   'api/v1/salary-insights/by-job-title',
   salaryByDepartment: 'api/v1/salary-insights/by-department',
+  login:              'api/v1/auth/login',
+  logout:             'api/v1/auth/logout',
+  currentUser:        'api/v1/auth/me',
 }

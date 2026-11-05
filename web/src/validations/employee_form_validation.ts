@@ -30,7 +30,7 @@ function validateFullName(value: string | null): string | null {
   return fullName.length > FULL_NAME_MAX_LENGTH ? FULL_NAME_TOO_LONG_MESSAGE : null
 }
 
-function validateEmail(value: string | null): string | null {
+export function validateEmail(value: string | null): string | null {
   return EMAIL_PATTERN.test(value?.trim() ?? '') ? null : EMAIL_INVALID_MESSAGE
 }
 

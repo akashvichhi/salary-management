@@ -3,11 +3,13 @@ import { Link, Outlet, useLocation } from 'react-router'
 import { AppShell, Button, Container, Group, Text } from '@mantine/core'
 
 import { APP_NAME } from '@src/constants/app_constants'
+import { LOGOUT_BUTTON_LABEL } from '@src/constants/auth_messages'
 import {
   EMPLOYEES_PAGE_TITLE,
   MAIN_NAVIGATION_LABEL,
   SALARY_INSIGHTS_PAGE_TITLE,
 } from '@src/constants/navigation_constants'
+import { useLogout } from '@src/hooks/use_logout'
 import { ROUTE_PATHS } from '@src/routes/route_paths'
 
 interface INavigationItem {
@@ -45,6 +47,16 @@ function MainNavigation(): React.JSX.Element {
   )
 }
 
+function LogoutButton(): React.JSX.Element {
+  const { logout, isLoggingOut } = useLogout()
+
+  return (
+    <Button loading={isLoggingOut} variant="default" onClick={logout}>
+      {LOGOUT_BUTTON_LABEL}
+    </Button>
+  )
+}
+
 // The shell stays on screen while pages load or fail inside it.
 export function AppLayout(): React.JSX.Element {
   return (
@@ -53,7 +65,10 @@ export function AppLayout(): React.JSX.Element {
         <Container h="100%" size="lg">
           <Group h="100%" justify="space-between">
             <Text fw="bold" visibleFrom="sm">{APP_NAME}</Text>
-            <MainNavigation />
+            <Group gap="xs">
+              <MainNavigation />
+              <LogoutButton />
+            </Group>
           </Group>
         </Container>
       </AppShell.Header>

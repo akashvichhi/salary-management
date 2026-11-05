@@ -30,3 +30,13 @@ export const salaryInsightKeys: ISalaryInsightKeys = {
   byJobTitle:   (country: string) => [...salaryInsightKeys.all(), 'by-job-title', country] as const,
   byDepartment: () => [...salaryInsightKeys.all(), 'by-department'] as const,
 }
+
+interface IAuthKeys {
+  all:         () => readonly ['auth']
+  currentUser: () => readonly ['auth', 'current-user']
+}
+
+export const authKeys: IAuthKeys = {
+  all:         () => ['auth'] as const,
+  currentUser: () => [...authKeys.all(), 'current-user'] as const,
+}
