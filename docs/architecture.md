@@ -124,7 +124,7 @@ sequenceDiagram
 | `GET /api/v1/auth/me` | Current user | 200 |
 | `GET /api/health` | Health check | 200 |
 
-Errors: 401 not logged in, 404 not found, 409 duplicate email, 422 validation, 429 too many login attempts, 500 generic message.
+Errors: 401 not logged in, 404 not found, 409 duplicate email (with `details` naming the `email` field), 422 validation, 429 too many login attempts, 500 generic message.
 
 **Success:**
 ```json
@@ -148,8 +148,7 @@ Errors: 401 not logged in, 404 not found, 409 duplicate email, 422 validation, 4
 
 | Page | Purpose |
 |---|---|
-| Employee list | Search, filter, sort and page through employees; delete with confirmation |
-| Employee create and edit | One shared form (`common/employee_form/`), with server field errors shown on the inputs |
+| Employee list | Search, filter, sort and page through employees; add and edit in a modal with one shared form, with server field errors shown on the inputs (decision 22); delete with confirmation |
 | Salary insights | Tables and stat cards for each insight |
 | Login | Built last |
 
@@ -188,7 +187,7 @@ Render's free tier has no persistent disk, so the database is recreated, and the
 
 | # | Question |
 |---|---|
-| 1 | Create and edit: separate routes or modals on the list page? Does "view" need its own detail page, or is the edit form enough? |
+| 1 | ~~Create and edit: separate routes or modals on the list page? Does "view" need its own detail page?~~ **Answered:** modals on the list page, no detail page (decision 22) |
 | 2 | ~~Insights endpoints: one per insight or combined?~~ **Answered:** one endpoint per insight, each an array of objects (the overview an object holding one); see the API outline and decision 19 |
 | 3 | ~~Job title, department and country: fixed lists or free text?~~ **Answered:** fixed lists in `constants/employee_constants.py`, matched ignoring case (decision 17); the web app keeps a copy for its dropdowns (decision 21) |
 | 4 | ~~Sort allow-list?~~ **Answered:** every column shown in the table: `full_name`, `email`, `job_title`, `department`, `country`, `salary`, `hire_date`; ties broken by `id` |

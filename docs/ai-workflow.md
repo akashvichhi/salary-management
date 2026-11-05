@@ -318,3 +318,22 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - Mantine's Select has the `combobox` role and the search input the `searchbox` role; the AI's first tests looked for `textbox` and were fixed in their red commits. The tests turn off Mantine's transitions (`env="test"`), so dropdown options are visible straight away.
   - The debounced-search test failed once in a full run: under load the re-render took longer than `waitFor`'s 1 s default. Its wait is now 3 s, fixed in the red commit that added it.
 - **How it was verified:** `npm run check` (90 tests), run twice to check the timing fix; each red snapshot fails before its green.
+
+## 2026-11-04 — Step W6: add and edit employees
+
+- **Prompt / instruction:** part of "Start W4 to W7"; question 1 answered as "modals, no view page".
+- **What the AI produced:**
+  - an API pair: a domain error can name the field it is about, and a taken email now returns `details: [{ "field": "email", ... }]` with its 409, so the form's generic field-error handling covers it
+  - a chore commit adding `@mantine/form`
+  - an "Add employee" button and an edit button on each row (labelled "Edit <name>"), both opening one form in a Mantine `Modal`
+  - `employee_form_validation.ts`: the API's rules checked first for quick feedback; the salary is checked as text (up to 10 digits and 2 decimals, more than 0), so it is never parsed into a float
+  - `useCreateEmployeeMutation` and `useUpdateEmployeeMutation`: a notification on success and failure, and the list reloads after a save; server field errors appear on their inputs and the modal stays open
+  - edit sends only the fields that changed, and closes without a request when nothing did
+  - `show_notification.ts`, now also used by the global error listener
+- **What I changed, rejected, or corrected, and why:**
+  - The plan had the form in `common/employee_form/`, written when create and edit were separate routes. With modals, only the list page uses it, so it lives in `pages/employee_list/` (decision 22).
+  - `@mantine/modals` was first installed here too, but only the delete confirmation (W7) needs it, so it moved to W7. Add and edit use Mantine's own `Modal`.
+  - The hire date uses a native date input (`type="date"`): it gives the ISO string the API expects, with no date library.
+  - Two AI mistakes caught by the tests: React Query passes a second argument to `mutationFn`, so passing `createEmployee` directly sent it to the mocked API; and Mantine 9's `useForm` takes the transformed type, not a function type, as its second generic.
+  - Filling the form opens three Mantine Selects, which takes several seconds in jsdom, so the form tests have a 20 s timeout.
+- **How it was verified:** `make check` (153 tests, 100% coverage); `npm run check` (102 tests); each red snapshot fails before its green.

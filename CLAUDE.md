@@ -247,7 +247,7 @@ Error (every 4xx and 5xx):
 { "error": "Employee not found" }
 ```
 
-Validation error (422) may add field-level `details`, so the UI can highlight the right input:
+Validation error (422), and any domain error about one field (e.g. a 409 for a taken email), may add field-level `details`, so the UI can highlight the right input:
 ```json
 {
   "error": "Validation failed",
@@ -420,6 +420,7 @@ web/src/
 │   ├── reload_for_new_version.ts    the ONLY place that reloads for a new version, with the loop guard
 │   ├── reload_page.ts               the one wrapper around window.location.reload (tests replace it)
 │   ├── log_render_error.ts          the boundaries' onError: console.error, no personal data
+│   ├── show_notification.ts         the one place notifications are shown (success and error)
 │   ├── format_currency.ts
 │   └── format_date.ts               ISO date → "Mar 15, 2024" in IST
 ├── styles/
@@ -445,14 +446,14 @@ web/src/
 │   └── skeletons/                   table_skeleton.tsx, card_skeleton.tsx, form_skeleton.tsx, page_skeleton.tsx
 ├── test_utils/                      test-only helpers: render_with_providers.tsx, render_with_mantine.tsx, employee_factory.ts
 ├── common/                          feature components shared by 2+ pages/routes
-│   └── employee_form/               e.g. employee_form.tsx used by the create and edit routes
+│   └── ...                          created when a second page needs a component (the employee form is used by the list page only, decision 22)
 └── pages/                           one folder per route
     ├── login/
     │   └── login_page.tsx
     ├── employee_list/
     │   ├── employee_list_page.tsx
-    │   ├── components/              components used only by this page: employee_table, sortable_header, employee_filters, ...
-    │   └── hooks/                   logic used only by this page, one hook per file: use_employee_list, use_search_input
+    │   ├── components/              components used only by this page: employee_table, sortable_header, employee_filters, employee_form, employee_form_modal, ...
+    │   └── hooks/                   logic used only by this page, one hook per file: use_employee_list, use_search_input, use_employee_form, use_employee_form_modal
     └── salary_insights/
         └── salary_insights_page.tsx
 ```

@@ -149,6 +149,13 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** copy them, with a comment in each file pointing to the other.
 - **Consequences:** no extra request, query or loading state on every filter bar and form. The two copies can drift, but the lists change rarely, and the API still validates every value, so drift shows up as a clear 422 rather than bad data. An endpoint is the fix if the lists ever become editable.
 
+## 22. Add and edit in modals on the list page
+
+- **Context:** the HR manager adds and edits employees while working through the list, often with a search or filter applied. An employee has seven fields, all of which the table already shows.
+- **Options:** separate routes (`/employees/new`, `/employees/:id/edit`) with a shared form, plus a detail page for "view"; or modals on the list page, with the table row as the view.
+- **Decision:** modals on the list page, one form for both add and edit, and no detail page.
+- **Consequences:** the list keeps its URL state (page, filters, sort) and scroll position while editing, and no extra routes, lazy chunks or form skeleton are needed: the edit form is filled from the row, so it never waits on a request. An edit can't be shared as a link, which the requirements don't ask for. Edit sends only the fields that changed (`PATCH`). The form is used by one page only, so it lives in `pages/employee_list/`, not `common/`.
+
 ## Runtime dependencies
 
 Each runtime dependency gets one line here, with its reason, when it is added.
@@ -168,4 +175,5 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `react-error-boundary` | Error boundaries as components with reset support, so we write no class components (decision 13) |
 | `@tanstack/react-query` | Server-state cache: loading and error states, keeping the previous page while the next loads, and invalidation after edits |
 | `@mantine/notifications` | Toasts in the same design system, for mutation feedback and the global error listener |
+| `@mantine/form` | Form state, validation and per-field errors (including the API's `details`) in the same design system |
 | `@tabler/icons-react` | The icon set Mantine's docs use; icons are imported by name, so only the ones used reach the bundle |
