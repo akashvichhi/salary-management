@@ -11,6 +11,7 @@ from app.core.config import Settings, get_settings
 from app.core.database import create_database_engine, create_session_factory
 from app.core.exception_handlers import register_exception_handlers
 from app.core.logging_filters import install_access_log_filter
+from app.core.origin_check_middleware import OriginCheckMiddleware
 
 APP_TITLE = "Salary Management API"
 # Below about 1 KB, compressing costs more time than it saves on the wire.
@@ -33,6 +34,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title=APP_TITLE, lifespan=lifespan)
     app.state.settings = app_settings
     app.state.session_factory = create_session_factory(engine)
+    # Added first, so it runs last: after CORS has answered any preflight request.
+    app.add_middleware(OriginCheckMiddleware, allowed_origins=app_settings.allowed_origins)
     app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE_BYTES)
     if app_settings.allowed_origins:
         app.add_middleware(
