@@ -5,7 +5,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
-from app.constants.messages import INVALID_CREDENTIALS, NOT_AUTHENTICATED
+from app.constants.messages import (
+    INVALID_CREDENTIALS,
+    NOT_AUTHENTICATED,
+    TOO_MANY_LOGIN_ATTEMPTS,
+)
 from app.core.config import Settings
 from app.core.database import create_database_engine, create_session_factory
 from app.core.security import generate_session_token, hash_session_token
@@ -18,6 +22,7 @@ from tests.factories import HR_MANAGER_EMAIL, login_payload
 LOGIN_URL = "/api/v1/auth/login"
 CURRENT_USER_URL = "/api/v1/auth/me"
 LOGOUT_URL = "/api/v1/auth/logout"
+MAX_FAILED_LOGINS = 5
 SESSION_TTL_SECONDS = 8 * 60 * 60
 INVALID_CREDENTIALS_RESPONSE = {"error": INVALID_CREDENTIALS}
 NOT_AUTHENTICATED_RESPONSE = {"error": NOT_AUTHENTICATED}
@@ -231,3 +236,48 @@ def test_logout_ends_the_session_on_the_server(
 
 def test_logout_without_a_session_still_succeeds(client: TestClient) -> None:
     assert client.post(LOGOUT_URL).status_code == 204
+
+
+def fail_logins(client: TestClient, times: int) -> None:
+    for _ in range(times):
+        response = client.post(LOGIN_URL, json=login_payload(password="wrong password"))
+        assert response.status_code == 401
+
+
+@pytest.mark.usefixtures("hr_manager")
+def test_the_sixth_failed_login_returns_429(client: TestClient) -> None:
+    fail_logins(client, MAX_FAILED_LOGINS)
+
+    response = client.post(LOGIN_URL, json=login_payload(password="wrong password"))
+
+    assert response.status_code == 429
+    assert response.json() == {"error": TOO_MANY_LOGIN_ATTEMPTS}
+
+
+@pytest.mark.usefixtures("hr_manager")
+def test_a_blocked_login_is_refused_even_with_the_right_password(client: TestClient) -> None:
+    fail_logins(client, MAX_FAILED_LOGINS)
+
+    response = client.post(LOGIN_URL, json=login_payload())
+
+    assert response.status_code == 429
+    assert "set-cookie" not in response.headers
+
+
+@pytest.mark.usefixtures("hr_manager")
+def test_a_successful_login_resets_the_failed_count(client: TestClient) -> None:
+    fail_logins(client, MAX_FAILED_LOGINS - 1)
+    assert client.post(LOGIN_URL, json=login_payload()).status_code == 200
+
+    fail_logins(client, MAX_FAILED_LOGINS - 1)
+
+    assert client.post(LOGIN_URL, json=login_payload()).status_code == 200
+
+
+@pytest.mark.usefixtures("hr_manager")
+def test_failed_logins_for_one_email_do_not_block_another(client: TestClient) -> None:
+    fail_logins(client, MAX_FAILED_LOGINS)
+
+    response = client.post(LOGIN_URL, json=login_payload(email="someone.else@acme.com"))
+
+    assert response.status_code == 401
