@@ -13,3 +13,25 @@ export const SEARCH_PLACEHOLDER: string = 'Name or email'
 export const EMPLOYEES_FILTERED_EMPTY_TITLE: string = 'No employees match these filters'
 export const EMPLOYEES_FILTERED_EMPTY_MESSAGE: string = 'Try a different search, or clear the filters to see everyone.'
 export const CLEAR_FILTERS_LABEL: string = 'Clear filters'
+
+export const ADD_EMPLOYEE_LABEL: string = 'Add employee'
+export const EDIT_EMPLOYEE_TITLE: string = 'Edit employee'
+export const SAVE_EMPLOYEE_LABEL: string = 'Save'
+export const CANCEL_LABEL: string = 'Cancel'
+export const EMPLOYEE_ACTIONS_LABEL: string = 'Actions'
+
+export function editEmployeeLabel(fullName: string): string {
+  return `Edit ${fullName}`
+}
+
+export const EMPLOYEE_CREATED_MESSAGE: string = 'Employee added'
+export const EMPLOYEE_UPDATED_MESSAGE: string = 'Employee updated'
+
+export const FULL_NAME_REQUIRED_MESSAGE: string = 'Enter the employee’s name'
+export const FULL_NAME_TOO_LONG_MESSAGE: string = 'Name must be at most 100 characters'
+export const EMAIL_INVALID_MESSAGE: string = 'Enter a valid email address'
+export const JOB_TITLE_REQUIRED_MESSAGE: string = 'Choose a job title'
+export const DEPARTMENT_REQUIRED_MESSAGE: string = 'Choose a department'
+export const COUNTRY_REQUIRED_MESSAGE: string = 'Choose a country'
+export const SALARY_INVALID_MESSAGE: string = 'Enter an amount in USD greater than 0, with at most 2 decimals'
+export const HIRE_DATE_REQUIRED_MESSAGE: string = 'Enter the hire date'

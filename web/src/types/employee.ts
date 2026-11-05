@@ -25,3 +25,17 @@ export interface IEmployeeListParams extends IPaginationParams {
 }
 
 export type TEmployeeColumn = 'fullName' | 'email' | 'jobTitle' | 'department' | 'country' | 'salary' | 'hireDate'
+
+// The body of POST /employees. Salary stays a decimal string, so it is never parsed into a float.
+export interface IEmployeeCreatePayload {
+  fullName:   string
+  email:      string
+  jobTitle:   string
+  department: string
+  country:    string
+  salary:     string
+  hireDate:   string
+}
+
+// The body of PATCH /employees/{id}: only the fields that changed.
+export type TEmployeeUpdatePayload = Partial<IEmployeeCreatePayload>
