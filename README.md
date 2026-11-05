@@ -52,7 +52,7 @@ npm run check         # ESLint, Stylelint, type check, tests
 npm run build         # production build in web/dist
 ```
 
-Copy `web/.env.example` to `web/.env` to point the app at the local API.
+Copy `web/.env.example` to `web/.env` to point the app at the local API. Log in with the `HR_MANAGER_EMAIL` and `HR_MANAGER_PASSWORD` from `api/.env`.
 
 After pulling changes, run `uv run alembic upgrade head` again: a database left on an older migration fails with errors such as `no such column`.
 

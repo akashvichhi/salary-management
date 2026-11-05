@@ -437,3 +437,18 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - Repository methods were added in the step that first uses them, not up front.
 - **How it was verified:** `make check` (209 tests, 100% coverage); each red snapshot fails only its new or changed tests (the reds that import a module or constant not written yet fail at collection).
 
+## 2026-11-05 — Step L2: login page
+
+- **Prompt / instruction:** the second half of "start and complete phase 3 together".
+- **What the AI produced:**
+  - `auth_api.ts`, `auth_queries.ts` and `authKeys`; `withCredentials: true` on the API client, and a `status` on every `IApiError` the server answered
+  - the login page (`pages/login/`): labelled email and password inputs, validation before the request, the API's generic error in an alert, and a button that is disabled while logging in
+  - `ProtectedRoute` around the app shell: the full-screen loader while the session is checked, the page on 200, login on 401 (remembering the page and its query string), and an error with "Try again" for anything else
+  - a "Log out" button in the header, which clears the whole cache and goes back to login
+  - a 401 mid-session (any endpoint except `/auth/me` and `/auth/login`) drops the cached data and sends the user back through login
+- **What I changed, rejected, or corrected, and why:**
+  - The API client tells the app about an expired session through a handler that `app.tsx` registers, instead of importing the query client and the router itself.
+  - `IApiError` gained `status`: without it the protected route can't tell "not logged in" (go to login) from "the API is down" (show retry).
+  - The email is trimmed before sending; the password is sent exactly as typed, since spaces can be part of it.
+  - The tests find the password input with `selector: 'input'`, because Mantine's show/hide button is labelled "Toggle password visibility" and also matches "Password". That button is now reachable with Tab (Mantine skips it by default), so it works with the keyboard alone.
+- **How it was verified:** `npm run check` (142 tests); the red snapshot fails only the changed API client tests and the two new test files.

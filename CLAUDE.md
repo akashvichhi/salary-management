@@ -409,12 +409,15 @@ web/src/
 │   └── query_client.ts              the one QueryClient, with the default staleTime and retry
 ├── hooks/                           shared business logic hooks, one hook per file
 │   ├── use_global_error_listener.ts window error / unhandledrejection → log + one notification
-│   └── use_list_url_state.ts        page, filters, search, sort ↔ URL query string
+│   ├── use_list_url_state.ts        page, filters, search, sort ↔ URL query string
+│   └── use_logout.ts                the header's logout: the mutation, then back to login
 ├── constants/
 │   ├── api_endpoints.ts
 │   ├── query_keys.ts
 │   ├── error_messages.ts            every user-facing error and fallback text
 │   ├── error_handling_constants.ts  reload guard, notification interval, chunk-error and noise patterns
+│   ├── http_status.ts               the HTTP status codes the app reacts to (401)
+│   ├── auth_messages.ts             login page and session check texts
 │   ├── navigation_constants.ts      page titles, shared by the navigation and the page headers
 │   ├── query_constants.ts           QUERY_STALE_TIME_MS, QUERY_RETRY_COUNT
 │   ├── time_constants.ts            APP_TIMEZONE (IST), APP_LOCALE, APP_CURRENCY
@@ -434,6 +437,8 @@ web/src/
 │   ├── format_currency.ts
 │   ├── format_count.ts              10000 → "10,000"
 │   ├── is_empty_list.ts
+│   ├── is_unauthenticated_error.ts  an IApiError with status 401
+│   ├── login_redirect.ts            remembers the page asked for before login, and returns to it after
 │   └── format_date.ts               ISO date → "15/03/2024" (APP_DATE_FORMAT, also the date inputs' default in theme.ts)
 ├── styles/
 │   ├── global.scss                  only if needed: resets and base element styles (imported once in main.tsx)
@@ -461,7 +466,8 @@ web/src/
 │   └── ...                          created when a second page needs a component (the employee form is used by the list page only, decision 22)
 └── pages/                           one folder per route
     ├── login/
-    │   └── login_page.tsx
+    │   ├── login_page.tsx
+    │   └── hooks/                   use_login_form
     ├── employee_list/
     │   ├── employee_list_page.tsx
     │   ├── components/              components used only by this page: employee_table, sortable_header, employee_filters, employee_form, employee_form_modal, delete_employee_confirm, ...
@@ -472,7 +478,7 @@ web/src/
         └── hooks/                   use_insight_country (job-title country ↔ ?country=), use_country_name
 ```
 
-Auth files (`auth_api.ts`, `types/auth.ts`, `auth_queries.ts`, `login_form_validation.ts`, `protected_route.tsx`, `pages/login/`) are created when login is built, as the last feature. Until then, the full-screen loader isn't used.
+The auth files (`auth_api.ts`, `types/auth.ts`, `auth_queries.ts`, `auth_messages.ts`, `login_form_validation.ts`, `protected_route.tsx`, `use_logout.ts`, `login_redirect.ts`, `pages/login/`) were built last, after the employee and insights features. The full-screen loader is used only by the protected route.
 
 ### Naming
 - Files and folders: `snake_case` (`employee_table.tsx`, `use_list_url_state.ts`).
@@ -518,7 +524,7 @@ Auth files (`auth_api.ts`, `types/auth.ts`, `auth_queries.ts`, `login_form_valid
   - while it loads → `full_screen_loader.tsx`
   - 200 → render the page
   - 401 → redirect to the login route, remembering the page the user wanted
-- **Session expiry:** the response interceptor handles any 401 (except from `/auth/me` and `/auth/login`) by clearing the React Query cache and redirecting to login.
+- **Session expiry:** the response interceptor reports any 401 (except from `/auth/me` and `/auth/login`) to a handler that `app.tsx` registers with `setSessionExpiredHandler`. It removes every cached query except the session, then checks the session again, so the protected route redirects to login and remembers the page. The API client therefore needs no access to the router or the cache.
 - **Login:** `useLoginMutation` → on success, put the returned user into the `useCurrentUserQuery` cache and navigate to the remembered page. Show the generic error from the API; **NEVER** say whether the email or the password was wrong.
 - **Logout:** `useLogoutMutation` → on success, clear the whole React Query cache and navigate to login.
 
