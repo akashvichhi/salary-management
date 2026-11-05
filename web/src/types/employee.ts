@@ -39,3 +39,14 @@ export interface IEmployeeCreatePayload {
 
 // The body of PATCH /employees/{id}: only the fields that changed.
 export type TEmployeeUpdatePayload = Partial<IEmployeeCreatePayload>
+
+// What the form holds: a Select is null until something is chosen.
+export interface IEmployeeFormValues {
+  fullName:   string
+  email:      string
+  jobTitle:   string | null
+  department: string | null
+  country:    string | null
+  salary:     string
+  hireDate:   string
+}

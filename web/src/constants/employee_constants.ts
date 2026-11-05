@@ -92,3 +92,11 @@ export const SEARCH_DEBOUNCE_MS: number = 300
 // Taller pages scroll inside the table (with the header kept in view), so the pagination and
 // page-size controls below it stay on screen.
 export const EMPLOYEE_TABLE_MAX_HEIGHT: number = 560
+
+// The API's limits for an employee (api/app/constants/employee_constants.py). The form checks them
+// first for quick feedback; the API stays the source of truth.
+export const FULL_NAME_MAX_LENGTH: number = 100
+// Numeric(12, 2): up to 10 digits before the decimal point and 2 after.
+export const SALARY_PATTERN: RegExp = /^\d{1,10}(\.\d{1,2})?$/
+export const NON_ZERO_DIGIT_PATTERN: RegExp = /[1-9]/
+export const EMAIL_PATTERN: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

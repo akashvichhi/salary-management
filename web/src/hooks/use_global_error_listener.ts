@@ -1,15 +1,12 @@
 import { useEffect } from 'react'
 
-import { notifications } from '@mantine/notifications'
-
 import {
   GLOBAL_ERROR_NOTIFICATION_INTERVAL_MS,
   IGNORED_ERROR_MESSAGES,
 } from '@src/constants/error_handling_constants'
 import { UNEXPECTED_ERROR_MESSAGE } from '@src/constants/error_messages'
 import { isChunkLoadError } from '@src/utils/is_chunk_load_error'
-
-const NOTIFICATION_COLOR: string = 'red'
+import { showErrorNotification } from '@src/utils/show_notification'
 
 function isIgnoredNoise(message: string): boolean {
   return IGNORED_ERROR_MESSAGES.some((ignored: string): boolean => message.includes(ignored))
@@ -31,7 +28,7 @@ export function useGlobalErrorListener(): void {
       if (now - lastNotifiedAt < GLOBAL_ERROR_NOTIFICATION_INTERVAL_MS) return
 
       lastNotifiedAt = now
-      notifications.show({ color: NOTIFICATION_COLOR, message: UNEXPECTED_ERROR_MESSAGE })
+      showErrorNotification(UNEXPECTED_ERROR_MESSAGE)
     }
 
     function handleError(event: ErrorEvent): void {

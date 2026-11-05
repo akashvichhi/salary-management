@@ -30,6 +30,7 @@ import { TableSkeleton } from '@src/ui/skeletons/table_skeleton'
 interface IEmployeeListContentProps {
   listState:      IListUrlState<TEmployeeFilterKey>
   employeesQuery: UseQueryResult<IPaginatedResponse<IEmployee>, IApiError>
+  onEdit:         (employee: IEmployee) => void
 }
 
 const countFormatter: Intl.NumberFormat = new Intl.NumberFormat(APP_LOCALE)
@@ -37,7 +38,7 @@ const PER_PAGE_SELECT_DATA: string[] = PER_PAGE_OPTIONS.map(String)
 const PER_PAGE_SELECT_WIDTH: number = 96
 
 // One of: skeleton (first load), error with retry, empty state, or the table with pagination.
-export function EmployeeListContent({ listState, employeesQuery }: IEmployeeListContentProps): React.JSX.Element {
+export function EmployeeListContent({ listState, employeesQuery, onEdit }: IEmployeeListContentProps): React.JSX.Element {
   const { page, perPage, sort, hasActiveFilters, setPage, setPerPage, setSort, clearFilters } = listState
   const { data, error, isPending, isPlaceholderData, refetch } = employeesQuery
 
@@ -91,7 +92,7 @@ export function EmployeeListContent({ listState, employeesQuery }: IEmployeeList
           </Group>
         )}
       </Group>
-      <EmployeeTable employees={data.data} sort={sort} onSort={setSort} />
+      <EmployeeTable employees={data.data} sort={sort} onEdit={onEdit} onSort={setSort} />
       <Group justify="space-between">
         {data.meta.totalPages > 1 ? (
           <Pagination total={data.meta.totalPages} value={page} onChange={handlePageChange} />
