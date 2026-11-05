@@ -400,3 +400,20 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
 - **What the AI produced:** `docs/plan.md` without Phase 4 (D1–D6: Docker, Render, performance, README, video, submission) and without its row in the order table.
 - **What I changed, rejected, or corrected, and why:** I'll handle delivery outside the step-by-step plan. The rules about it in `CLAUDE.md` (serving the build, `docs/performance.md`) stay.
 - **How it was verified:** docs only; the plan's other phases are unchanged.
+
+## 2026-11-05 — Step W8: salary insights page
+
+- **Prompt / instruction:** "start W8": tables and stat cards for every insight, with a country picker for job titles; tests first for each insight, the loading skeletons and a per-section error state; the page does no arithmetic, only formatting.
+- **What the AI produced:**
+  - a red commit: page tests against a mocked API module (each insight's values, the country picker and `?country=` in the URL, a skeleton in a section still loading, an error with retry in one section only, an empty state)
+  - a green commit:
+    - types, API functions, query hooks and `salaryInsightKeys` for the four endpoints
+    - `InsightSection`, a card per insight with its own query, so one slow or failing insight never hides the others
+    - `InsightTable`, plus a section for each insight: the payroll overview (two stat cards and payroll per country), pay by country (min, max, average, median), pay by job title (with the country picker) and pay by department
+    - `CardSkeleton` for the stat cards; `formatCount` for headcounts
+- **What I changed, rejected, or corrected, and why:**
+  - Every amount is shown exactly as the API sends it, through `formatCurrency`; no sums or averages in the browser.
+  - The picked country is kept in the URL (`?country=US`), like the list filters, so refreshing keeps it. An unknown code falls back to the first country.
+  - Country names come from the employee options endpoint (decision 21), not from a copy in the web app.
+  - The per-country payroll column is called "Payroll", so it isn't confused with the "Total payroll" card.
+- **How it was verified:** `npm run check` (125 tests); the red snapshot fails only the new page tests; the endpoint paths and field names checked against `salary_insight_router.py` and `salary_insight_resource.py`.

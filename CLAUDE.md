@@ -390,15 +390,18 @@ web/src/
 ├── api/
 │   ├── api_client.ts                axios instance + interceptors (case conversion, error normalisation, 401 handling)
 │   ├── auth_api.ts
-│   └── employee_api.ts              API functions, one per endpoint
+│   ├── employee_api.ts              API functions, one per endpoint
+│   └── salary_insight_api.ts
 ├── types/
 │   ├── api_response.ts              IApiResponse<T>, IApiError, IFieldError
 │   ├── auth.ts                      IUser, ILoginFormValues
 │   ├── pagination.ts                IPaginationMeta, IPaginatedResponse<T>, IPaginationParams
-│   └── employee.ts                  IEmployee, IEmployeeFormValues, IEmployeeListParams
+│   ├── employee.ts                  IEmployee, IEmployeeFormValues, IEmployeeListParams
+│   └── salary_insight.ts            one interface per insight; amounts are decimal strings
 ├── queries/                         React Query hooks, ONE file per resource (all its queries + mutations)
 │   ├── auth_queries.ts              useCurrentUserQuery, useLoginMutation, useLogoutMutation
 │   ├── employee_queries.ts          useEmployeesQuery, useEmployeeQuery, useCreate/Update/DeleteEmployeeMutation
+│   ├── salary_insight_queries.ts    one query per insight (overview, by country, by job title, by department)
 │   └── query_client.ts              the one QueryClient, with the default staleTime and retry
 ├── hooks/                           shared business logic hooks, one hook per file
 │   ├── use_global_error_listener.ts window error / unhandledrejection → log + one notification
@@ -412,6 +415,7 @@ web/src/
 │   ├── query_constants.ts           QUERY_STALE_TIME_MS, QUERY_RETRY_COUNT
 │   ├── time_constants.ts            APP_TIMEZONE (IST), APP_LOCALE, APP_CURRENCY
 │   ├── employee_messages.ts         employee UI texts (states, labels, notifications)
+│   ├── salary_insight_messages.ts   insights page texts (section titles, column labels, states)
 │   └── employee_constants.ts        page size, sort fields, column labels (the dropdown lists come from the API, decision 21)
 ├── validations/
 │   ├── employee_form_validation.ts
@@ -424,6 +428,8 @@ web/src/
 │   ├── log_render_error.ts          the boundaries' onError: console.error, no personal data
 │   ├── show_notification.ts         the one place notifications are shown (success and error)
 │   ├── format_currency.ts
+│   ├── format_count.ts              10000 → "10,000"
+│   ├── is_empty_list.ts
 │   └── format_date.ts               ISO date → "15/03/2024" (APP_DATE_FORMAT, also the date inputs' default in theme.ts)
 ├── styles/
 │   ├── global.scss                  only if needed: resets and base element styles (imported once in main.tsx)
@@ -457,7 +463,9 @@ web/src/
     │   ├── components/              components used only by this page: employee_table, sortable_header, employee_filters, employee_form, employee_form_modal, delete_employee_confirm, ...
     │   └── hooks/                   logic used only by this page, one hook per file: use_employee_list, use_search_input, use_employee_form, use_employee_form_modal, use_delete_employee_modal
     └── salary_insights/
-        └── salary_insights_page.tsx
+        ├── salary_insights_page.tsx
+        ├── components/              insight_section (card with skeleton / error / empty state), insight_table, one *_section per insight
+        └── hooks/                   use_insight_country (job-title country ↔ ?country=), use_country_name
 ```
 
 Auth files (`auth_api.ts`, `types/auth.ts`, `auth_queries.ts`, `login_form_validation.ts`, `protected_route.tsx`, `pages/login/`) are created when login is built, as the last feature. Until then, the full-screen loader isn't used.
