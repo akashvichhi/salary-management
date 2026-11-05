@@ -417,3 +417,23 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - Country names come from the employee options endpoint (decision 21), not from a copy in the web app.
   - The per-country payroll column is called "Payroll", so it isn't confused with the "Total payroll" card.
 - **How it was verified:** `npm run check` (125 tests); the red snapshot fails only the new page tests; the endpoint paths and field names checked against `salary_insight_router.py` and `salary_insight_resource.py`.
+
+## 2026-11-05 — Step L1: login API
+
+- **Prompt / instruction:** "start and complete phase 3 together". Before starting I asked three things: the rate-limit store (open question 8), whether the `web/` review checkpoint comes first, and how to update `uv.lock` with no `uv` on this machine. Answers: in memory; Phase 3 first, review afterwards; Akash runs `uv lock`.
+- **What the AI produced:** one red/green pair each, in the plan's order:
+  - passwords and tokens: Argon2 hashing, `token_urlsafe(32)` session IDs, SHA-256 token hashes (`core/security.py`)
+  - login: the `users` and `sessions` tables and their migration, `AuthService.login`, `POST /auth/login` with an `HttpOnly; SameSite=Lax; Path=/` cookie (`Secure` unless `COOKIE_SECURE=false`)
+  - protection: `get_current_user` on one `protected_router` that holds the employee, option and insight routers, plus `GET /auth/me`; expired sessions are deleted when used
+  - logout: `POST /auth/logout` (204) deletes the session and clears the cookie, and also succeeds with no session
+  - the origin check: a pure ASGI middleware that returns 403 for a write whose `Origin` is neither this host nor in `ALLOWED_ORIGINS`
+  - the rate limit: 5 failed logins per email and IP in a sliding 15-minute window, then 429; checked before the password, so a blocked login is refused even with the right one
+  - the seed creates the HR manager from `HR_MANAGER_EMAIL` and `HR_MANAGER_PASSWORD`, and keeps an existing one
+- **What I changed, rejected, or corrected, and why:**
+  - A wrong email still runs an Argon2 check against a dummy hash, so its response time doesn't reveal that the email is unknown.
+  - The existing route tests now use an `authenticated_client` fixture (`tests/conftest.py`). The test settings turn `COOKIE_SECURE` off, because the test client talks plain http and would never send a Secure cookie back.
+  - The same-origin rule compares the host only: behind Render's proxy the app sees http while the browser sends an https `Origin`.
+  - A write with no `Origin` header is allowed: browsers always send it on cross-site writes, so only non-browser clients leave it out, and they can't carry the user's cookie.
+  - Repository methods were added in the step that first uses them, not up front.
+- **How it was verified:** `make check` (209 tests, 100% coverage); each red snapshot fails only its new or changed tests (the reds that import a module or constant not written yet fail at collection).
+

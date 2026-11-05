@@ -140,8 +140,10 @@ api/
 │   │   ├── logging_filters.py          drops query strings (search text) from access logs
 │   │   ├── money.py                    money rules: rounding half-up to the cent
 │   │   ├── security.py                 password hashing (Argon2), session token generation and hashing
+│   │   ├── login_rate_limiter.py       failed logins per email and IP, in memory (decision 23)
 │   │   └── origin_check_middleware.py  CSRF protection: rejects write requests from foreign origins
 │   ├── constants/
+│   │   ├── auth_constants.py           login rate limit
 │   │   └── messages.py                 every user-facing message, in one place
 │   ├── models/                         SQLAlchemy ORM models (tables only, no logic)
 │   │   ├── employee_model.py
@@ -169,6 +171,8 @@ api/
 │   │       └── response_schema.py      DataResponse[T], PaginatedResponse[T], ErrorResponse
 │   └── api/
 │       ├── dependencies.py             wires repositories and services for Depends(), incl. get_current_user
+│       ├── session_cookie.py           sets and clears the session cookie with its attributes
+│       ├── client_ip.py                the caller's IP, for the login rate limit
 │       └── v1/
 │           ├── api_router.py           includes all v1 routers under /api/v1
 │           └── routers/                the "controllers"
@@ -190,7 +194,7 @@ api/
 └── .env.example
 ```
 
-Auth files (`security.py`, `origin_check_middleware.py`, `user_*`, `session_*`, `auth_*`, `login_request.py`) are created when login is built, as the last feature (see Security and configuration).
+The auth files (`security.py`, `login_rate_limiter.py`, `origin_check_middleware.py`, `session_cookie.py`, `user_*`, `session_*`, `auth_*`, `login_request.py`) were built last, after the employee and insights features (see Security and configuration).
 
 ### Naming
 - Modules, functions, and variables: `snake_case`. Classes: `PascalCase`. Constants: `UPPER_SNAKE_CASE`.

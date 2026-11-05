@@ -156,6 +156,13 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** modals on the list page, one form for both add and edit, and no detail page.
 - **Consequences:** the list keeps its URL state (page, filters, sort) and scroll position while editing, and no extra routes, lazy chunks or form skeleton are needed: the edit form is filled from the row, so it never waits on a request. An edit can't be shared as a link, which the requirements don't ask for. Edit sends only the fields that changed (`PATCH`). The form is used by one page only, so it lives in `pages/employee_list/`, not `common/`.
 
+## 23. Login rate limit in memory
+
+- **Context:** failed logins are limited to 5 per email and IP in 15 minutes (decision 10), and the counts have to live somewhere (open question 8).
+- **Options:** a dictionary in the app's memory; a `login_attempts` table in SQLite.
+- **Decision:** in memory (`core/login_rate_limiter.py`), one limiter per app, with a lock because `def` endpoints run in a thread pool. The window slides: each failure counts for 15 minutes. A successful login clears the count.
+- **Consequences:** no table, migration or cleanup job. The counts are lost on restart and aren't shared between processes, which is fine for one container with one worker; more workers or instances would need the table (or Redis) instead. Behind Render's proxy the IP comes from `X-Forwarded-For` only if uvicorn runs with `--proxy-headers`; without it every request shares the proxy's IP and the limit is per email only.
+
 ## Runtime dependencies
 
 Each runtime dependency gets one line here, with its reason, when it is added.

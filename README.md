@@ -31,12 +31,16 @@ Prerequisites: [uv](https://docs.astral.sh/uv/) (it installs Python 3.13 for the
 cd api
 uv sync                                  # install the pinned dependencies
 uv run alembic upgrade head              # create or update the local SQLite database
-make seed                                # add 10,000 sample employees (skipped if any exist)
+make seed                                # add 10,000 sample employees and the HR manager (each skipped if it exists)
 uv run uvicorn app.main:app --reload     # run the API on http://localhost:8000
 make check                               # lint, format, type check, tests with coverage
 ```
 
-Copy `api/.env.example` to `api/.env` to override settings. The web dev server needs it: `ALLOWED_ORIGINS` lets `http://localhost:5173` call the API through CORS.
+Copy `api/.env.example` to `api/.env` to override settings. The web dev server needs it:
+
+- `ALLOWED_ORIGINS` lets `http://localhost:5173` call the API through CORS (and past the origin check).
+- `COOKIE_SECURE=false` lets the session cookie work over plain http.
+- `HR_MANAGER_EMAIL` and `HR_MANAGER_PASSWORD` are the login `make seed` creates. Every API route except login needs it.
 
 **Web** (`web/`), with Node.js 22.22 or newer:
 
