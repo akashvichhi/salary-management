@@ -142,6 +142,13 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** ESLint 9.39.5, TypeScript 6.0.3 and Stylelint 17.16.0; everything else at its newest version. Vite 8 bundles with Rolldown, so the vendor chunks use `codeSplitting.groups` instead of Rollup's `manualChunks`.
 - **Consequences:** every rule in `CLAUDE.md` works, with no forced installs. Upgrade once each plugin's peer range allows it.
 
+## 21. Dropdown lists copied into the web app
+
+- **Context:** the filters and the employee form need the country, department and job title lists (10, 10 and 20 values), which are fixed in `api/app/constants/employee_constants.py` (decision 17).
+- **Options:** copy them into `web/src/constants/employee_constants.ts`; serve them from a new `GET /api/v1/employee-options` endpoint.
+- **Decision:** copy them, with a comment in each file pointing to the other.
+- **Consequences:** no extra request, query or loading state on every filter bar and form. The two copies can drift, but the lists change rarely, and the API still validates every value, so drift shows up as a clear 422 rather than bad data. An endpoint is the fix if the lists ever become editable.
+
 ## Runtime dependencies
 
 Each runtime dependency gets one line here, with its reason, when it is added.
@@ -159,4 +166,5 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `axios` | One HTTP client with interceptors, so case conversion and error normalisation happen in one place |
 | `react-router` | URL-based routing with lazy pages, so refresh, the back button and shared links keep the view |
 | `react-error-boundary` | Error boundaries as components with reset support, so we write no class components (decision 13) |
+| `@tanstack/react-query` | Server-state cache: loading and error states, keeping the previous page while the next loads, and invalidation after edits |
 | `@mantine/notifications` | Toasts in the same design system, for mutation feedback and the global error listener |

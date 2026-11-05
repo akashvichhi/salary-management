@@ -1,4 +1,5 @@
-"""The allowed values for employee fields. The seed data and the UI dropdowns use the same lists."""
+"""The allowed values for employee fields. The seed data uses these lists; the web app keeps a
+copy for its dropdowns in web/src/constants/employee_constants.ts (decision 21), so change both."""
 
 from enum import StrEnum
 

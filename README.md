@@ -36,7 +36,7 @@ uv run uvicorn app.main:app --reload     # run the API on http://localhost:8000
 make check                               # lint, format, type check, tests with coverage
 ```
 
-Copy `api/.env.example` to `api/.env` to override settings.
+Copy `api/.env.example` to `api/.env` to override settings. The web dev server needs it: `ALLOWED_ORIGINS` lets `http://localhost:5173` call the API through CORS.
 
 **Web** (`web/`), with Node.js 22.22 or newer:
 

@@ -190,7 +190,7 @@ Render's free tier has no persistent disk, so the database is recreated, and the
 |---|---|
 | 1 | Create and edit: separate routes or modals on the list page? Does "view" need its own detail page, or is the edit form enough? |
 | 2 | ~~Insights endpoints: one per insight or combined?~~ **Answered:** one endpoint per insight, each an array of objects (the overview an object holding one); see the API outline and decision 19 |
-| 3 | ~~Job title, department and country: fixed lists or free text?~~ **Answered:** fixed lists in `constants/employee_constants.py`, matched ignoring case (decision 17). Where the dropdowns get them is decided with the frontend |
+| 3 | ~~Job title, department and country: fixed lists or free text?~~ **Answered:** fixed lists in `constants/employee_constants.py`, matched ignoring case (decision 17); the web app keeps a copy for its dropdowns (decision 21) |
 | 4 | ~~Sort allow-list?~~ **Answered:** every column shown in the table: `full_name`, `email`, `job_title`, `department`, `country`, `salary`, `hire_date`; ties broken by `id` |
 | 5 | Search by name or email uses a substring match, which can't use an index. Is a scan of 10,000 rows fast enough? Measure in `docs/performance.md` |
 | 6 | The `country` index duplicates the leading column of `(country, job_title)`. Keep both, or drop it if `EXPLAIN QUERY PLAN` shows the composite covers it? |

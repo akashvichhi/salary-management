@@ -396,7 +396,8 @@ web/src/
 │   └── employee.ts                  IEmployee, IEmployeeFormValues, IEmployeeListParams
 ├── queries/                         React Query hooks, ONE file per resource (all its queries + mutations)
 │   ├── auth_queries.ts              useCurrentUserQuery, useLoginMutation, useLogoutMutation
-│   └── employee_queries.ts          useEmployeesQuery, useEmployeeQuery, useCreate/Update/DeleteEmployeeMutation
+│   ├── employee_queries.ts          useEmployeesQuery, useEmployeeQuery, useCreate/Update/DeleteEmployeeMutation
+│   └── query_client.ts              the one QueryClient, with the default staleTime and retry
 ├── hooks/                           shared business logic hooks, one hook per file
 │   ├── use_debounced_value.ts
 │   ├── use_global_error_listener.ts window error / unhandledrejection → log + one notification
@@ -407,7 +408,10 @@ web/src/
 │   ├── error_messages.ts            every user-facing error and fallback text
 │   ├── error_handling_constants.ts  reload guard, notification interval, chunk-error and noise patterns
 │   ├── navigation_constants.ts      page titles, shared by the navigation and the page headers
-│   └── employee_constants.ts
+│   ├── query_constants.ts           QUERY_STALE_TIME_MS, QUERY_RETRY_COUNT
+│   ├── time_constants.ts            APP_TIMEZONE (IST), APP_LOCALE, APP_CURRENCY
+│   ├── employee_messages.ts         employee UI texts (states, labels, notifications)
+│   └── employee_constants.ts        a copy of the API's fixed lists (decision 21), page size, column labels
 ├── validations/
 │   ├── employee_form_validation.ts
 │   └── login_form_validation.ts
@@ -417,7 +421,8 @@ web/src/
 │   ├── reload_for_new_version.ts    the ONLY place that reloads for a new version, with the loop guard
 │   ├── reload_page.ts               the one wrapper around window.location.reload (tests replace it)
 │   ├── log_render_error.ts          the boundaries' onError: console.error, no personal data
-│   └── format_currency.ts
+│   ├── format_currency.ts
+│   └── format_date.ts               ISO date → "Mar 15, 2024" in IST
 ├── styles/
 │   ├── global.scss                  only if needed: resets and base element styles (imported once in main.tsx)
 │   ├── theme.ts                     Mantine theme: same spacing / font / breakpoint scale as the tokens
@@ -439,7 +444,7 @@ web/src/
 │   ├── layout/                      page_header.tsx
 │   ├── feedback/                    empty_state.tsx, error_state.tsx, error_fallback.tsx, root_error_boundary.tsx, root_error_fallback.tsx, full_screen_loader.tsx
 │   └── skeletons/                   table_skeleton.tsx, card_skeleton.tsx, form_skeleton.tsx, page_skeleton.tsx
-├── test_utils/                      test-only helpers, e.g. render_with_mantine.tsx
+├── test_utils/                      test-only helpers: render_with_providers.tsx, render_with_mantine.tsx, employee_factory.ts
 ├── common/                          feature components shared by 2+ pages/routes
 │   └── employee_form/               e.g. employee_form.tsx used by the create and edit routes
 └── pages/                           one folder per route

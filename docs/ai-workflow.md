@@ -286,3 +286,19 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - The app name moved from the page heading into the shell header (hidden on phones so the navigation fits); each page's `h1` is now its own title.
   - The AI's first listener test used a spy type that `tsc` rejected; it was fixed in the red commit, so that commit still type-checks.
 - **How it was verified:** `npm run check` (lint, style lint, type check, 51 tests) and `npm run build`. Each lazy page is its own chunk (about 0.2 KB), and no path string is hardcoded outside `route_paths.ts` (checked with grep).
+
+## 2026-11-04 — Step W4: employee list
+
+- **Prompt / instruction:** "Start W4 to W7". Before starting, the AI asked the two open questions these steps depend on: create and edit as **modals with no view page** (question 1), and the dropdown lists **copied into the web constants** (question 3, decision 21).
+- **What the AI produced:**
+  - an API pair for CORS: `ALLOWED_ORIGINS` in `config.py` (empty by default) turns on `CORSMiddleware` with credentials, for the Vite dev server only
+  - a chore commit adding React Query
+  - the list: `getEmployees` → `useEmployeesQuery` (keeping the previous page as placeholder data) → the page, with a table skeleton on first load, an error state with retry, an empty state, the total count, a small "updating" indicator while the next page loads, and Mantine pagination
+  - `format_currency.ts` (formats the decimal string directly, so it is never parsed into a float) and `format_date.ts` (in IST)
+  - `ErrorState` and `EmptyState`; the boundaries' `ErrorFallback` now reuses `ErrorState` instead of repeating it
+- **What I changed, rejected, or corrected, and why:**
+  - **409 has no field:** a taken email returns only `{ "error": ... }`, so the form couldn't put it on the email input without special-casing the status. The AI planned an API pair for W6 that adds `details` with `field: "email"`, so the form's generic handling covers it.
+  - Page state is a `useState` for now; W5 moves it to the URL, as the plan orders.
+  - A smoke run against the real API failed with a 500. The cause was the AI's own mistake: it passed a POSIX path as the SQLite URL on Windows. Rerun with a Windows path, the preflight and the list both returned `access-control-allow-origin: http://localhost:5173`.
+  - A shell heredoc with many files failed to parse; the AI wrote the remaining files one at a time.
+- **How it was verified:** `make check` (151 tests, 100% coverage); `npm run check` (63 tests) and `npm run build`; each red snapshot fails before its green; CORS checked with curl against uvicorn on the 10,000-employee database.
