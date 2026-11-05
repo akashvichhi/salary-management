@@ -1,20 +1,26 @@
 from decimal import Decimal
 
 import pytest
+from pydantic import SecretStr
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.constants.employee_constants import Country, JobTitle
 from app.core.config import Settings
 from app.core.database import create_database_engine, create_session_factory
+from app.core.security import verify_password
 from app.models.employee_model import EmployeeModel
+from app.models.user_model import UserModel
 from app.schemas.requests.employee_request import EmployeeCreateRequest
 from scripts import seed
 from scripts.seed import build_employees, run_seed, seed_employees, unique_email
 from scripts.seed_constants import COUNTRY_PROFILES, JOB_PROFILES
-from tests.factories import build_employee
+from tests.factories import HR_MANAGER_EMAIL, HR_MANAGER_PASSWORD, build_employee, build_user
 
 SMALL_SEED_COUNT = 300
+HR_MANAGER_NOT_CONFIGURED_LINE = (
+    "HR manager not created: set HR_MANAGER_EMAIL and HR_MANAGER_PASSWORD"
+)
 TEST_RANDOM_SEED = 7
 
 
@@ -106,6 +112,67 @@ def test_main_reports_only_counts_and_time(
     seed.main()
     seed.main()
 
-    first_run, second_run = capsys.readouterr().out.splitlines()
-    assert first_run.startswith(f"Seeded {SMALL_SEED_COUNT} employees in ")
-    assert second_run == "Employees already exist; seed skipped"
+    first_employees, first_manager, second_employees, second_manager = (
+        capsys.readouterr().out.splitlines()
+    )
+    assert first_employees.startswith(f"Seeded {SMALL_SEED_COUNT} employees in ")
+    assert second_employees == "Employees already exist; seed skipped"
+    assert first_manager == second_manager == HR_MANAGER_NOT_CONFIGURED_LINE
+
+
+def users(session: Session) -> list[UserModel]:
+    return list(session.scalars(select(UserModel)))
+
+
+def with_hr_manager(settings: Settings, email: str | None, password: str | None) -> Settings:
+    secret = SecretStr(password) if password is not None else None
+    return settings.model_copy(update={"hr_manager_email": email, "hr_manager_password": secret})
+
+
+def test_seed_creates_the_hr_manager_with_a_hashed_password(session: Session) -> None:
+    outcome = seed.seed_hr_manager(session, " HR@Acme.com ", HR_MANAGER_PASSWORD)
+
+    assert outcome is seed.HrManagerSeedOutcome.CREATED
+    [user] = users(session)
+    assert user.email == HR_MANAGER_EMAIL
+    assert user.password_hash != HR_MANAGER_PASSWORD
+    assert verify_password(user.password_hash, HR_MANAGER_PASSWORD)
+
+
+def test_seed_keeps_an_existing_hr_manager_and_their_password(session: Session) -> None:
+    session.add(build_user())
+    session.commit()
+
+    outcome = seed.seed_hr_manager(session, HR_MANAGER_EMAIL, "a new password")
+
+    assert outcome is seed.HrManagerSeedOutcome.ALREADY_EXISTS
+    [user] = users(session)
+    assert verify_password(user.password_hash, HR_MANAGER_PASSWORD)
+
+
+@pytest.mark.parametrize(
+    ("email", "password"), [(None, None), (HR_MANAGER_EMAIL, None), (None, HR_MANAGER_PASSWORD)]
+)
+def test_the_hr_manager_is_not_created_without_both_credentials(
+    settings: Settings, email: str | None, password: str | None
+) -> None:
+    outcome = seed.run_hr_manager_seed(with_hr_manager(settings, email, password))
+
+    assert outcome is seed.HrManagerSeedOutcome.NOT_CONFIGURED
+
+
+def test_main_creates_the_hr_manager_from_the_environment_without_printing_it(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    configured = with_hr_manager(settings, HR_MANAGER_EMAIL, HR_MANAGER_PASSWORD)
+    monkeypatch.setattr(seed, "get_settings", lambda: configured)
+    monkeypatch.setattr(seed, "SEED_EMPLOYEE_COUNT", SMALL_SEED_COUNT)
+
+    seed.main()
+    seed.main()
+
+    output = capsys.readouterr().out
+    assert output.splitlines()[1] == "HR manager created"
+    assert output.splitlines()[3] == "HR manager already exists; seed skipped"
+    assert HR_MANAGER_EMAIL not in output
+    assert HR_MANAGER_PASSWORD not in output
