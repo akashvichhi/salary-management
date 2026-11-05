@@ -1,0 +1,18 @@
+export const OVERVIEW_TITLE: string = 'Payroll overview'
+export const BY_COUNTRY_TITLE: string = 'Pay by country'
+export const BY_JOB_TITLE_TITLE: string = 'Pay by job title'
+export const BY_DEPARTMENT_TITLE: string = 'Pay by department'
+
+export const HEADCOUNT_LABEL: string = 'Headcount'
+export const TOTAL_PAYROLL_LABEL: string = 'Total payroll'
+export const PAYROLL_LABEL: string = 'Payroll'
+export const MIN_SALARY_LABEL: string = 'Lowest'
+export const MAX_SALARY_LABEL: string = 'Highest'
+export const AVERAGE_SALARY_LABEL: string = 'Average'
+export const MEDIAN_SALARY_LABEL: string = 'Median'
+export const COUNTRY_PICKER_LABEL: string = 'Country'
+
+export const INSIGHT_LOADING_LABEL: string = 'Loading this section'
+export const INSIGHT_LOAD_ERROR_TITLE: string = 'This section could not be loaded'
+export const INSIGHTS_EMPTY_TITLE: string = 'No employees yet'
+export const INSIGHTS_EMPTY_MESSAGE: string = 'Pay figures appear here once employees are added.'
