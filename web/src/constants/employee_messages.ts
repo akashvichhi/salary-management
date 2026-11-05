@@ -14,6 +14,7 @@ export const SEARCH_PLACEHOLDER: string = 'Name or email'
 export const EMPLOYEES_FILTERED_EMPTY_TITLE: string = 'No employees match these filters'
 export const EMPLOYEES_FILTERED_EMPTY_MESSAGE: string = 'Try a different search, or clear the filters to see everyone.'
 export const CLEAR_FILTERS_LABEL: string = 'Clear filters'
+export const RESET_SORT_LABEL: string = 'Reset sort'
 
 export const ADD_EMPLOYEE_LABEL: string = 'Add employee'
 export const EDIT_EMPLOYEE_TITLE: string = 'Edit employee'

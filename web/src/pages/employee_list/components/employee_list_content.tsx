@@ -14,6 +14,7 @@ import {
   EMPLOYEES_LOAD_ERROR_TITLE,
   EMPLOYEES_LOADING_LABEL,
   EMPLOYEES_UPDATING_LABEL,
+  RESET_SORT_LABEL,
   ROWS_PER_PAGE_LABEL,
 } from '@src/constants/employee_messages'
 import { TRY_AGAIN_LABEL } from '@src/constants/error_messages'
@@ -47,7 +48,7 @@ export function EmployeeListContent({
   onEdit,
   onDelete,
 }: IEmployeeListContentProps): React.JSX.Element {
-  const { page, perPage, sort, hasActiveFilters, setPage, setPerPage, setSort, clearFilters } = listState
+  const { page, perPage, sort, isSorted, hasActiveFilters, setPage, setPerPage, setSort, clearSort, clearFilters } = listState
   const { data, error, isPending, isPlaceholderData, refetch } = employeesQuery
 
   const handleRetry: () => void = useCallback((): void => {
@@ -99,11 +100,15 @@ export function EmployeeListContent({
             <VisuallyHidden>{EMPLOYEES_UPDATING_LABEL}</VisuallyHidden>
           </Group>
         )}
+        {isSorted && (
+          <Button size="compact-sm" variant="subtle" onClick={clearSort}>{RESET_SORT_LABEL}</Button>
+        )}
       </Group>
       <EmployeeTable
         countryNameByCode={countryNameByCode}
         employees={data.data}
         sort={sort}
+        onClearSort={clearSort}
         onDelete={onDelete}
         onEdit={onEdit}
         onSort={setSort}

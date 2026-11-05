@@ -11,6 +11,7 @@ interface ISortableHeaderProps {
   currentSort: string
   alignRight?: boolean
   onSort:      (sort: string) => void
+  onClearSort: () => void
 }
 
 const DESCENDING_PREFIX: string = '-'
@@ -28,7 +29,8 @@ const SORT_ICONS: Readonly<Record<TAriaSort, React.JSX.Element>> = {
   none:       <IconArrowsSort aria-hidden size={ICON_SIZE} />,
 }
 
-// A column header that sorts by its field: the first click sorts ascending, the next one reverses it.
+// A column header that sorts by its field: the first click sorts ascending, the second reverses it,
+// and the third clears the sort, back to the list's default.
 // The direction is announced through aria-sort and shown by an icon, never by colour alone.
 export const SortableHeader: React.NamedExoticComponent<ISortableHeaderProps> = memo(function SortableHeader({
   label,
@@ -36,12 +38,14 @@ export const SortableHeader: React.NamedExoticComponent<ISortableHeaderProps> = 
   currentSort,
   alignRight = false,
   onSort,
+  onClearSort,
 }: ISortableHeaderProps): React.JSX.Element {
   const ariaSort: TAriaSort = ariaSortFor(field, currentSort)
 
   const handleClick: () => void = useCallback((): void => {
-    onSort(ariaSort === 'ascending' ? `${DESCENDING_PREFIX}${field}` : field)
-  }, [ariaSort, field, onSort])
+    if (ariaSort === 'descending') onClearSort()
+    else onSort(ariaSort === 'ascending' ? `${DESCENDING_PREFIX}${field}` : field)
+  }, [ariaSort, field, onSort, onClearSort])
 
   return (
     <Table.Th aria-sort={ariaSort} ta={alignRight ? 'right' : undefined}>

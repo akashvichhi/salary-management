@@ -23,10 +23,13 @@ export interface IListUrlState<TFilterKey extends string> {
   sort:             string
   filters:          Readonly<Record<TFilterKey, string | null>>
   hasActiveFilters: boolean
+  // True while the list is sorted by anything other than its default.
+  isSorted:         boolean
   setPage:          (page: number, options?: INavigationOptions) => void
   setPerPage:       (perPage: number) => void
   setSearch:        (search: string) => void
   setSort:          (sort: string) => void
+  clearSort:        () => void
   setFilter:        (key: TFilterKey, value: string | null) => void
   clearFilters:     () => void
 }
@@ -114,6 +117,10 @@ export function useListUrlState<TFilterKey extends string>(
     update({ [SORT_PARAM]: sort === config.defaultSort ? null : sort }, true)
   }, [update, config.defaultSort])
 
+  const clearSort: () => void = useCallback((): void => {
+    setSort(config.defaultSort)
+  }, [setSort, config.defaultSort])
+
   const setFilter: (key: TFilterKey, value: string | null) => void = useCallback(
     (key: TFilterKey, value: string | null): void => {
       update({ [toSnakeCase(key)]: value }, true)
@@ -132,20 +139,23 @@ export function useListUrlState<TFilterKey extends string>(
   return useMemo<IListUrlState<TFilterKey>>((): IListUrlState<TFilterKey> => {
     const search: string = searchParams.get(SEARCH_PARAM) ?? ''
     const filters: Record<TFilterKey, string | null> = parseFilters(searchParams, config.filters)
+    const sort: string = parseSort(searchParams.get(SORT_PARAM), config.sortFields, config.defaultSort)
 
     return {
       page:             parsePage(searchParams.get(PAGE_PARAM)),
       perPage:          parsePerPage(searchParams.get(PER_PAGE_PARAM), config.perPageOptions, config.defaultPerPage),
       search,
-      sort:             parseSort(searchParams.get(SORT_PARAM), config.sortFields, config.defaultSort),
+      sort,
       filters,
       hasActiveFilters: search !== '' || Object.values<string | null>(filters).some(Boolean),
+      isSorted:         sort !== config.defaultSort,
       setPage,
       setPerPage,
       setSearch,
       setSort,
+      clearSort,
       setFilter,
       clearFilters,
     }
-  }, [searchParams, config, setPage, setPerPage, setSearch, setSort, setFilter, clearFilters])
+  }, [searchParams, config, setPage, setPerPage, setSearch, setSort, clearSort, setFilter, clearFilters])
 }

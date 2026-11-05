@@ -15,6 +15,7 @@ interface IEmployeeTableProps {
   countryNameByCode: ReadonlyMap<string, string>
   sort:              string
   onSort:            (sort: string) => void
+  onClearSort:       () => void
   onEdit:            (employee: IEmployee) => void
   onDelete:          (employee: IEmployee) => void
 }
@@ -72,6 +73,7 @@ export function EmployeeTable({
   countryNameByCode,
   sort,
   onSort,
+  onClearSort,
   onEdit,
   onDelete,
 }: IEmployeeTableProps): React.JSX.Element {
@@ -87,6 +89,7 @@ export function EmployeeTable({
                 currentSort={sort}
                 field={EMPLOYEE_SORT_FIELDS[column]}
                 label={EMPLOYEE_COLUMN_LABELS[column]}
+                onClearSort={onClearSort}
                 onSort={onSort}
               />
             ))}
