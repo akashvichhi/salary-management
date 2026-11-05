@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router'
 import { useForm } from '@mantine/form'
 import type { UseFormReturnType } from '@mantine/form'
 
+import { DEMO_LOGIN_EMAIL, DEMO_LOGIN_PASSWORD } from '@src/config/env'
 import { useLoginMutation } from '@src/queries/auth_queries'
 import type { ILoginFormValues } from '@src/types/auth'
 import { pathAfterLogin } from '@src/utils/login_redirect'
@@ -17,7 +18,8 @@ interface ILoginFormState {
   handleSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
 }
 
-const EMPTY_CREDENTIALS: ILoginFormValues = { email: '', password: '' }
+// Empty unless the demo login is configured (config/env.ts).
+const INITIAL_CREDENTIALS: ILoginFormValues = { email: DEMO_LOGIN_EMAIL, password: DEMO_LOGIN_PASSWORD }
 
 export function useLoginForm(): ILoginFormState {
   const navigate: ReturnType<typeof useNavigate> = useNavigate()
@@ -26,7 +28,7 @@ export function useLoginForm(): ILoginFormState {
 
   const form: UseFormReturnType<ILoginFormValues> = useForm<ILoginFormValues>({
     mode:          'controlled',
-    initialValues: EMPTY_CREDENTIALS,
+    initialValues: INITIAL_CREDENTIALS,
     validate:      loginFormValidation,
   })
 

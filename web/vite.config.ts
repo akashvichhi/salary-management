@@ -38,5 +38,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles:  ['./vitest.setup.ts'],
+    // Vitest reads web/.env too: blanking the demo login keeps every test's result the same on any machine.
+    env:         { VITE_DEMO_LOGIN_EMAIL: '', VITE_DEMO_LOGIN_PASSWORD: '' },
   },
 })
