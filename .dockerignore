@@ -1,0 +1,18 @@
+# Keep the build context small, and keep secrets and local data out of the image.
+.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+**/.coverage
+**/htmlcov
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+**/*.db-*
+web/dist
+docs
+.vscode
