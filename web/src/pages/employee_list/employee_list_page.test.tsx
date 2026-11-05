@@ -10,6 +10,7 @@ import {
   EMPLOYEES_LOAD_ERROR_TITLE,
   EMPLOYEES_LOADING_LABEL,
   EMPLOYEES_UPDATING_LABEL,
+  RESET_SORT_LABEL,
   ROWS_PER_PAGE_LABEL,
   SEARCH_LABEL,
 } from '@src/constants/employee_messages'
@@ -235,5 +236,28 @@ describe('EmployeeListPage', (): void => {
     expect(await screen.findByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.hireDate }))
       .toHaveAttribute('aria-sort', 'descending')
     expect(screen.getByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.fullName })).toHaveAttribute('aria-sort', 'none')
+  })
+
+  it('clears the sort on a third click, back to name A to Z', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?sort=-salary' })
+    await screen.findByText('Asha Rao')
+
+    fireEvent.click(screen.getByRole('button', { name: EMPLOYEE_COLUMN_LABELS.salary }))
+
+    expect(getEmployeesMock).toHaveBeenLastCalledWith(expect.objectContaining({ sort: 'full_name' }))
+    expect(screen.getByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.salary })).toHaveAttribute('aria-sort', 'none')
+    expect(screen.getByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.fullName })).toHaveAttribute('aria-sort', 'ascending')
+  })
+
+  it('shows a reset sort button only while a sort is applied, and it goes back to the default', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()], { totalCount: 25, totalPages: 2, currentPage: 2 }))
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?page=2&sort=-hire_date' })
+    await screen.findByText('Asha Rao')
+
+    fireEvent.click(screen.getByRole('button', { name: RESET_SORT_LABEL }))
+
+    expect(getEmployeesMock).toHaveBeenLastCalledWith(expect.objectContaining({ sort: 'full_name', page: 1 }))
+    expect(screen.queryByRole('button', { name: RESET_SORT_LABEL })).not.toBeInTheDocument()
   })
 })
