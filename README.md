@@ -2,6 +2,8 @@
 
 A web app where an HR manager manages salary data for 10,000 employees across countries, and answers questions about how the organisation pays people. Built for the Incubyte engineering assessment.
 
+**Live demo:** https://salary-management-k859.onrender.com. The login form comes filled in with the demo account (`hr@example.com` / `Hr@2026`): click **Log in**. It runs on Render's free tier, so the first visit after 15 idle minutes takes about a minute to wake up, and the data resets to the seed on every restart.
+
 ## What it does
 
 - **Employee records:** add, view, edit and delete employees.
