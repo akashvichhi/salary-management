@@ -198,4 +198,40 @@ describe('EmployeeListPage', (): void => {
     )
     expect(screen.getByRole('searchbox', { name: SEARCH_LABEL })).toHaveValue('')
   })
+
+  it('marks the table as sorted by name, ascending, by default', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))
+
+    renderWithProviders(<EmployeeListPage />)
+
+    expect(await screen.findByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.fullName }))
+      .toHaveAttribute('aria-sort', 'ascending')
+    expect(screen.getByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.salary })).toHaveAttribute('aria-sort', 'none')
+  })
+
+  it('sorts by a column on click, then reverses it on a second click, from page 1', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()], { totalCount: 25, totalPages: 2, currentPage: 2 }))
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?page=2' })
+    await screen.findByText('Asha Rao')
+
+    fireEvent.click(screen.getByRole('button', { name: EMPLOYEE_COLUMN_LABELS.salary }))
+
+    expect(getEmployeesMock).toHaveBeenLastCalledWith(expect.objectContaining({ sort: 'salary', page: 1 }))
+    expect(screen.getByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.salary })).toHaveAttribute('aria-sort', 'ascending')
+
+    fireEvent.click(screen.getByRole('button', { name: EMPLOYEE_COLUMN_LABELS.salary }))
+
+    expect(getEmployeesMock).toHaveBeenLastCalledWith(expect.objectContaining({ sort: '-salary' }))
+    expect(screen.getByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.salary })).toHaveAttribute('aria-sort', 'descending')
+  })
+
+  it('shows a descending sort from the URL on its column', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))
+
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?sort=-hire_date' })
+
+    expect(await screen.findByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.hireDate }))
+      .toHaveAttribute('aria-sort', 'descending')
+    expect(screen.getByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.fullName })).toHaveAttribute('aria-sort', 'none')
+  })
 })
