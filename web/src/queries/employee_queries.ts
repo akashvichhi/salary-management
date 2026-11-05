@@ -1,11 +1,20 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient, UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 
-import { createEmployee, deleteEmployee, getEmployees, updateEmployee } from '@src/api/employee_api'
+import { createEmployee, deleteEmployee, getEmployeeOptions, getEmployees, updateEmployee } from '@src/api/employee_api'
 import { EMPLOYEE_CREATED_MESSAGE, EMPLOYEE_DELETED_MESSAGE, EMPLOYEE_UPDATED_MESSAGE } from '@src/constants/employee_messages'
 import { employeeKeys } from '@src/constants/query_keys'
 import type { IApiError } from '@src/types/api_response'
-import type { IEmployee, IEmployeeCreatePayload, IEmployeeListParams, TEmployeeUpdatePayload } from '@src/types/employee'
+import type {
+  ICountryOption,
+  IEmployee,
+  IEmployeeCreatePayload,
+  IEmployeeListParams,
+  IEmployeeOptions,
+  IEmployeeSelectOptions,
+  ISelectOption,
+  TEmployeeUpdatePayload,
+} from '@src/types/employee'
 import type { IPaginatedResponse } from '@src/types/pagination'
 import { showErrorNotification, showSuccessNotification } from '@src/utils/show_notification'
 
@@ -22,6 +31,27 @@ export function useEmployeesQuery(
     queryFn:         (): Promise<IPaginatedResponse<IEmployee>> => getEmployees(params),
     // The table keeps the current rows while the next page loads, instead of flashing empty.
     placeholderData: keepPreviousData,
+  })
+}
+
+function toSelectOptions(options: IEmployeeOptions): IEmployeeSelectOptions {
+  return {
+    countries:         options.countries.map(({ code, name }: ICountryOption): ISelectOption => ({ value: code, label: name })),
+    departments:       options.departments,
+    jobTitles:         options.jobTitles,
+    countryCodes:      options.countries.map(({ code }: ICountryOption): string => code),
+    countryNameByCode: new Map(options.countries.map(({ code, name }: ICountryOption): [string, string] => [code, name])),
+  }
+}
+
+// The lists are fixed in the API's code, so they only change with a deploy, which reloads the app:
+// they are loaded once per visit and never refetched.
+export function useEmployeeOptionsQuery(): UseQueryResult<IEmployeeSelectOptions, IApiError> {
+  return useQuery<IEmployeeOptions, IApiError, IEmployeeSelectOptions>({
+    queryKey:  employeeKeys.options(),
+    queryFn:   (): Promise<IEmployeeOptions> => getEmployeeOptions(),
+    select:    toSelectOptions,
+    staleTime: Infinity,
   })
 }
 

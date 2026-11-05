@@ -50,3 +50,29 @@ export interface IEmployeeFormValues {
   salary:     string
   hireDate:   string
 }
+
+// GET /employee-options: the allowed values of the fields picked from a list.
+export interface ICountryOption {
+  code: string
+  name: string
+}
+
+export interface IEmployeeOptions {
+  countries:   ICountryOption[]
+  departments: string[]
+  jobTitles:   string[]
+}
+
+export interface ISelectOption {
+  value: string
+  label: string
+}
+
+// The same lists, shaped for the dropdowns and the table.
+export interface IEmployeeSelectOptions {
+  countries:         ISelectOption[]
+  departments:       string[]
+  jobTitles:         string[]
+  countryCodes:      string[]
+  countryNameByCode: ReadonlyMap<string, string>
+}

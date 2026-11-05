@@ -3,19 +3,16 @@ import { useEffect, useMemo } from 'react'
 import type { UseQueryResult } from '@tanstack/react-query'
 
 import {
-  COUNTRY_CODES,
   DEFAULT_EMPLOYEE_SORT,
   DEFAULT_PER_PAGE,
-  DEPARTMENTS,
   EMPLOYEE_SORT_FIELDS,
-  JOB_TITLES,
   PER_PAGE_OPTIONS,
 } from '@src/constants/employee_constants'
 import { useListUrlState } from '@src/hooks/use_list_url_state'
 import type { IListUrlConfig, IListUrlState } from '@src/hooks/use_list_url_state'
 import { useEmployeesQuery } from '@src/queries/employee_queries'
 import type { IApiError } from '@src/types/api_response'
-import type { IEmployee, IEmployeeListParams, TEmployeeFilterKey } from '@src/types/employee'
+import type { IEmployee, IEmployeeListParams, IEmployeeSelectOptions, TEmployeeFilterKey } from '@src/types/employee'
 import type { IPaginatedResponse } from '@src/types/pagination'
 
 interface IEmployeeList {
@@ -23,20 +20,26 @@ interface IEmployeeList {
   employeesQuery: UseQueryResult<IPaginatedResponse<IEmployee>, IApiError>
 }
 
-const EMPLOYEE_LIST_URL_CONFIG: IListUrlConfig<TEmployeeFilterKey> = {
-  filters: {
-    country:    COUNTRY_CODES,
-    jobTitle:   JOB_TITLES,
-    department: DEPARTMENTS,
-  },
-  sortFields:     Object.values(EMPLOYEE_SORT_FIELDS),
-  defaultSort:    DEFAULT_EMPLOYEE_SORT,
-  perPageOptions: PER_PAGE_OPTIONS,
-  defaultPerPage: DEFAULT_PER_PAGE,
-}
+const EMPLOYEE_SORT_FIELD_VALUES: string[] = Object.values(EMPLOYEE_SORT_FIELDS)
 
-export function useEmployeeList(): IEmployeeList {
-  const listState: IListUrlState<TEmployeeFilterKey> = useListUrlState(EMPLOYEE_LIST_URL_CONFIG)
+// A filter value from the URL is kept only when the API lists it, so an old link can't send a
+// value the API would reject.
+export function useEmployeeList(options: IEmployeeSelectOptions): IEmployeeList {
+  const urlConfig: IListUrlConfig<TEmployeeFilterKey> = useMemo<IListUrlConfig<TEmployeeFilterKey>>(
+    (): IListUrlConfig<TEmployeeFilterKey> => ({
+      filters: {
+        country:    options.countryCodes,
+        jobTitle:   options.jobTitles,
+        department: options.departments,
+      },
+      sortFields:     EMPLOYEE_SORT_FIELD_VALUES,
+      defaultSort:    DEFAULT_EMPLOYEE_SORT,
+      perPageOptions: PER_PAGE_OPTIONS,
+      defaultPerPage: DEFAULT_PER_PAGE,
+    }),
+    [options],
+  )
+  const listState: IListUrlState<TEmployeeFilterKey> = useListUrlState(urlConfig)
   const { page, perPage, search, sort, filters, setPage } = listState
 
   const params: IEmployeeListParams = useMemo<IEmployeeListParams>((): IEmployeeListParams => ({

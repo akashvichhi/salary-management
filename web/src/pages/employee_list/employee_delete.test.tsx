@@ -3,7 +3,7 @@ import { notifications } from '@mantine/notifications'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { deleteEmployee, getEmployees } from '@src/api/employee_api'
+import { deleteEmployee, getEmployeeOptions, getEmployees } from '@src/api/employee_api'
 import {
   CANCEL_LABEL,
   DELETE_EMPLOYEE_TITLE,
@@ -14,6 +14,7 @@ import {
 } from '@src/constants/employee_messages'
 import EmployeeListPage from '@src/pages/employee_list/employee_list_page'
 import { buildEmployee, buildPage } from '@src/test_utils/employee_factory'
+import { buildEmployeeOptions } from '@src/test_utils/employee_options_factory'
 import { renderWithProviders } from '@src/test_utils/render_with_providers'
 
 vi.mock('@src/api/employee_api')
@@ -37,6 +38,7 @@ function confirmButton(dialog: HTMLElement): HTMLElement {
 
 beforeEach((): void => {
   vi.resetAllMocks()
+  vi.mocked(getEmployeeOptions).mockResolvedValue(buildEmployeeOptions())
   modals.closeAll()
   notifications.clean()
   getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))

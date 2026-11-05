@@ -1,21 +1,21 @@
 import { Button, Group, Select, SimpleGrid, Stack, TextInput } from '@mantine/core'
-import type { ComboboxData } from '@mantine/core'
 
-import { COUNTRY_OPTIONS, DEPARTMENTS, EMPLOYEE_COLUMN_LABELS, JOB_TITLES } from '@src/constants/employee_constants'
+import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
 import { CANCEL_LABEL, SAVE_EMPLOYEE_LABEL } from '@src/constants/employee_messages'
 import { useEmployeeForm } from '@src/pages/employee_list/hooks/use_employee_form'
-import type { IEmployee } from '@src/types/employee'
+import type { IEmployee, IEmployeeSelectOptions } from '@src/types/employee'
 
 interface IEmployeeFormProps {
   // null to add an employee.
   employee: IEmployee | null
+  options:  IEmployeeSelectOptions
   onDone:   () => void
 }
 
 const CURRENCY_SYMBOL: string = '$'
 const FORM_COLUMNS: { base: number, sm: number } = { base: 1, sm: 2 }
 
-export function EmployeeForm({ employee, onDone }: IEmployeeFormProps): React.JSX.Element {
+export function EmployeeForm({ employee, options, onDone }: IEmployeeFormProps): React.JSX.Element {
   const { form, isSaving, handleSubmit } = useEmployeeForm(employee, onDone)
 
   return (
@@ -27,21 +27,21 @@ export function EmployeeForm({ employee, onDone }: IEmployeeFormProps): React.JS
           <Select
             searchable
             withAsterisk
-            data={JOB_TITLES as ComboboxData}
+            data={options.jobTitles}
             label={EMPLOYEE_COLUMN_LABELS.jobTitle}
             {...form.getInputProps('jobTitle')}
           />
           <Select
             searchable
             withAsterisk
-            data={DEPARTMENTS as ComboboxData}
+            data={options.departments}
             label={EMPLOYEE_COLUMN_LABELS.department}
             {...form.getInputProps('department')}
           />
           <Select
             searchable
             withAsterisk
-            data={COUNTRY_OPTIONS as ComboboxData}
+            data={options.countries}
             label={EMPLOYEE_COLUMN_LABELS.country}
             {...form.getInputProps('country')}
           />

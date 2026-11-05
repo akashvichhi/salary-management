@@ -1,12 +1,23 @@
 import { apiClient } from '@src/api/api_client'
 import { API_ENDPOINTS } from '@src/constants/api_endpoints'
 import type { IApiResponse } from '@src/types/api_response'
-import type { IEmployee, IEmployeeCreatePayload, IEmployeeListParams, TEmployeeUpdatePayload } from '@src/types/employee'
+import type {
+  IEmployee,
+  IEmployeeCreatePayload,
+  IEmployeeListParams,
+  IEmployeeOptions,
+  TEmployeeUpdatePayload,
+} from '@src/types/employee'
 import type { IPaginatedResponse } from '@src/types/pagination'
 
 export async function getEmployees(params: IEmployeeListParams): Promise<IPaginatedResponse<IEmployee>> {
   const { data } = await apiClient.get<IPaginatedResponse<IEmployee>>(API_ENDPOINTS.employees, { params })
   return data
+}
+
+export async function getEmployeeOptions(): Promise<IEmployeeOptions> {
+  const { data } = await apiClient.get<IApiResponse<IEmployeeOptions>>(API_ENDPOINTS.employeeOptions)
+  return data.data
 }
 
 export async function createEmployee(payload: IEmployeeCreatePayload): Promise<IEmployee> {

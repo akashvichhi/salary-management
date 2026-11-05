@@ -2,7 +2,7 @@ import { notifications } from '@mantine/notifications'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createEmployee, getEmployees, updateEmployee } from '@src/api/employee_api'
+import { createEmployee, getEmployeeOptions, getEmployees, updateEmployee } from '@src/api/employee_api'
 import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
 import {
   ADD_EMPLOYEE_LABEL,
@@ -21,6 +21,7 @@ import {
 } from '@src/constants/employee_messages'
 import EmployeeListPage from '@src/pages/employee_list/employee_list_page'
 import { buildEmployee, buildPage } from '@src/test_utils/employee_factory'
+import { buildEmployeeOptions } from '@src/test_utils/employee_options_factory'
 import { renderWithProviders } from '@src/test_utils/render_with_providers'
 import type { IEmployee, IEmployeeCreatePayload } from '@src/types/employee'
 
@@ -87,6 +88,7 @@ async function fillNewEmployee(dialog: HTMLElement): Promise<void> {
 
 beforeEach((): void => {
   vi.resetAllMocks()
+  vi.mocked(getEmployeeOptions).mockResolvedValue(buildEmployeeOptions())
   notifications.clean()
   getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))
 })

@@ -3,12 +3,7 @@ import { memo, useCallback } from 'react'
 import { ActionIcon, Group, Table, VisuallyHidden } from '@mantine/core'
 import { IconPencil, IconTrash } from '@tabler/icons-react'
 
-import {
-  COUNTRY_NAME_BY_CODE,
-  EMPLOYEE_COLUMN_LABELS,
-  EMPLOYEE_SORT_FIELDS,
-  EMPLOYEE_TABLE_MAX_HEIGHT,
-} from '@src/constants/employee_constants'
+import { EMPLOYEE_COLUMN_LABELS, EMPLOYEE_SORT_FIELDS, EMPLOYEE_TABLE_MAX_HEIGHT } from '@src/constants/employee_constants'
 import { deleteEmployeeLabel, editEmployeeLabel, EMPLOYEE_ACTIONS_LABEL } from '@src/constants/employee_messages'
 import { SortableHeader } from '@src/pages/employee_list/components/sortable_header'
 import type { IEmployee, TEmployeeColumn } from '@src/types/employee'
@@ -16,17 +11,19 @@ import { formatCurrency } from '@src/utils/format_currency'
 import { formatDate } from '@src/utils/format_date'
 
 interface IEmployeeTableProps {
-  employees: IEmployee[]
-  sort:      string
-  onSort:    (sort: string) => void
-  onEdit:    (employee: IEmployee) => void
-  onDelete:  (employee: IEmployee) => void
+  employees:         IEmployee[]
+  countryNameByCode: ReadonlyMap<string, string>
+  sort:              string
+  onSort:            (sort: string) => void
+  onEdit:            (employee: IEmployee) => void
+  onDelete:          (employee: IEmployee) => void
 }
 
 interface IEmployeeRowProps {
-  employee: IEmployee
-  onEdit:   (employee: IEmployee) => void
-  onDelete: (employee: IEmployee) => void
+  employee:    IEmployee
+  countryName: string
+  onEdit:      (employee: IEmployee) => void
+  onDelete:    (employee: IEmployee) => void
 }
 
 const ICON_SIZE: number = 16
@@ -40,6 +37,7 @@ const RIGHT_ALIGNED_COLUMN: TEmployeeColumn = 'salary'
 
 const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function EmployeeRow({
   employee,
+  countryName,
   onEdit,
   onDelete,
 }: IEmployeeRowProps): React.JSX.Element {
@@ -52,7 +50,7 @@ const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function
       <Table.Td>{employee.email}</Table.Td>
       <Table.Td>{employee.jobTitle}</Table.Td>
       <Table.Td>{employee.department}</Table.Td>
-      <Table.Td>{COUNTRY_NAME_BY_CODE.get(employee.country) ?? employee.country}</Table.Td>
+      <Table.Td>{countryName}</Table.Td>
       <Table.Td ta="right">{formatCurrency(employee.salary)}</Table.Td>
       <Table.Td>{formatDate(employee.hireDate)}</Table.Td>
       <Table.Td>
@@ -69,7 +67,14 @@ const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function
   )
 })
 
-export function EmployeeTable({ employees, sort, onSort, onEdit, onDelete }: IEmployeeTableProps): React.JSX.Element {
+export function EmployeeTable({
+  employees,
+  countryNameByCode,
+  sort,
+  onSort,
+  onEdit,
+  onDelete,
+}: IEmployeeTableProps): React.JSX.Element {
   return (
     <Table.ScrollContainer maxHeight={EMPLOYEE_TABLE_MAX_HEIGHT} minWidth={TABLE_MIN_WIDTH}>
       <Table highlightOnHover stickyHeader striped>
@@ -92,7 +97,13 @@ export function EmployeeTable({ employees, sort, onSort, onEdit, onDelete }: IEm
         </Table.Thead>
         <Table.Tbody>
           {employees.map((employee: IEmployee): React.JSX.Element => (
-            <EmployeeRow key={employee.id} employee={employee} onDelete={onDelete} onEdit={onEdit} />
+            <EmployeeRow
+              key={employee.id}
+              countryName={countryNameByCode.get(employee.country) ?? employee.country}
+              employee={employee}
+              onDelete={onDelete}
+              onEdit={onEdit}
+            />
           ))}
         </Table.Tbody>
       </Table>

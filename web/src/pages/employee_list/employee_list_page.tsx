@@ -1,49 +1,44 @@
-import { Button, Stack } from '@mantine/core'
-import { IconPlus } from '@tabler/icons-react'
+import { useCallback } from 'react'
 
-import { ADD_EMPLOYEE_LABEL } from '@src/constants/employee_messages'
+import type { UseQueryResult } from '@tanstack/react-query'
+
+import { DEFAULT_PER_PAGE, EMPLOYEE_TABLE_MAX_HEIGHT } from '@src/constants/employee_constants'
+import { EMPLOYEE_OPTIONS_LOAD_ERROR_TITLE, EMPLOYEES_LOADING_LABEL } from '@src/constants/employee_messages'
+import { TRY_AGAIN_LABEL } from '@src/constants/error_messages'
 import { EMPLOYEES_PAGE_TITLE } from '@src/constants/navigation_constants'
-import { EmployeeFilters } from '@src/pages/employee_list/components/employee_filters'
-import { EmployeeFormModal } from '@src/pages/employee_list/components/employee_form_modal'
-import { EmployeeListContent } from '@src/pages/employee_list/components/employee_list_content'
-import { useDeleteEmployeeModal } from '@src/pages/employee_list/hooks/use_delete_employee_modal'
-import { useEmployeeFormModal } from '@src/pages/employee_list/hooks/use_employee_form_modal'
-import { useEmployeeList } from '@src/pages/employee_list/hooks/use_employee_list'
-import type { IEmployee } from '@src/types/employee'
+import { EmployeeListView } from '@src/pages/employee_list/components/employee_list_view'
+import { useEmployeeOptionsQuery } from '@src/queries/employee_queries'
+import type { IApiError } from '@src/types/api_response'
+import type { IEmployeeSelectOptions } from '@src/types/employee'
+import { ErrorState } from '@src/ui/feedback/error_state'
 import { PageHeader } from '@src/ui/layout/page_header'
+import { TableSkeleton } from '@src/ui/skeletons/table_skeleton'
 
-const ICON_SIZE: number = 16
-
+// The filters, the form and the URL check all need the dropdown lists, so the page waits for them
+// (one small request per visit, cached after that) before asking for employees.
 export default function EmployeeListPage(): React.JSX.Element {
-  const { listState, employeesQuery } = useEmployeeList()
-  const formModal: ReturnType<typeof useEmployeeFormModal> = useEmployeeFormModal()
-  const openDeleteModal: (employee: IEmployee) => void = useDeleteEmployeeModal()
+  const optionsQuery: UseQueryResult<IEmployeeSelectOptions, IApiError> = useEmployeeOptionsQuery()
+  const { data, error, refetch } = optionsQuery
+
+  const handleRetry: () => void = useCallback((): void => {
+    void refetch()
+  }, [refetch])
+
+  if (data) return <EmployeeListView options={data} />
 
   return (
     <>
-      <PageHeader
-        action={(
-          <Button leftSection={<IconPlus aria-hidden size={ICON_SIZE} />} onClick={formModal.openCreate}>
-            {ADD_EMPLOYEE_LABEL}
-          </Button>
-        )}
-        title={EMPLOYEES_PAGE_TITLE}
-      />
-      <Stack gap="lg">
-        <EmployeeFilters listState={listState} />
-        <EmployeeListContent
-          employeesQuery={employeesQuery}
-          listState={listState}
-          onDelete={openDeleteModal}
-          onEdit={formModal.openEdit}
+      <PageHeader title={EMPLOYEES_PAGE_TITLE} />
+      {error ? (
+        <ErrorState
+          actionLabel={TRY_AGAIN_LABEL}
+          message={error.error}
+          title={EMPLOYEE_OPTIONS_LOAD_ERROR_TITLE}
+          onAction={handleRetry}
         />
-      </Stack>
-      <EmployeeFormModal
-        employee={formModal.employee}
-        formKey={formModal.formKey}
-        opened={formModal.opened}
-        onClose={formModal.close}
-      />
+      ) : (
+        <TableSkeleton label={EMPLOYEES_LOADING_LABEL} maxHeight={EMPLOYEE_TABLE_MAX_HEIGHT} rowCount={DEFAULT_PER_PAGE} />
+      )}
     </>
   )
 }
