@@ -2,13 +2,21 @@ import { memo } from 'react'
 
 import { Table } from '@mantine/core'
 
-import { COUNTRY_NAME_BY_CODE, EMPLOYEE_COLUMN_LABELS, EMPLOYEE_TABLE_MAX_HEIGHT } from '@src/constants/employee_constants'
-import type { IEmployee } from '@src/types/employee'
+import {
+  COUNTRY_NAME_BY_CODE,
+  EMPLOYEE_COLUMN_LABELS,
+  EMPLOYEE_SORT_FIELDS,
+  EMPLOYEE_TABLE_MAX_HEIGHT,
+} from '@src/constants/employee_constants'
+import { SortableHeader } from '@src/pages/employee_list/components/sortable_header'
+import type { IEmployee, TEmployeeColumn } from '@src/types/employee'
 import { formatCurrency } from '@src/utils/format_currency'
 import { formatDate } from '@src/utils/format_date'
 
 interface IEmployeeTableProps {
   employees: IEmployee[]
+  sort:      string
+  onSort:    (sort: string) => void
 }
 
 interface IEmployeeRowProps {
@@ -17,6 +25,10 @@ interface IEmployeeRowProps {
 
 // Below this width the table scrolls sideways instead of squashing the columns.
 const TABLE_MIN_WIDTH: number = 900
+
+// Column order; salary is right-aligned so the amounts line up.
+const COLUMNS: readonly TEmployeeColumn[] = ['fullName', 'email', 'jobTitle', 'department', 'country', 'salary', 'hireDate']
+const RIGHT_ALIGNED_COLUMN: TEmployeeColumn = 'salary'
 
 const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function EmployeeRow({
   employee,
@@ -34,19 +46,22 @@ const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function
   )
 })
 
-export function EmployeeTable({ employees }: IEmployeeTableProps): React.JSX.Element {
+export function EmployeeTable({ employees, sort, onSort }: IEmployeeTableProps): React.JSX.Element {
   return (
     <Table.ScrollContainer maxHeight={EMPLOYEE_TABLE_MAX_HEIGHT} minWidth={TABLE_MIN_WIDTH}>
       <Table highlightOnHover stickyHeader striped>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th>{EMPLOYEE_COLUMN_LABELS.fullName}</Table.Th>
-            <Table.Th>{EMPLOYEE_COLUMN_LABELS.email}</Table.Th>
-            <Table.Th>{EMPLOYEE_COLUMN_LABELS.jobTitle}</Table.Th>
-            <Table.Th>{EMPLOYEE_COLUMN_LABELS.department}</Table.Th>
-            <Table.Th>{EMPLOYEE_COLUMN_LABELS.country}</Table.Th>
-            <Table.Th ta="right">{EMPLOYEE_COLUMN_LABELS.salary}</Table.Th>
-            <Table.Th>{EMPLOYEE_COLUMN_LABELS.hireDate}</Table.Th>
+            {COLUMNS.map((column: TEmployeeColumn): React.JSX.Element => (
+              <SortableHeader
+                key={column}
+                alignRight={column === RIGHT_ALIGNED_COLUMN}
+                currentSort={sort}
+                field={EMPLOYEE_SORT_FIELDS[column]}
+                label={EMPLOYEE_COLUMN_LABELS[column]}
+                onSort={onSort}
+              />
+            ))}
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>

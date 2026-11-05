@@ -38,7 +38,7 @@ const PER_PAGE_SELECT_WIDTH: number = 96
 
 // One of: skeleton (first load), error with retry, empty state, or the table with pagination.
 export function EmployeeListContent({ listState, employeesQuery }: IEmployeeListContentProps): React.JSX.Element {
-  const { page, perPage, hasActiveFilters, setPage, setPerPage, clearFilters } = listState
+  const { page, perPage, sort, hasActiveFilters, setPage, setPerPage, setSort, clearFilters } = listState
   const { data, error, isPending, isPlaceholderData, refetch } = employeesQuery
 
   const handleRetry: () => void = useCallback((): void => {
@@ -91,7 +91,7 @@ export function EmployeeListContent({ listState, employeesQuery }: IEmployeeList
           </Group>
         )}
       </Group>
-      <EmployeeTable employees={data.data} />
+      <EmployeeTable employees={data.data} sort={sort} onSort={setSort} />
       <Group justify="space-between">
         {data.meta.totalPages > 1 ? (
           <Pagination total={data.meta.totalPages} value={page} onChange={handlePageChange} />
