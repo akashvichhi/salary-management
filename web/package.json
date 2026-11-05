@@ -20,6 +20,7 @@
     "@mantine/core": "9.7.4",
     "@mantine/hooks": "9.7.4",
     "@mantine/notifications": "9.7.4",
+    "@tanstack/react-query": "5.104.5",
     "axios": "1.20.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
