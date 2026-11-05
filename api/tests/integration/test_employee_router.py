@@ -13,6 +13,11 @@ from tests.factories import employee_payload
 
 EMPLOYEES_URL = "/api/v1/employees"
 IST_OFFSET_SUFFIX = "+05:30"
+# A taken email is reported on the email field, so the form can show it on that input.
+EMAIL_TAKEN_RESPONSE = {
+    "error": EMPLOYEE_EMAIL_TAKEN,
+    "details": [{"field": "email", "message": EMPLOYEE_EMAIL_TAKEN}],
+}
 
 
 def create_employee(client: TestClient, **overrides: Any) -> dict[str, Any]:
@@ -50,7 +55,17 @@ def test_create_employee_rejects_an_email_that_differs_only_in_case(client: Test
     response = client.post(EMPLOYEES_URL, json=employee_payload(email="Asha.Rao@ACME.com"))
 
     assert response.status_code == 409
-    assert response.json() == {"error": EMPLOYEE_EMAIL_TAKEN}
+    assert response.json() == EMAIL_TAKEN_RESPONSE
+
+
+def test_update_employee_rejects_an_email_another_employee_has(client: TestClient) -> None:
+    create_employee(client, email="taken@acme.com")
+    created = create_employee(client, email="asha.rao@acme.com")
+
+    response = client.patch(f"{EMPLOYEES_URL}/{created['id']}", json={"email": "taken@acme.com"})
+
+    assert response.status_code == 409
+    assert response.json() == EMAIL_TAKEN_RESPONSE
 
 
 def test_get_employee_returns_200_with_the_employee(client: TestClient) -> None:

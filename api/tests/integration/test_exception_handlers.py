@@ -16,6 +16,7 @@ CONFLICT_MESSAGE = "Thing already exists"
 DOMAIN_VALIDATION_MESSAGE = "Thing is not allowed"
 INTERNAL_DETAIL = "SELECT * FROM employees -- E:/secret/path.py"
 CUSTOM_RULE_MESSAGE = "Code must start with A"
+CONFLICT_FIELD = "code"
 
 
 class PayloadRequest(BaseModel):
@@ -51,6 +52,10 @@ def build_error_router() -> APIRouter:
     @router.get("/conflict")
     def raise_conflict() -> None:
         raise ConflictError(CONFLICT_MESSAGE)
+
+    @router.get("/conflict-on-field")
+    def raise_conflict_on_field() -> None:
+        raise ConflictError(CONFLICT_MESSAGE, field=CONFLICT_FIELD)
 
     @router.get("/domain-validation")
     def raise_domain_validation() -> None:
@@ -115,6 +120,16 @@ def test_conflict_error_returns_409_with_its_message(error_client: TestClient) -
 
     assert response.status_code == 409
     assert response.json() == {"error": CONFLICT_MESSAGE}
+
+
+def test_domain_error_about_one_field_names_it_in_the_details(error_client: TestClient) -> None:
+    response = error_client.get(f"{TEST_ROUTE_PREFIX}/conflict-on-field")
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "error": CONFLICT_MESSAGE,
+        "details": [{"field": CONFLICT_FIELD, "message": CONFLICT_MESSAGE}],
+    }
 
 
 def test_domain_validation_error_returns_422_with_its_message(error_client: TestClient) -> None:
