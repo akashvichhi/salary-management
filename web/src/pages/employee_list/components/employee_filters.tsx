@@ -1,6 +1,10 @@
-import { Group, TextInput } from '@mantine/core'
+import { useCallback } from 'react'
+
+import { Group, Select, TextInput } from '@mantine/core'
+import type { ComboboxData } from '@mantine/core'
 import { IconSearch } from '@tabler/icons-react'
 
+import { COUNTRY_OPTIONS, DEPARTMENTS, EMPLOYEE_COLUMN_LABELS, JOB_TITLES } from '@src/constants/employee_constants'
 import { SEARCH_LABEL, SEARCH_PLACEHOLDER } from '@src/constants/employee_messages'
 import type { IListUrlState } from '@src/hooks/use_list_url_state'
 import { useSearchInput } from '@src/pages/employee_list/hooks/use_search_input'
@@ -10,11 +14,36 @@ interface IEmployeeFiltersProps {
   listState: IListUrlState<TEmployeeFilterKey>
 }
 
+interface IFilterSelectProps {
+  filterKey: TEmployeeFilterKey
+  data:      ComboboxData
+  value:     string | null
+  onFilter:  (key: TEmployeeFilterKey, value: string | null) => void
+}
+
 const ICON_SIZE: number = 16
 
+function FilterSelect({ filterKey, data, value, onFilter }: IFilterSelectProps): React.JSX.Element {
+  const handleChange: (nextValue: string | null) => void = useCallback((nextValue: string | null): void => {
+    onFilter(filterKey, nextValue)
+  }, [filterKey, onFilter])
+
+  return (
+    <Select
+      clearable
+      searchable
+      data={data}
+      label={EMPLOYEE_COLUMN_LABELS[filterKey]}
+      value={value}
+      onChange={handleChange}
+    />
+  )
+}
+
 export function EmployeeFilters({ listState }: IEmployeeFiltersProps): React.JSX.Element {
+  const { filters, search, setFilter, setSearch } = listState
   const searchInput: { value: string, onChange: (event: React.ChangeEvent<HTMLInputElement>) => void } =
-    useSearchInput(listState.search, listState.setSearch)
+    useSearchInput(search, setSearch)
 
   return (
     <Group align="flex-end" gap="md">
@@ -26,6 +55,9 @@ export function EmployeeFilters({ listState }: IEmployeeFiltersProps): React.JSX
         value={searchInput.value}
         onChange={searchInput.onChange}
       />
+      <FilterSelect data={COUNTRY_OPTIONS as ComboboxData} filterKey="country" value={filters.country} onFilter={setFilter} />
+      <FilterSelect data={JOB_TITLES as ComboboxData} filterKey="jobTitle" value={filters.jobTitle} onFilter={setFilter} />
+      <FilterSelect data={DEPARTMENTS as ComboboxData} filterKey="department" value={filters.department} onFilter={setFilter} />
     </Group>
   )
 }

@@ -1,13 +1,16 @@
 import { useCallback } from 'react'
 
-import { Group, Loader, Pagination, Select, Stack, Text, VisuallyHidden } from '@mantine/core'
+import { Button, Group, Loader, Pagination, Select, Stack, Text, VisuallyHidden } from '@mantine/core'
 import type { UseQueryResult } from '@tanstack/react-query'
 
 import { EMPLOYEE_TABLE_MAX_HEIGHT, PER_PAGE_OPTIONS } from '@src/constants/employee_constants'
 import {
+  CLEAR_FILTERS_LABEL,
   employeeCountLabel,
   EMPLOYEES_EMPTY_MESSAGE,
   EMPLOYEES_EMPTY_TITLE,
+  EMPLOYEES_FILTERED_EMPTY_MESSAGE,
+  EMPLOYEES_FILTERED_EMPTY_TITLE,
   EMPLOYEES_LOAD_ERROR_TITLE,
   EMPLOYEES_LOADING_LABEL,
   EMPLOYEES_UPDATING_LABEL,
@@ -35,7 +38,7 @@ const PER_PAGE_SELECT_WIDTH: number = 96
 
 // One of: skeleton (first load), error with retry, empty state, or the table with pagination.
 export function EmployeeListContent({ listState, employeesQuery }: IEmployeeListContentProps): React.JSX.Element {
-  const { page, perPage, setPage, setPerPage } = listState
+  const { page, perPage, hasActiveFilters, setPage, setPerPage, clearFilters } = listState
   const { data, error, isPending, isPlaceholderData, refetch } = employeesQuery
 
   const handleRetry: () => void = useCallback((): void => {
@@ -59,6 +62,16 @@ export function EmployeeListContent({ listState, employeesQuery }: IEmployeeList
         message={error.error}
         title={EMPLOYEES_LOAD_ERROR_TITLE}
         onAction={handleRetry}
+      />
+    )
+  }
+
+  if (data.data.length === 0 && hasActiveFilters) {
+    return (
+      <EmptyState
+        action={<Button variant="light" onClick={clearFilters}>{CLEAR_FILTERS_LABEL}</Button>}
+        message={EMPLOYEES_FILTERED_EMPTY_MESSAGE}
+        title={EMPLOYEES_FILTERED_EMPTY_TITLE}
       />
     )
   }
