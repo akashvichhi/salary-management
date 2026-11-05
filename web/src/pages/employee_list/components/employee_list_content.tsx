@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { Group, Loader, Pagination, Select, Stack, Text, VisuallyHidden } from '@mantine/core'
 import type { UseQueryResult } from '@tanstack/react-query'
 
-import { PER_PAGE_OPTIONS } from '@src/constants/employee_constants'
+import { EMPLOYEE_TABLE_MAX_HEIGHT, PER_PAGE_OPTIONS } from '@src/constants/employee_constants'
 import {
   employeeCountLabel,
   EMPLOYEES_EMPTY_MESSAGE,
@@ -50,7 +50,7 @@ export function EmployeeListContent({ listState, employeesQuery }: IEmployeeList
     if (value) setPerPage(Number(value))
   }, [setPerPage])
 
-  if (isPending) return <TableSkeleton label={EMPLOYEES_LOADING_LABEL} rowCount={perPage} />
+  if (isPending) return <TableSkeleton label={EMPLOYEES_LOADING_LABEL} maxHeight={EMPLOYEE_TABLE_MAX_HEIGHT} rowCount={perPage} />
 
   if (error) {
     return (

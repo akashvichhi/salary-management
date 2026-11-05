@@ -2,7 +2,7 @@ import { memo } from 'react'
 
 import { Table } from '@mantine/core'
 
-import { COUNTRY_NAME_BY_CODE, EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
+import { COUNTRY_NAME_BY_CODE, EMPLOYEE_COLUMN_LABELS, EMPLOYEE_TABLE_MAX_HEIGHT } from '@src/constants/employee_constants'
 import type { IEmployee } from '@src/types/employee'
 import { formatCurrency } from '@src/utils/format_currency'
 import { formatDate } from '@src/utils/format_date'
@@ -36,8 +36,8 @@ const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function
 
 export function EmployeeTable({ employees }: IEmployeeTableProps): React.JSX.Element {
   return (
-    <Table.ScrollContainer minWidth={TABLE_MIN_WIDTH}>
-      <Table highlightOnHover striped>
+    <Table.ScrollContainer maxHeight={EMPLOYEE_TABLE_MAX_HEIGHT} minWidth={TABLE_MIN_WIDTH}>
+      <Table highlightOnHover stickyHeader striped>
         <Table.Thead>
           <Table.Tr>
             <Table.Th>{EMPLOYEE_COLUMN_LABELS.fullName}</Table.Th>

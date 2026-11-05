@@ -88,3 +88,7 @@ export const DEFAULT_EMPLOYEE_SORT: string = EMPLOYEE_SORT_FIELDS.fullName
 
 // Long enough to skip the keystrokes of a word being typed, short enough to feel instant.
 export const SEARCH_DEBOUNCE_MS: number = 300
+
+// Taller pages scroll inside the table (with the header kept in view), so the pagination and
+// page-size controls below it stay on screen.
+export const EMPLOYEE_TABLE_MAX_HEIGHT: number = 560
