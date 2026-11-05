@@ -141,16 +141,19 @@ api/
 │   │   ├── money.py                    money rules: rounding half-up to the cent
 │   │   ├── security.py                 password hashing (Argon2), session token generation and hashing
 │   │   ├── login_rate_limiter.py       failed logins per email and IP, in memory (decision 23)
-│   │   └── origin_check_middleware.py  CSRF protection: rejects write requests from foreign origins
+│   │   ├── origin_check_middleware.py  CSRF protection: rejects write requests from foreign origins
+│   │   └── web_app.py                  serves the web build (WEB_DIST_DIR): /assets/* cached, any other non-API path → index.html
 │   ├── constants/
 │   │   ├── auth_constants.py           login rate limit
-│   │   └── messages.py                 every user-facing message, in one place
+│   │   ├── messages.py                 every user-facing message, in one place
+│   │   └── route_constants.py          API_PREFIX (/api) and API_V1_PREFIX (/api/v1)
 │   ├── models/                         SQLAlchemy ORM models (tables only, no logic)
 │   │   ├── employee_model.py
 │   │   ├── user_model.py
 │   │   └── session_model.py
 │   ├── repositories/                   database access: queries, filtering, aggregation
 │   │   ├── employee_repository.py
+│   │   ├── salary_insight_repository.py   GROUP BY aggregates and the salaries for the median
 │   │   ├── user_repository.py
 │   │   └── session_repository.py
 │   ├── services/                       business logic
@@ -184,6 +187,7 @@ api/
 ├── migrations/                         Alembic
 ├── scripts/
 │   ├── seed.py                         seeds 10,000 employees + the HR manager user (credentials from env)
+│   ├── start.sh                        the container's start command: migrate, seed, then uvicorn
 │   └── data/                           first_names.txt, last_names.txt
 ├── tests/
 │   ├── conftest.py                     in-memory SQLite, test client, fixtures
@@ -420,6 +424,7 @@ web/src/
 │   ├── auth_messages.ts             login page and session check texts
 │   ├── navigation_constants.ts      page titles, shared by the navigation and the page headers
 │   ├── query_constants.ts           QUERY_STALE_TIME_MS, QUERY_RETRY_COUNT
+│   ├── list_constants.ts            DEFAULT_PAGE and the descending sort prefix, shared by every list
 │   ├── time_constants.ts            APP_TIMEZONE (IST), APP_LOCALE, APP_CURRENCY
 │   ├── employee_messages.ts         employee UI texts (states, labels, notifications)
 │   ├── salary_insight_messages.ts   insights page texts (section titles, column labels, states)
@@ -503,6 +508,7 @@ The auth files (`auth_api.ts`, `types/auth.ts`, `auth_queries.ts`, `auth_message
   export const API_URL: string = import.meta.env.VITE_API_URL || '/'
   ```
   In production FastAPI serves the frontend from the same origin, so `VITE_API_URL` is left unset and `/` is used.
+- `VITE_DEMO_LOGIN_EMAIL` and `VITE_DEMO_LOGIN_PASSWORD` (optional) prefill the login form for the demo. Vite builds them into the JavaScript, so anyone can read them: they may only ever hold the demo account. Tests blank them in `vite.config.ts` (`test.env`).
 - `api/api_client.ts` creates ONE axios instance with `baseURL: API_URL`. All requests go through it. **NEVER** call `axios` or `fetch` directly elsewhere.
 - Endpoint paths live in `constants/api_endpoints.ts` (e.g. `EMPLOYEES: 'api/v1/employees'`, `employeeById: (id: number) => \`api/v1/employees/${id}\``).
 

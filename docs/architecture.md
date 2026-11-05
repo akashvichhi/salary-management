@@ -183,6 +183,8 @@ flowchart LR
 
 Render's free tier has no persistent disk, so the database is recreated, and the seed runs again, on every restart. Edits made in the demo are lost when it restarts.
 
+The steps live in `api/scripts/start.sh`, the image's start command. uvicorn runs with `--proxy-headers`, so the login rate limit sees the caller's IP behind Render's proxy (decision 23).
+
 ## Open questions
 
 | # | Question |
@@ -191,8 +193,8 @@ Render's free tier has no persistent disk, so the database is recreated, and the
 | 2 | ~~Insights endpoints: one per insight or combined?~~ **Answered:** one endpoint per insight, each an array of objects (the overview an object holding one); see the API outline and decision 19 |
 | 3 | ~~Job title, department and country: fixed lists or free text?~~ **Answered:** fixed lists in `constants/employee_constants.py`, matched ignoring case (decision 17); the web app loads them for its dropdowns from `GET /api/v1/employee-options` (decision 21) |
 | 4 | ~~Sort allow-list?~~ **Answered:** every column shown in the table: `full_name`, `email`, `job_title`, `department`, `country`, `salary`, `hire_date`; ties broken by `id` |
-| 5 | Search by name or email uses a substring match, which can't use an index. Is a scan of 10,000 rows fast enough? Measure in `docs/performance.md` |
-| 6 | The `country` index duplicates the leading column of `(country, job_title)`. Keep both, or drop it if `EXPLAIN QUERY PLAN` shows the composite covers it? |
+| 5 | ~~Search by name or email uses a substring match, which can't use an index. Is a scan of 10,000 rows fast enough?~~ **Answered:** yes: 40 to 58 ms median, well under the 300 ms target (`docs/performance.md`) |
+| 6 | ~~The `country` index duplicates the leading column of `(country, job_title)`. Keep both, or drop it?~~ **Answered:** keep both. Without it the planner falls back to the composite, and the country filter and the insights get 4 to 9 ms slower (`docs/performance.md`) |
 | 7 | ~~Delete: hard or soft?~~ **Answered:** soft delete with `is_active` (decision 16) |
 | 8 | ~~Login rate limit: in memory (resets on restart, fine for one container) or a database table?~~ **Answered:** in memory (decision 23) |
 | 9 | ~~Seed data: values and salary ranges?~~ **Answered:** the fixed lists; each job title has a USD range and a department, scaled by a per-country pay factor (decision 18) |

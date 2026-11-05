@@ -163,6 +163,13 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** in memory (`core/login_rate_limiter.py`), one limiter per app, with a lock because `def` endpoints run in a thread pool. The window slides: each failure counts for 15 minutes. A successful login clears the count.
 - **Consequences:** no table, migration or cleanup job. The counts are lost on restart and aren't shared between processes, which is fine for one container with one worker; more workers or instances would need the table (or Redis) instead. Behind Render's proxy the IP comes from `X-Forwarded-For` only if uvicorn runs with `--proxy-headers`; without it every request shares the proxy's IP and the limit is per email only.
 
+## 24. Demo login prefilled from build variables
+
+- **Context:** reviewers open the deployed demo and shouldn't have to look up the login (the user's request).
+- **Options:** show the credentials as text on the login page; prefill the form from `VITE_DEMO_LOGIN_*` build variables; a "demo" button that skips the form.
+- **Decision:** prefill from build variables, read in `config/env.ts`. Without them the form starts empty, as before.
+- **Consequences:** Vite builds the values into the JavaScript, so anyone who opens the app can read them. They must only ever be a demo account, never a real one. The real login rules (Argon2, the generic error, the rate limit) still apply.
+
 ## Runtime dependencies
 
 Each runtime dependency gets one line here, with its reason, when it is added.

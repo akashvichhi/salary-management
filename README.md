@@ -52,9 +52,34 @@ npm run check         # ESLint, Stylelint, type check, tests
 npm run build         # production build in web/dist
 ```
 
-Copy `web/.env.example` to `web/.env` to point the app at the local API. Log in with the `HR_MANAGER_EMAIL` and `HR_MANAGER_PASSWORD` from `api/.env`.
+Copy `web/.env.example` to `web/.env` to point the app at the local API. Log in with the `HR_MANAGER_EMAIL` and `HR_MANAGER_PASSWORD` from `api/.env`; `VITE_DEMO_LOGIN_EMAIL` and `VITE_DEMO_LOGIN_PASSWORD` in `web/.env` fill them in for you.
 
 After pulling changes, run `uv run alembic upgrade head` again: a database left on an older migration fails with errors such as `no such column`.
+
+## Deployment (Render)
+
+The root `Dockerfile` builds one image: it builds `web/`, installs the API with `uv sync --frozen`, and serves both from FastAPI. Its start command (`api/scripts/start.sh`) migrates the database, seeds it, then runs uvicorn on Render's `$PORT`.
+
+1. In Render, create a **Web Service** from this repository, branch `master`, runtime **Docker**. Leave the build and start commands empty: the Dockerfile has them.
+2. Set the **Health Check Path** to `/api/health`.
+3. Add the environment variables:
+
+   | Variable | Value |
+   |---|---|
+   | `HR_MANAGER_EMAIL`, `HR_MANAGER_PASSWORD` | The login the seed creates |
+   | `VITE_DEMO_LOGIN_EMAIL`, `VITE_DEMO_LOGIN_PASSWORD` | Optional: prefill the login form. Render passes them to the build, and they end up in the JavaScript, so use them only for a demo account |
+
+   Leave `ALLOWED_ORIGINS`, `COOKIE_SECURE` and `VITE_API_URL` unset: the app and the API share one origin over https.
+4. Deploy. Every push to `master` deploys again.
+
+**SQLite on Render:** the database is a file inside the container. The free tier has no persistent disk, so the file starts empty on every deploy and restart, and the start command migrates and reseeds it: the demo always begins with the same 10,000 employees, and edits are lost on restart (decision 8). With a paid persistent disk, point `DATABASE_URL` at it (e.g. `sqlite:////var/data/salary_management.db`); the seed skips whatever already exists.
+
+To try the image locally:
+
+```bash
+docker build -t salary-management .
+docker run -p 8000:8000 -e HR_MANAGER_EMAIL=hr@example.com -e HR_MANAGER_PASSWORD='choose-one' -e COOKIE_SECURE=false salary-management
+```
 
 ## Documentation
 
@@ -65,5 +90,6 @@ After pulling changes, run `uv run alembic upgrade head` again: a database left 
 | [Architecture](docs/architecture.md) | System and sequence diagrams, data model, API outline, open questions |
 | [Design decisions](docs/decisions.md) | The key decisions and trade-offs, as short ADRs |
 | [Implementation plan](docs/plan.md) | The build order as small, test-first steps |
+| [Performance](docs/performance.md) | Measured seed and response times, query plans, bundle sizes, optimisations |
 | [AI prompts and workflow log](docs/ai-workflow.md) | How AI was used, every prompt, and what I changed |
 | [`CLAUDE.md`](CLAUDE.md) | The rules file the AI follows: structure, naming, API contract, testing and commits |
