@@ -7,6 +7,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary } from 'react-error-boundary'
 
 import { setSessionExpiredHandler } from '@src/api/api_client'
+import { DEFAULT_COLOR_SCHEME } from '@src/constants/app_constants'
 import { useGlobalErrorListener } from '@src/hooks/use_global_error_listener'
 import { expireSession } from '@src/queries/auth_queries'
 import { queryClient } from '@src/queries/query_client'
@@ -27,7 +28,7 @@ function GlobalErrorListener(): null {
 export function App(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineProvider theme={theme}>
+      <MantineProvider defaultColorScheme={DEFAULT_COLOR_SCHEME} theme={theme}>
         <Notifications />
         <GlobalErrorListener />
         <ErrorBoundary FallbackComponent={AppErrorFallback} onError={logRenderError}>

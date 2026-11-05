@@ -3,7 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>Salary Management</title>
+    <!-- Mantine's ColorSchemeScript for a plain index.html: sets light or dark before React loads,
+         using the same rule as DEFAULT_COLOR_SCHEME ("auto") in src/constants/app_constants.ts. -->
+    <script>
+      try {
+        var stored = window.localStorage.getItem('mantine-color-scheme-value');
+        var scheme = stored === 'light' || stored === 'dark' ? stored : 'auto';
+        if (scheme === 'auto') {
+          scheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-mantine-color-scheme', scheme);
+      } catch (error) {}
+    </script>
   </head>
   <body>
     <div id="root">
