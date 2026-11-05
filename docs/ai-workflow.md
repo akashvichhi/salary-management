@@ -337,3 +337,16 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - Two AI mistakes caught by the tests: React Query passes a second argument to `mutationFn`, so passing `createEmployee` directly sent it to the mocked API; and Mantine 9's `useForm` takes the transformed type, not a function type, as its second generic.
   - Filling the form opens three Mantine Selects, which takes several seconds in jsdom, so the form tests have a 20 s timeout.
 - **How it was verified:** `make check` (153 tests, 100% coverage); `npm run check` (102 tests); each red snapshot fails before its green.
+
+## 2026-11-04 — Step W7: delete employees
+
+- **Prompt / instruction:** part of "Start W4 to W7".
+- **What the AI produced:**
+  - a chore commit adding `@mantine/modals`
+  - a delete button on each row (labelled "Delete <name>") that opens a confirmation modal naming the employee
+  - `useDeleteEmployeeMutation`: a notification on success and failure, then the list reloads; the confirm button shows the loading state and the modal stays open if the delete fails
+  - deleting the only employee on the last page steps back a page, through the list's existing "page past the end" rule
+- **What I changed, rejected, or corrected, and why:**
+  - Mantine's `openConfirmModal` sets the button props once, when the modal opens, so it can't show the loading state while the delete runs. The modal body is our own small component instead, which runs the mutation itself.
+  - With two icon buttons per row, an existing test failed: the page took just over Testing Library's 1 s default wait to re-render in jsdom. A separate test commit raises the default to 3 s in `vitest.setup.ts`, instead of patching single tests.
+- **How it was verified:** `npm run check` (108 tests); each red snapshot fails before its green.

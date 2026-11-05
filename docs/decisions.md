@@ -176,4 +176,5 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `@tanstack/react-query` | Server-state cache: loading and error states, keeping the previous page while the next loads, and invalidation after edits |
 | `@mantine/notifications` | Toasts in the same design system, for mutation feedback and the global error listener |
 | `@mantine/form` | Form state, validation and per-field errors (including the API's `details`) in the same design system |
+| `@mantine/modals` | The delete confirmation, opened from a hook without placing a modal in every page |
 | `@tabler/icons-react` | The icon set Mantine's docs use; icons are imported by name, so only the ones used reach the bundle |

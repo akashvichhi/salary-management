@@ -452,8 +452,8 @@ web/src/
     │   └── login_page.tsx
     ├── employee_list/
     │   ├── employee_list_page.tsx
-    │   ├── components/              components used only by this page: employee_table, sortable_header, employee_filters, employee_form, employee_form_modal, ...
-    │   └── hooks/                   logic used only by this page, one hook per file: use_employee_list, use_search_input, use_employee_form, use_employee_form_modal
+    │   ├── components/              components used only by this page: employee_table, sortable_header, employee_filters, employee_form, employee_form_modal, delete_employee_confirm, ...
+    │   └── hooks/                   logic used only by this page, one hook per file: use_employee_list, use_search_input, use_employee_form, use_employee_form_modal, use_delete_employee_modal
     └── salary_insights/
         └── salary_insights_page.tsx
 ```
