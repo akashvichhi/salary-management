@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_DATABASE_URL = "sqlite:///./salary_management.db"
@@ -20,6 +21,9 @@ class Settings(BaseSettings):
     session_ttl_hours: int = DEFAULT_SESSION_TTL_HOURS
     # Browsers send a Secure cookie over HTTPS only; turned off only for local http development.
     cookie_secure: bool = True
+    # The HR manager the seed script creates. Read by the seed only, never by the running app.
+    hr_manager_email: str | None = None
+    hr_manager_password: SecretStr | None = None
 
 
 @lru_cache

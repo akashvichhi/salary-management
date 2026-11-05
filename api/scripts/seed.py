@@ -1,4 +1,4 @@
-"""Seeds the database with 10,000 employees, the same ones on every run.
+"""Seeds the database with 10,000 employees, the same ones on every run, and the HR manager.
 
 Run from api/: `uv run python -m scripts.seed` (after `uv run alembic upgrade head`).
 """
@@ -7,6 +7,7 @@ import random
 import time
 from datetime import date, timedelta
 from decimal import Decimal
+from enum import Enum
 from pathlib import Path
 
 from sqlalchemy import func, insert, select
@@ -14,8 +15,12 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
 from app.core.database import create_database_engine, create_session_factory
+from app.core.security import hash_password
 from app.models.employee_model import EmployeeModel
+from app.models.user_model import UserModel
+from app.repositories.user_repository import UserRepository
 from app.schemas.requests.employee_request import EmployeeCreateRequest
+from app.schemas.requests.login_request import LoginRequest
 from scripts.seed_constants import (
     COUNTRY_PROFILES,
     EARLIEST_HIRE_DATE,
@@ -106,15 +111,49 @@ def run_seed(settings: Settings, count: int = SEED_EMPLOYEE_COUNT) -> int:
         engine.dispose()
 
 
+class HrManagerSeedOutcome(Enum):
+    CREATED = "HR manager created"
+    ALREADY_EXISTS = "HR manager already exists; seed skipped"
+    NOT_CONFIGURED = "HR manager not created: set HR_MANAGER_EMAIL and HR_MANAGER_PASSWORD"
+
+
+def seed_hr_manager(session: Session, email: str, password: str) -> HrManagerSeedOutcome:
+    """Creates the one HR manager. An existing one keeps their password, so re-seeding is safe."""
+    # The login schema, so the stored email is normalised exactly as login looks it up.
+    credentials = LoginRequest.model_validate({"email": email, "password": password})
+    users = UserRepository(session)
+    if users.find_by_email(credentials.email):
+        return HrManagerSeedOutcome.ALREADY_EXISTS
+    users.add(UserModel(email=credentials.email, password_hash=hash_password(password)))
+    session.commit()
+    return HrManagerSeedOutcome.CREATED
+
+
+def run_hr_manager_seed(settings: Settings) -> HrManagerSeedOutcome:
+    if not settings.hr_manager_email or not settings.hr_manager_password:
+        return HrManagerSeedOutcome.NOT_CONFIGURED
+    engine = create_database_engine(settings.database_url)
+    try:
+        with create_session_factory(engine)() as session:
+            return seed_hr_manager(
+                session, settings.hr_manager_email, settings.hr_manager_password.get_secret_value()
+            )
+    finally:
+        engine.dispose()
+
+
 def main() -> None:
+    settings = get_settings()
     started = time.perf_counter()
-    inserted = run_seed(get_settings(), SEED_EMPLOYEE_COUNT)
+    inserted = run_seed(settings, SEED_EMPLOYEE_COUNT)
     elapsed = time.perf_counter() - started
-    # Counts and timings only: seed data looks like personal data, so none of it is printed.
+    # Counts and timings only: seed data looks like personal data, so none of it is printed,
+    # and neither are the HR manager's email and password.
     if inserted:
         print(f"Seeded {inserted} employees in {elapsed:.2f}s")
     else:
         print("Employees already exist; seed skipped")
+    print(run_hr_manager_seed(settings).value)
 
 
 if __name__ == "__main__":
