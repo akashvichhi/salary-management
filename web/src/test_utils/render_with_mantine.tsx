@@ -5,5 +5,5 @@ import type { RenderResult } from '@testing-library/react'
 import { theme } from '@src/styles/theme'
 
 export function renderWithMantine(ui: React.ReactElement): RenderResult {
-  return render(<MantineProvider theme={theme}>{ui}</MantineProvider>)
+  return render(<MantineProvider env="test" theme={theme}>{ui}</MantineProvider>)
 }

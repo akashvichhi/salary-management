@@ -28,3 +28,6 @@ class ResizeObserverStub {
 }
 
 window.ResizeObserver = ResizeObserverStub
+
+// jsdom has no scrollIntoView; Mantine's combobox calls it to keep the active option visible.
+Element.prototype.scrollIntoView = (): void => {}

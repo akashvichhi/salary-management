@@ -17,7 +17,7 @@ export function renderWithProviders(ui: React.ReactElement, { route = '/' }: IRe
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={theme}>
         <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
       </MantineProvider>
     </QueryClientProvider>,

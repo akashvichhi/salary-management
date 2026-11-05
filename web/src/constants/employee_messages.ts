@@ -7,3 +7,4 @@ export const EMPLOYEES_EMPTY_MESSAGE: string = 'Employees you add will appear he
 export function employeeCountLabel(count: number, formattedCount: string): string {
   return count === 1 ? `${formattedCount} employee` : `${formattedCount} employees`
 }
+export const ROWS_PER_PAGE_LABEL: string = 'Rows per page'

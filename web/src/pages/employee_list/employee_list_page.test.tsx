@@ -7,6 +7,7 @@ import {
   EMPLOYEES_LOAD_ERROR_TITLE,
   EMPLOYEES_LOADING_LABEL,
   EMPLOYEES_UPDATING_LABEL,
+  ROWS_PER_PAGE_LABEL,
 } from '@src/constants/employee_messages'
 import { TRY_AGAIN_LABEL } from '@src/constants/error_messages'
 import EmployeeListPage from '@src/pages/employee_list/employee_list_page'
@@ -87,5 +88,37 @@ describe('EmployeeListPage', (): void => {
 
     expect(await screen.findByRole('heading', { name: EMPLOYEES_EMPTY_TITLE })).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('reads the list state from the URL, so refreshing keeps the view', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()], { totalCount: 25, totalPages: 2, currentPage: 2 }))
+
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?page=2&country=IN&sort=-salary' })
+
+    await screen.findByText('Asha Rao')
+    expect(getEmployeesMock).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 2, perPage: 20, country: 'IN', sort: '-salary' }),
+    )
+  })
+
+  it('steps back to the last page when the current page is past the end', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValueOnce(buildPage([], { totalCount: 25, totalPages: 2, currentPage: 3 }))
+    getEmployeesMock.mockResolvedValueOnce(buildPage([buildEmployee()], { totalCount: 25, totalPages: 2, currentPage: 2 }))
+
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?page=3' })
+
+    expect(await screen.findByText('Asha Rao')).toBeInTheDocument()
+    expect(getEmployeesMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }))
+  })
+
+  it('requests the chosen page size, starting again from page 1', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()], { totalCount: 25, totalPages: 2, currentPage: 2 }))
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?page=2' })
+    await screen.findByText('Asha Rao')
+
+    fireEvent.click(screen.getByRole('combobox', { name: ROWS_PER_PAGE_LABEL }))
+    fireEvent.click(await screen.findByRole('option', { name: '50' }))
+
+    expect(getEmployeesMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, perPage: 50 }))
   })
 })
