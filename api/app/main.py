@@ -14,6 +14,7 @@ from app.core.exception_handlers import register_exception_handlers
 from app.core.logging_filters import install_access_log_filter
 from app.core.login_rate_limiter import LoginRateLimiter
 from app.core.origin_check_middleware import OriginCheckMiddleware
+from app.core.web_app import mount_web_app
 
 APP_TITLE = "Salary Management API"
 # Below about 1 KB, compressing costs more time than it saves on the wire.
@@ -51,6 +52,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_exception_handlers(app)
     app.include_router(health_router)
     app.include_router(api_v1_router)
+    # Last, so its catch-all route comes after every API route.
+    if app_settings.web_dist_dir:
+        mount_web_app(app, app_settings.web_dist_dir)
     return app
 
 

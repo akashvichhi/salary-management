@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -24,6 +25,9 @@ class Settings(BaseSettings):
     # The HR manager the seed script creates. Read by the seed only, never by the running app.
     hr_manager_email: str | None = None
     hr_manager_password: SecretStr | None = None
+    # The React build (web/dist) to serve, set in the Docker image. Unset in local development,
+    # where Vite serves the web app and FastAPI only the API.
+    web_dist_dir: Path | None = None
 
 
 @lru_cache

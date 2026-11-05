@@ -1,4 +1,5 @@
-API_V1_PREFIX = "/api/v1"
+API_PREFIX = "/api"
+API_V1_PREFIX = f"{API_PREFIX}/v1"
 EMPLOYEES_PATH = "/employees"
 EMPLOYEE_OPTIONS_PATH = "/employee-options"
 SALARY_INSIGHTS_PATH = "/salary-insights"
