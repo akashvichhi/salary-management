@@ -362,3 +362,12 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - This reverses decision 21. The AI had recommended copying the lists to save a request, and I accepted it in W4; at review I chose one source of truth over saving one small cached request.
   - The new tests live in their own file and use values only the API knows (New Zealand, Research), so a copy kept in the web app could not pass them. The existing test files get a default options mock in the green commit, where the page starts needing it, so the red commit fails only the new tests.
 - **How it was verified:** `make check` (156 tests, 100% coverage); `npm run check` (114 tests); each red snapshot fails before its green.
+
+## 2026-11-05 — Step W7.2: clear the sort
+
+- **Prompt / instruction:** "How can i clear the sorting? There should a way to clear the sort."
+- **What the AI produced:** a red/green pair with two ways back to the default sort (name A to Z), both removing `sort` from the URL and going back to page 1:
+  - a third click on a sorted column header clears it (ascending → descending → default)
+  - a "Reset sort" button next to the employee count, shown only while a sort other than the default is applied, so the option can be seen without knowing the click cycle
+- **What I changed, rejected, or corrected, and why:** W5 only toggled between ascending and descending, so once a column was sorted the default could only be reached by editing the URL. "Clear filters" still keeps the sort, as before: the two are separate controls.
+- **How it was verified:** `npm run check` (116 tests); the red snapshot fails only the two new tests.
