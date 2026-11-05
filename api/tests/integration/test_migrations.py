@@ -50,3 +50,19 @@ def test_migrations_match_the_models(migrated_engine: Engine) -> None:
 
     assert differences == []
     migrated_engine.dispose()
+
+
+def test_upgrade_head_creates_the_users_and_sessions_tables(migrated_engine: Engine) -> None:
+    inspector = inspect(migrated_engine)
+
+    def unique_columns(table: str) -> set[tuple[str | None, ...]]:
+        indexes = inspector.get_indexes(table)
+        return {tuple(index["column_names"]) for index in indexes if index["unique"]}
+
+    assert ("email",) in unique_columns("users")
+    assert ("token_hash",) in unique_columns("sessions")
+    [user_key] = inspector.get_foreign_keys("sessions")
+    assert user_key["referred_table"] == "users"
+    # Deleting a user ends their sessions.
+    assert user_key["options"]["ondelete"] == "CASCADE"
+    migrated_engine.dispose()
