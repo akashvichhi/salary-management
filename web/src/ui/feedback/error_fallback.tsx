@@ -1,4 +1,6 @@
-import { Button, Container, Stack, Text, Title } from '@mantine/core'
+import { Container } from '@mantine/core'
+
+import { ErrorState } from '@src/ui/feedback/error_state'
 
 interface IErrorFallbackProps {
   title:       string
@@ -7,14 +9,11 @@ interface IErrorFallbackProps {
   onAction:    () => void
 }
 
-export function ErrorFallback({ title, message, actionLabel, onAction }: IErrorFallbackProps): React.JSX.Element {
+// The error boundaries' fallback: the same message and action as a failed query, in a narrow column.
+export function ErrorFallback(props: IErrorFallbackProps): React.JSX.Element {
   return (
-    <Container py="xl" size="xs">
-      <Stack align="center" gap="md" role="alert">
-        <Title order={2} ta="center">{title}</Title>
-        <Text c="dimmed" ta="center">{message}</Text>
-        <Button onClick={onAction}>{actionLabel}</Button>
-      </Stack>
+    <Container size="xs">
+      <ErrorState {...props} />
     </Container>
   )
 }
