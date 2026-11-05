@@ -1,5 +1,6 @@
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
+import type { QueryClient } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -12,10 +13,12 @@ import {
   deleteEmployeeLabel,
   EMPLOYEE_DELETED_MESSAGE,
 } from '@src/constants/employee_messages'
+import { salaryInsightKeys } from '@src/constants/query_keys'
 import EmployeeListPage from '@src/pages/employee_list/employee_list_page'
 import { buildEmployee, buildPage } from '@src/test_utils/employee_factory'
 import { buildEmployeeOptions } from '@src/test_utils/employee_options_factory'
-import { renderWithProviders } from '@src/test_utils/render_with_providers'
+import { createTestQueryClient, renderWithProviders } from '@src/test_utils/render_with_providers'
+import { buildPayrollOverview } from '@src/test_utils/salary_insight_factory'
 
 vi.mock('@src/api/employee_api')
 
@@ -26,8 +29,8 @@ function neverResolves(): Promise<void> {
   return new Promise((): void => {})
 }
 
-async function openDeleteModal(route?: string): Promise<HTMLElement> {
-  renderWithProviders(<EmployeeListPage />, { route })
+async function openDeleteModal(route?: string, queryClient?: QueryClient): Promise<HTMLElement> {
+  renderWithProviders(<EmployeeListPage />, { route, queryClient })
   fireEvent.click(await screen.findByRole('button', { name: deleteEmployeeLabel('Asha Rao') }))
   return screen.findByRole('dialog', { name: DELETE_EMPLOYEE_TITLE })
 }
@@ -75,6 +78,19 @@ describe('deleting an employee', (): void => {
       expect(screen.queryByRole('dialog', { name: DELETE_EMPLOYEE_TITLE })).not.toBeInTheDocument()
     })
     expect(getEmployeesMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('marks the salary insights as out of date, so they reload with the change', async (): Promise<void> => {
+    deleteEmployeeMock.mockResolvedValue()
+    const queryClient: QueryClient = createTestQueryClient()
+    queryClient.setQueryData(salaryInsightKeys.overview(), buildPayrollOverview())
+    const dialog: HTMLElement = await openDeleteModal(undefined, queryClient)
+
+    fireEvent.click(confirmButton(dialog))
+
+    await waitFor((): void => {
+      expect(queryClient.getQueryState(salaryInsightKeys.overview())?.isInvalidated).toBe(true)
+    })
   })
 
   it('disables the confirm button while the delete runs', async (): Promise<void> => {

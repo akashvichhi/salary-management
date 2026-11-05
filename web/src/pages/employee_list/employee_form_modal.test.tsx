@@ -1,4 +1,5 @@
 import { notifications } from '@mantine/notifications'
+import type { QueryClient } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -19,10 +20,12 @@ import {
   SALARY_INVALID_MESSAGE,
   SAVE_EMPLOYEE_LABEL,
 } from '@src/constants/employee_messages'
+import { salaryInsightKeys } from '@src/constants/query_keys'
 import EmployeeListPage from '@src/pages/employee_list/employee_list_page'
 import { buildEmployee, buildPage } from '@src/test_utils/employee_factory'
 import { buildEmployeeOptions } from '@src/test_utils/employee_options_factory'
-import { renderWithProviders } from '@src/test_utils/render_with_providers'
+import { createTestQueryClient, renderWithProviders } from '@src/test_utils/render_with_providers'
+import { buildPayrollOverview } from '@src/test_utils/salary_insight_factory'
 import type { IEmployee, IEmployeeCreatePayload } from '@src/types/employee'
 
 vi.mock('@src/api/employee_api')
@@ -53,6 +56,19 @@ function neverResolves(): Promise<IEmployee> {
   return new Promise((): void => {})
 }
 
+// Insights already loaded during the visit, so a test can check a save marks them out of date.
+function queryClientWithInsights(): QueryClient {
+  const queryClient: QueryClient = createTestQueryClient()
+  queryClient.setQueryData(salaryInsightKeys.overview(), buildPayrollOverview())
+  return queryClient
+}
+
+async function expectInsightsOutOfDate(queryClient: QueryClient): Promise<void> {
+  await waitFor((): void => {
+    expect(queryClient.getQueryState(salaryInsightKeys.overview())?.isInvalidated).toBe(true)
+  })
+}
+
 function textbox(dialog: HTMLElement, label: string): HTMLElement {
   return within(dialog).getByRole('textbox', { name: label })
 }
@@ -61,15 +77,15 @@ function saveButton(dialog: HTMLElement): HTMLElement {
   return within(dialog).getByRole('button', { name: SAVE_EMPLOYEE_LABEL })
 }
 
-async function openAddModal(): Promise<HTMLElement> {
-  renderWithProviders(<EmployeeListPage />)
+async function openAddModal(queryClient?: QueryClient): Promise<HTMLElement> {
+  renderWithProviders(<EmployeeListPage />, { queryClient })
   await screen.findByText('Asha Rao')
   fireEvent.click(screen.getByRole('button', { name: ADD_EMPLOYEE_LABEL }))
   return screen.findByRole('dialog', { name: ADD_EMPLOYEE_LABEL })
 }
 
-async function openEditModal(): Promise<HTMLElement> {
-  renderWithProviders(<EmployeeListPage />)
+async function openEditModal(queryClient?: QueryClient): Promise<HTMLElement> {
+  renderWithProviders(<EmployeeListPage />, { queryClient })
   fireEvent.click(await screen.findByRole('button', { name: editEmployeeLabel('Asha Rao') }))
   return screen.findByRole('dialog', { name: EDIT_EMPLOYEE_TITLE })
 }
@@ -118,6 +134,17 @@ describe('adding an employee', { timeout: FORM_TEST_TIMEOUT_MS }, (): void => {
       expect(screen.queryByRole('dialog', { name: ADD_EMPLOYEE_LABEL })).not.toBeInTheDocument()
     })
     expect(getEmployeesMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('marks the salary insights as out of date, so they include the new employee', async (): Promise<void> => {
+    createEmployeeMock.mockResolvedValue(buildEmployee({ id: 2, fullName: NEW_EMPLOYEE.fullName }))
+    const queryClient: QueryClient = queryClientWithInsights()
+    const dialog: HTMLElement = await openAddModal(queryClient)
+
+    await fillNewEmployee(dialog)
+    fireEvent.click(saveButton(dialog))
+
+    await expectInsightsOutOfDate(queryClient)
   })
 
   it('opens with an empty hire date, not "Invalid date"', async (): Promise<void> => {
@@ -212,6 +239,17 @@ describe('editing an employee', { timeout: FORM_TEST_TIMEOUT_MS }, (): void => {
 
     expect(await screen.findByText(EMPLOYEE_UPDATED_MESSAGE)).toBeInTheDocument()
     expect(updateEmployeeMock).toHaveBeenCalledWith(1, { salary: '90000' })
+  })
+
+  it('marks the salary insights as out of date, so they include the change', async (): Promise<void> => {
+    updateEmployeeMock.mockResolvedValue(buildEmployee({ salary: '90000.00' }))
+    const queryClient: QueryClient = queryClientWithInsights()
+    const dialog: HTMLElement = await openEditModal(queryClient)
+
+    fireEvent.change(textbox(dialog, EMPLOYEE_COLUMN_LABELS.salary), { target: { value: '90000' } })
+    fireEvent.click(saveButton(dialog))
+
+    await expectInsightsOutOfDate(queryClient)
   })
 
   it('closes without a request when nothing changed', async (): Promise<void> => {
