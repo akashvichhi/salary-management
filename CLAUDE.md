@@ -173,6 +173,7 @@ api/
 │           └── routers/                the "controllers"
 │               ├── auth_router.py
 │               ├── employee_router.py
+│               ├── employee_option_router.py   GET /employee-options: the fixed lists for the dropdowns
 │               ├── health_router.py    GET /api/health (mounted outside /api/v1)
 │               └── salary_insight_router.py
 ├── migrations/                         Alembic
@@ -410,7 +411,7 @@ web/src/
 │   ├── query_constants.ts           QUERY_STALE_TIME_MS, QUERY_RETRY_COUNT
 │   ├── time_constants.ts            APP_TIMEZONE (IST), APP_LOCALE, APP_CURRENCY
 │   ├── employee_messages.ts         employee UI texts (states, labels, notifications)
-│   └── employee_constants.ts        a copy of the API's fixed lists (decision 21), page size, column labels
+│   └── employee_constants.ts        page size, sort fields, column labels (the dropdown lists come from the API, decision 21)
 ├── validations/
 │   ├── employee_form_validation.ts
 │   └── login_form_validation.ts
@@ -707,7 +708,7 @@ import classNames from 'classnames'
 ```
 
 ### Constants and validation
-- Constants (page sizes, sort options, country list, debounce delay) go in `src/constants/`, one file per domain.
+- Constants (page sizes, sort options, debounce delay) go in `src/constants/`, one file per domain. Lists the API owns (countries, departments, job titles) are **never** copied: they are loaded from `GET /api/v1/employee-options` (decision 21).
 - Form validation rules go in `src/validations/` and are used by `@mantine/form`. Limits come from constants (e.g. `MIN_SALARY`), never inline numbers.
 - Frontend validation exists for user experience only; the backend is the source of truth. Server field errors (`details`) are shown on the matching form inputs.
 

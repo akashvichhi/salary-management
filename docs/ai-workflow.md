@@ -350,3 +350,15 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - Mantine's `openConfirmModal` sets the button props once, when the modal opens, so it can't show the loading state while the delete runs. The modal body is our own small component instead, which runs the mutation itself.
   - With two icon buttons per row, an existing test failed: the page took just over Testing Library's 1 s default wait to re-render in jsdom. A separate test commit raises the default to 3 s in `vitest.setup.ts`, instead of patching single tests.
 - **How it was verified:** `npm run check` (108 tests); each red snapshot fails before its green.
+
+## 2026-11-05 — Step W7.1: dropdown lists from the API
+
+- **Prompt / instruction:** "We have list of country, job title and department in backend. So there should only one source of truth. We should use those list in frontend via api"
+- **What the AI produced:**
+  - an API pair: `GET /api/v1/employee-options` returns `{ countries: [{ code, name }], departments, job_titles }`, built from the backend's enums; the country display names moved into `COUNTRY_NAMES` next to the `Country` enum
+  - a web pair: `useEmployeeOptionsQuery` (cached for the visit), used by the filters, the employee form, the table's country column and the URL check; the copied lists are gone from `employee_constants.ts`
+  - the list page shows the table skeleton until the lists arrive, and an error with a retry if they fail
+- **What I changed, rejected, or corrected, and why:**
+  - This reverses decision 21. The AI had recommended copying the lists to save a request, and I accepted it in W4; at review I chose one source of truth over saving one small cached request.
+  - The new tests live in their own file and use values only the API knows (New Zealand, Research), so a copy kept in the web app could not pass them. The existing test files get a default options mock in the green commit, where the page starts needing it, so the red commit fails only the new tests.
+- **How it was verified:** `make check` (156 tests, 100% coverage); `npm run check` (114 tests); each red snapshot fails before its green.

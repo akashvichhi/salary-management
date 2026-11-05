@@ -142,12 +142,12 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** ESLint 9.39.5, TypeScript 6.0.3 and Stylelint 17.16.0; everything else at its newest version. Vite 8 bundles with Rolldown, so the vendor chunks use `codeSplitting.groups` instead of Rollup's `manualChunks`.
 - **Consequences:** every rule in `CLAUDE.md` works, with no forced installs. Upgrade once each plugin's peer range allows it.
 
-## 21. Dropdown lists copied into the web app
+## 21. Dropdown lists served by the API
 
-- **Context:** the filters and the employee form need the country, department and job title lists (10, 10 and 20 values), which are fixed in `api/app/constants/employee_constants.py` (decision 17).
+- **Context:** the filters, the employee form, the table's country names and the URL check need the country, department and job title lists (10, 10 and 20 values), which are fixed in `api/app/constants/employee_constants.py` (decision 17).
 - **Options:** copy them into `web/src/constants/employee_constants.ts`; serve them from a new `GET /api/v1/employee-options` endpoint.
-- **Decision:** copy them, with a comment in each file pointing to the other.
-- **Consequences:** no extra request, query or loading state on every filter bar and form. The two copies can drift, but the lists change rarely, and the API still validates every value, so drift shows up as a clear 422 rather than bad data. An endpoint is the fix if the lists ever become editable.
+- **Decision:** serve them from the endpoint, so the backend is the one source of truth. The country display names moved to the backend too (`COUNTRY_NAMES`). This replaces the first choice, a copy in the web app, which was built in W5 and dropped in W7.1 at review: two copies are two places to change, and they can drift.
+- **Consequences:** adding a value is a backend change only. The list page waits for this one small request before asking for employees, since the URL check needs the lists; it is cached for the whole visit (`staleTime: Infinity`) because the lists only change with a deploy, which reloads the app. If it fails, the page shows an error with a retry.
 
 ## 22. Add and edit in modals on the list page
 
