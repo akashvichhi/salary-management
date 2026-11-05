@@ -24,6 +24,9 @@ interface IInsightSectionProps<T> {
   control?:  React.ReactNode
   // Replaces the default table skeleton (e.g. stat cards).
   skeleton?: React.ReactNode
+  // A query this insight waits for (e.g. the country list): if it fails, its error and retry show
+  // here, instead of a skeleton that never ends.
+  requires?: UseQueryResult<unknown, IApiError>
 }
 
 const SKELETON_ROW_COUNT: number = 5
@@ -37,12 +40,16 @@ export function InsightSection<T>({
   children,
   control,
   skeleton,
+  requires,
 }: IInsightSectionProps<T>): React.JSX.Element {
   const titleId: string = useId()
-  const { data, error, refetch } = query
+  const { data } = query
+  const failedQuery: UseQueryResult<unknown, IApiError> | null = requires?.error ? requires : query.error ? query : null
+  const error: IApiError | null = failedQuery?.error ?? null
+  const refetch: (() => Promise<unknown>) | undefined = failedQuery?.refetch
 
   const handleRetry: () => void = useCallback((): void => {
-    void refetch()
+    void refetch?.()
   }, [refetch])
 
   function renderContent(): React.ReactNode {

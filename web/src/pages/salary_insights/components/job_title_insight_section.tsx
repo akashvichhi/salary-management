@@ -33,7 +33,8 @@ function jobTitleKey(row: IJobTitleSalaryInsight): string {
 }
 
 export function JobTitleInsightSection(): React.JSX.Element {
-  const { data: options } = useEmployeeOptionsQuery()
+  const optionsQuery: ReturnType<typeof useEmployeeOptionsQuery> = useEmployeeOptionsQuery()
+  const { data: options } = optionsQuery
   const { country, setCountry } = useInsightCountry(options?.countryCodes)
   const byJobTitleQuery: ReturnType<typeof useSalaryByJobTitleQuery> = useSalaryByJobTitleQuery(country)
 
@@ -49,7 +50,13 @@ export function JobTitleInsightSection(): React.JSX.Element {
   )
 
   return (
-    <InsightSection control={countryPicker} isEmpty={isEmptyList} query={byJobTitleQuery} title={BY_JOB_TITLE_TITLE}>
+    <InsightSection
+      control={countryPicker}
+      isEmpty={isEmptyList}
+      query={byJobTitleQuery}
+      requires={optionsQuery}
+      title={BY_JOB_TITLE_TITLE}
+    >
       {(rows: IJobTitleSalaryInsight[]): React.JSX.Element => (
         <InsightTable columns={JOB_TITLE_COLUMNS} rowKey={jobTitleKey} rows={rows} />
       )}
