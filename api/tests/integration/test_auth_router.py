@@ -17,6 +17,7 @@ from tests.factories import HR_MANAGER_EMAIL, login_payload
 
 LOGIN_URL = "/api/v1/auth/login"
 CURRENT_USER_URL = "/api/v1/auth/me"
+LOGOUT_URL = "/api/v1/auth/logout"
 SESSION_TTL_SECONDS = 8 * 60 * 60
 INVALID_CREDENTIALS_RESPONSE = {"error": INVALID_CREDENTIALS}
 NOT_AUTHENTICATED_RESPONSE = {"error": NOT_AUTHENTICATED}
@@ -200,3 +201,33 @@ def test_the_current_user_returns_401_when_not_logged_in(client: TestClient) -> 
 
     assert response.status_code == 401
     assert response.json() == NOT_AUTHENTICATED_RESPONSE
+
+
+def test_logout_returns_204_and_clears_the_cookie(
+    authenticated_client: TestClient, settings: Settings
+) -> None:
+    response = authenticated_client.post(LOGOUT_URL)
+
+    assert response.status_code == 204
+    assert response.content == b""
+    cookie = response.headers["set-cookie"].lower()
+    assert cookie.startswith(f"{settings.session_cookie_name}=")
+    assert "max-age=0" in cookie
+    assert "httponly" in cookie
+
+
+def test_logout_ends_the_session_on_the_server(
+    authenticated_client: TestClient, settings: Settings
+) -> None:
+    session_id = authenticated_client.cookies[settings.session_cookie_name]
+
+    authenticated_client.post(LOGOUT_URL)
+    # Sending the old session ID again, as a copied cookie would.
+    authenticated_client.cookies.set(settings.session_cookie_name, session_id)
+
+    assert authenticated_client.get(CURRENT_USER_URL).status_code == 401
+    assert stored_sessions(settings) == []
+
+
+def test_logout_without_a_session_still_succeeds(client: TestClient) -> None:
+    assert client.post(LOGOUT_URL).status_code == 204
