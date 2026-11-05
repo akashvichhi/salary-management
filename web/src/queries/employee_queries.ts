@@ -3,7 +3,7 @@ import type { QueryClient, UseMutationResult, UseQueryResult } from '@tanstack/r
 
 import { createEmployee, deleteEmployee, getEmployeeOptions, getEmployees, updateEmployee } from '@src/api/employee_api'
 import { EMPLOYEE_CREATED_MESSAGE, EMPLOYEE_DELETED_MESSAGE, EMPLOYEE_UPDATED_MESSAGE } from '@src/constants/employee_messages'
-import { employeeKeys } from '@src/constants/query_keys'
+import { employeeKeys, salaryInsightKeys } from '@src/constants/query_keys'
 import type { IApiError } from '@src/types/api_response'
 import type {
   ICountryOption,
@@ -59,6 +59,15 @@ function showMutationError(error: IApiError): void {
   showErrorNotification(error.error)
 }
 
+// Every insight is computed from the employees, so a change makes them out of date along with the
+// lists. Insights not on screen are refetched when the page opens again.
+function refreshEmployeeData(queryClient: QueryClient): Promise<void> {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: employeeKeys.lists() }),
+    queryClient.invalidateQueries({ queryKey: salaryInsightKeys.all() }),
+  ]).then((): void => undefined)
+}
+
 export function useCreateEmployeeMutation(): UseMutationResult<IEmployee, IApiError, IEmployeeCreatePayload> {
   const queryClient: QueryClient = useQueryClient()
 
@@ -66,7 +75,7 @@ export function useCreateEmployeeMutation(): UseMutationResult<IEmployee, IApiEr
     mutationFn: (payload: IEmployeeCreatePayload): Promise<IEmployee> => createEmployee(payload),
     onSuccess:  async (): Promise<void> => {
       showSuccessNotification(EMPLOYEE_CREATED_MESSAGE)
-      await queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
+      await refreshEmployeeData(queryClient)
     },
     onError: showMutationError,
   })
@@ -79,7 +88,7 @@ export function useUpdateEmployeeMutation(): UseMutationResult<IEmployee, IApiEr
     mutationFn: ({ id, payload }: IUpdateEmployeeVariables): Promise<IEmployee> => updateEmployee(id, payload),
     onSuccess:  async (): Promise<void> => {
       showSuccessNotification(EMPLOYEE_UPDATED_MESSAGE)
-      await queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
+      await refreshEmployeeData(queryClient)
     },
     onError: showMutationError,
   })
@@ -94,7 +103,7 @@ export function useDeleteEmployeeMutation(): UseMutationResult<void, IApiError, 
     mutationFn: (id: number): Promise<void> => deleteEmployee(id),
     onSuccess:  async (): Promise<void> => {
       showSuccessNotification(EMPLOYEE_DELETED_MESSAGE)
-      await queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
+      await refreshEmployeeData(queryClient)
     },
     onError: showMutationError,
   })
