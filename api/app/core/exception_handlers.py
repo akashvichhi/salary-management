@@ -8,13 +8,20 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.constants.messages import INTERNAL_SERVER_ERROR, VALIDATION_FAILED
-from app.core.exceptions import ConflictError, DomainError, DomainValidationError, NotFoundError
+from app.core.exceptions import (
+    ConflictError,
+    DomainError,
+    DomainValidationError,
+    NotFoundError,
+    UnauthenticatedError,
+)
 from app.schemas.common.response_schema import ErrorResponse, FieldError
 
 logger = logging.getLogger(__name__)
 
 # A new domain error gets its status code here, without touching the handlers.
 DOMAIN_ERROR_STATUS_CODES: dict[type[DomainError], int] = {
+    UnauthenticatedError: status.HTTP_401_UNAUTHORIZED,
     NotFoundError: status.HTTP_404_NOT_FOUND,
     ConflictError: status.HTTP_409_CONFLICT,
     DomainValidationError: status.HTTP_422_UNPROCESSABLE_CONTENT,

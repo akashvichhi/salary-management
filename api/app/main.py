@@ -31,6 +31,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         engine.dispose()
 
     app = FastAPI(title=APP_TITLE, lifespan=lifespan)
+    app.state.settings = app_settings
     app.state.session_factory = create_session_factory(engine)
     app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE_BYTES)
     if app_settings.allowed_origins:

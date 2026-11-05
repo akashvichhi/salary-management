@@ -11,6 +11,10 @@ class DomainError(Exception):
         self.field = field
 
 
+class UnauthenticatedError(DomainError):
+    """Not logged in, or the session is unknown or expired."""
+
+
 class NotFoundError(DomainError):
     pass
 

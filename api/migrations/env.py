@@ -4,7 +4,9 @@ from alembic import context
 
 from app.core.config import get_settings
 from app.core.database import create_database_engine
-from app.models import employee_model  # noqa: F401  registers the table on Base.metadata
+
+# Imported to register their tables on Base.metadata.
+from app.models import employee_model, session_model, user_model  # noqa: F401
 from app.models.base_model import Base
 
 config = context.config
