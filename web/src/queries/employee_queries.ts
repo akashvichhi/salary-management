@@ -1,8 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient, UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 
-import { createEmployee, getEmployees, updateEmployee } from '@src/api/employee_api'
-import { EMPLOYEE_CREATED_MESSAGE, EMPLOYEE_UPDATED_MESSAGE } from '@src/constants/employee_messages'
+import { createEmployee, deleteEmployee, getEmployees, updateEmployee } from '@src/api/employee_api'
+import { EMPLOYEE_CREATED_MESSAGE, EMPLOYEE_DELETED_MESSAGE, EMPLOYEE_UPDATED_MESSAGE } from '@src/constants/employee_messages'
 import { employeeKeys } from '@src/constants/query_keys'
 import type { IApiError } from '@src/types/api_response'
 import type { IEmployee, IEmployeeCreatePayload, IEmployeeListParams, TEmployeeUpdatePayload } from '@src/types/employee'
@@ -49,6 +49,21 @@ export function useUpdateEmployeeMutation(): UseMutationResult<IEmployee, IApiEr
     mutationFn: ({ id, payload }: IUpdateEmployeeVariables): Promise<IEmployee> => updateEmployee(id, payload),
     onSuccess:  async (): Promise<void> => {
       showSuccessNotification(EMPLOYEE_UPDATED_MESSAGE)
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
+    },
+    onError: showMutationError,
+  })
+}
+
+// Reloading the list also covers deleting the last row of the last page: the empty page that comes
+// back makes the list step back a page (use_employee_list.ts).
+export function useDeleteEmployeeMutation(): UseMutationResult<void, IApiError, number> {
+  const queryClient: QueryClient = useQueryClient()
+
+  return useMutation<void, IApiError, number>({
+    mutationFn: (id: number): Promise<void> => deleteEmployee(id),
+    onSuccess:  async (): Promise<void> => {
+      showSuccessNotification(EMPLOYEE_DELETED_MESSAGE)
       await queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
     },
     onError: showMutationError,

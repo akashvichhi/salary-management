@@ -1,6 +1,7 @@
 import { RouterProvider } from 'react-router'
 
 import { MantineProvider } from '@mantine/core'
+import { ModalsProvider } from '@mantine/modals'
 import { Notifications } from '@mantine/notifications'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary } from 'react-error-boundary'
@@ -25,7 +26,9 @@ export function App(): React.JSX.Element {
         <Notifications />
         <GlobalErrorListener />
         <ErrorBoundary FallbackComponent={AppErrorFallback} onError={logRenderError}>
-          <RouterProvider router={appRouter} />
+          <ModalsProvider>
+            <RouterProvider router={appRouter} />
+          </ModalsProvider>
         </ErrorBoundary>
       </MantineProvider>
     </QueryClientProvider>

@@ -1,7 +1,7 @@
 import { memo, useCallback } from 'react'
 
-import { ActionIcon, Table, VisuallyHidden } from '@mantine/core'
-import { IconPencil } from '@tabler/icons-react'
+import { ActionIcon, Group, Table, VisuallyHidden } from '@mantine/core'
+import { IconPencil, IconTrash } from '@tabler/icons-react'
 
 import {
   COUNTRY_NAME_BY_CODE,
@@ -9,7 +9,7 @@ import {
   EMPLOYEE_SORT_FIELDS,
   EMPLOYEE_TABLE_MAX_HEIGHT,
 } from '@src/constants/employee_constants'
-import { editEmployeeLabel, EMPLOYEE_ACTIONS_LABEL } from '@src/constants/employee_messages'
+import { deleteEmployeeLabel, editEmployeeLabel, EMPLOYEE_ACTIONS_LABEL } from '@src/constants/employee_messages'
 import { SortableHeader } from '@src/pages/employee_list/components/sortable_header'
 import type { IEmployee, TEmployeeColumn } from '@src/types/employee'
 import { formatCurrency } from '@src/utils/format_currency'
@@ -20,11 +20,13 @@ interface IEmployeeTableProps {
   sort:      string
   onSort:    (sort: string) => void
   onEdit:    (employee: IEmployee) => void
+  onDelete:  (employee: IEmployee) => void
 }
 
 interface IEmployeeRowProps {
   employee: IEmployee
   onEdit:   (employee: IEmployee) => void
+  onDelete: (employee: IEmployee) => void
 }
 
 const ICON_SIZE: number = 16
@@ -39,8 +41,10 @@ const RIGHT_ALIGNED_COLUMN: TEmployeeColumn = 'salary'
 const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function EmployeeRow({
   employee,
   onEdit,
+  onDelete,
 }: IEmployeeRowProps): React.JSX.Element {
   const handleEdit: () => void = useCallback((): void => onEdit(employee), [onEdit, employee])
+  const handleDelete: () => void = useCallback((): void => onDelete(employee), [onDelete, employee])
 
   return (
     <Table.Tr>
@@ -52,15 +56,20 @@ const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function
       <Table.Td ta="right">{formatCurrency(employee.salary)}</Table.Td>
       <Table.Td>{formatDate(employee.hireDate)}</Table.Td>
       <Table.Td>
-        <ActionIcon aria-label={editEmployeeLabel(employee.fullName)} variant="subtle" onClick={handleEdit}>
-          <IconPencil aria-hidden size={ICON_SIZE} />
-        </ActionIcon>
+        <Group gap="xs" wrap="nowrap">
+          <ActionIcon aria-label={editEmployeeLabel(employee.fullName)} variant="subtle" onClick={handleEdit}>
+            <IconPencil aria-hidden size={ICON_SIZE} />
+          </ActionIcon>
+          <ActionIcon aria-label={deleteEmployeeLabel(employee.fullName)} color="red" variant="subtle" onClick={handleDelete}>
+            <IconTrash aria-hidden size={ICON_SIZE} />
+          </ActionIcon>
+        </Group>
       </Table.Td>
     </Table.Tr>
   )
 })
 
-export function EmployeeTable({ employees, sort, onSort, onEdit }: IEmployeeTableProps): React.JSX.Element {
+export function EmployeeTable({ employees, sort, onSort, onEdit, onDelete }: IEmployeeTableProps): React.JSX.Element {
   return (
     <Table.ScrollContainer maxHeight={EMPLOYEE_TABLE_MAX_HEIGHT} minWidth={TABLE_MIN_WIDTH}>
       <Table highlightOnHover stickyHeader striped>
@@ -83,7 +92,7 @@ export function EmployeeTable({ employees, sort, onSort, onEdit }: IEmployeeTabl
         </Table.Thead>
         <Table.Tbody>
           {employees.map((employee: IEmployee): React.JSX.Element => (
-            <EmployeeRow key={employee.id} employee={employee} onEdit={onEdit} />
+            <EmployeeRow key={employee.id} employee={employee} onDelete={onDelete} onEdit={onEdit} />
           ))}
         </Table.Tbody>
       </Table>
