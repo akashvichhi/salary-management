@@ -9,8 +9,11 @@ from app.core.config import Settings
 from app.core.database import create_database_engine, create_session_factory
 from app.main import create_app
 from app.models.base_model import Base
+from app.models.user_model import UserModel
+from tests.factories import build_user, login_payload
 
 IN_MEMORY_DATABASE_URL = "sqlite://"
+LOGIN_URL = "/api/v1/auth/login"
 
 
 @pytest.fixture
@@ -32,10 +35,30 @@ def settings(tmp_path: Path) -> Settings:
     engine = create_database_engine(database_url)
     Base.metadata.create_all(engine)
     engine.dispose()
-    return Settings(_env_file=None, database_url=database_url)
+    # The test client talks plain http, where a Secure cookie would never be sent back.
+    return Settings(_env_file=None, database_url=database_url, cookie_secure=False)
 
 
 @pytest.fixture
 def client(settings: Settings) -> Iterator[TestClient]:
     with TestClient(create_app(settings)) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def hr_manager(settings: Settings) -> UserModel:
+    engine = create_database_engine(settings.database_url)
+    with create_session_factory(engine)() as db_session:
+        user = build_user()
+        db_session.add(user)
+        db_session.commit()
+    engine.dispose()
+    return user
+
+
+@pytest.fixture
+def authenticated_client(client: TestClient, hr_manager: UserModel) -> TestClient:
+    """A client logged in as the HR manager; its cookie jar carries the session."""
+    response = client.post(LOGIN_URL, json=login_payload())
+    assert response.status_code == 200, response.text
+    return client

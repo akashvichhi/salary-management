@@ -4,7 +4,9 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
+from app.core.security import hash_password
 from app.models.employee_model import EmployeeModel
+from app.models.user_model import UserModel
 from app.schemas.requests.employee_request import EmployeeCreateRequest
 
 DEFAULT_EMPLOYEE_FIELDS: dict[str, Any] = {
@@ -34,3 +36,17 @@ def employee_payload(**overrides: Any) -> dict[str, Any]:
 
 def build_create_request(**overrides: Any) -> EmployeeCreateRequest:
     return EmployeeCreateRequest.model_validate(employee_payload(**overrides))
+
+
+HR_MANAGER_EMAIL = "hr@acme.com"
+HR_MANAGER_PASSWORD = "correct horse battery staple"
+
+
+def build_user(email: str = HR_MANAGER_EMAIL, password: str = HR_MANAGER_PASSWORD) -> UserModel:
+    return UserModel(email=email, password_hash=hash_password(password))
+
+
+def login_payload(
+    email: str = HR_MANAGER_EMAIL, password: str = HR_MANAGER_PASSWORD
+) -> dict[str, str]:
+    return {"email": email, "password": password}

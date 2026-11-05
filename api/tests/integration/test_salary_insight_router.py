@@ -7,11 +7,13 @@ from tests.integration.test_employee_router import create_employee
 INSIGHTS_URL = "/api/v1/salary-insights"
 
 
-def test_salary_by_country_returns_an_array_with_money_as_strings(client: TestClient) -> None:
-    create_employee(client, email="a@acme.com", country="IN", salary="20000")
-    create_employee(client, email="b@acme.com", country="IN", salary="30000.50")
+def test_salary_by_country_returns_an_array_with_money_as_strings(
+    authenticated_client: TestClient,
+) -> None:
+    create_employee(authenticated_client, email="a@acme.com", country="IN", salary="20000")
+    create_employee(authenticated_client, email="b@acme.com", country="IN", salary="30000.50")
 
-    response = client.get(f"{INSIGHTS_URL}/by-country")
+    response = authenticated_client.get(f"{INSIGHTS_URL}/by-country")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -28,18 +30,22 @@ def test_salary_by_country_returns_an_array_with_money_as_strings(client: TestCl
     }
 
 
-def test_salary_by_country_of_an_empty_database_is_an_empty_list(client: TestClient) -> None:
-    response = client.get(f"{INSIGHTS_URL}/by-country")
+def test_salary_by_country_of_an_empty_database_is_an_empty_list(
+    authenticated_client: TestClient,
+) -> None:
+    response = authenticated_client.get(f"{INSIGHTS_URL}/by-country")
 
     assert response.status_code == 200
     assert response.json() == {"data": []}
 
 
-def test_salary_by_job_title_reads_the_country_ignoring_case(client: TestClient) -> None:
-    create_employee(client, email="a@acme.com", country="IN", job_title="Accountant")
-    create_employee(client, email="b@acme.com", country="US", job_title="Accountant")
+def test_salary_by_job_title_reads_the_country_ignoring_case(
+    authenticated_client: TestClient,
+) -> None:
+    create_employee(authenticated_client, email="a@acme.com", country="IN", job_title="Accountant")
+    create_employee(authenticated_client, email="b@acme.com", country="US", job_title="Accountant")
 
-    response = client.get(f"{INSIGHTS_URL}/by-job-title", params={"country": "in"})
+    response = authenticated_client.get(f"{INSIGHTS_URL}/by-job-title", params={"country": "in"})
 
     assert response.status_code == 200
     assert response.json() == {
@@ -49,19 +55,21 @@ def test_salary_by_job_title_reads_the_country_ignoring_case(client: TestClient)
 
 @pytest.mark.parametrize("params", [{}, {"country": "XX"}])
 def test_salary_by_job_title_needs_a_known_country(
-    client: TestClient, params: dict[str, str]
+    authenticated_client: TestClient, params: dict[str, str]
 ) -> None:
-    response = client.get(f"{INSIGHTS_URL}/by-job-title", params=params)
+    response = authenticated_client.get(f"{INSIGHTS_URL}/by-job-title", params=params)
 
     assert response.status_code == 422
     assert response.json()["error"] == VALIDATION_FAILED
     assert [detail["field"] for detail in response.json()["details"]] == ["country"]
 
 
-def test_salary_by_department_returns_an_array_with_money_as_strings(client: TestClient) -> None:
-    create_employee(client, email="a@acme.com", department="Legal", salary="70000")
+def test_salary_by_department_returns_an_array_with_money_as_strings(
+    authenticated_client: TestClient,
+) -> None:
+    create_employee(authenticated_client, email="a@acme.com", department="Legal", salary="70000")
 
-    response = client.get(f"{INSIGHTS_URL}/by-department")
+    response = authenticated_client.get(f"{INSIGHTS_URL}/by-department")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -69,11 +77,13 @@ def test_salary_by_department_returns_an_array_with_money_as_strings(client: Tes
     }
 
 
-def test_payroll_overview_returns_totals_with_money_as_strings(client: TestClient) -> None:
-    create_employee(client, email="a@acme.com", country="IN", salary="20000")
-    create_employee(client, email="b@acme.com", country="US", salary="80000.50")
+def test_payroll_overview_returns_totals_with_money_as_strings(
+    authenticated_client: TestClient,
+) -> None:
+    create_employee(authenticated_client, email="a@acme.com", country="IN", salary="20000")
+    create_employee(authenticated_client, email="b@acme.com", country="US", salary="80000.50")
 
-    response = client.get(f"{INSIGHTS_URL}/overview")
+    response = authenticated_client.get(f"{INSIGHTS_URL}/overview")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -88,8 +98,8 @@ def test_payroll_overview_returns_totals_with_money_as_strings(client: TestClien
     }
 
 
-def test_payroll_overview_of_an_empty_database_is_zeros(client: TestClient) -> None:
-    response = client.get(f"{INSIGHTS_URL}/overview")
+def test_payroll_overview_of_an_empty_database_is_zeros(authenticated_client: TestClient) -> None:
+    response = authenticated_client.get(f"{INSIGHTS_URL}/overview")
 
     assert response.json() == {
         "data": {"headcount": 0, "total_payroll": "0.00", "payroll_by_country": []}

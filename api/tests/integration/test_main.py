@@ -18,11 +18,11 @@ GZIP_HEADERS = {"Accept-Encoding": "gzip"}
 EMPLOYEES_FOR_A_LARGE_RESPONSE = 10
 
 
-def test_large_responses_are_compressed(client: TestClient) -> None:
+def test_large_responses_are_compressed(authenticated_client: TestClient) -> None:
     for number in range(EMPLOYEES_FOR_A_LARGE_RESPONSE):
-        create_employee(client, email=f"employee{number}@acme.com")
+        create_employee(authenticated_client, email=f"employee{number}@acme.com")
 
-    response = client.get("/api/v1/employees", headers=GZIP_HEADERS)
+    response = authenticated_client.get("/api/v1/employees", headers=GZIP_HEADERS)
 
     assert response.headers["content-encoding"] == "gzip"
     assert response.json()["meta"]["total_count"] == EMPLOYEES_FOR_A_LARGE_RESPONSE

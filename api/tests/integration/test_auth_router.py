@@ -1,39 +1,31 @@
 from collections.abc import Iterator
+from datetime import timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
-from app.constants.messages import INVALID_CREDENTIALS
+from app.constants.messages import INVALID_CREDENTIALS, NOT_AUTHENTICATED
 from app.core.config import Settings
 from app.core.database import create_database_engine, create_session_factory
-from app.core.security import hash_password, hash_session_token
+from app.core.security import generate_session_token, hash_session_token
 from app.main import create_app
+from app.models.base_model import now_in_app_timezone
 from app.models.session_model import SessionModel
 from app.models.user_model import UserModel
+from tests.factories import HR_MANAGER_EMAIL, login_payload
 
 LOGIN_URL = "/api/v1/auth/login"
-HR_MANAGER_EMAIL = "hr@acme.com"
-HR_MANAGER_PASSWORD = "correct horse battery staple"
+CURRENT_USER_URL = "/api/v1/auth/me"
 SESSION_TTL_SECONDS = 8 * 60 * 60
 INVALID_CREDENTIALS_RESPONSE = {"error": INVALID_CREDENTIALS}
-
-
-def login_payload(
-    email: str = HR_MANAGER_EMAIL, password: str = HR_MANAGER_PASSWORD
-) -> dict[str, str]:
-    return {"email": email, "password": password}
-
-
-@pytest.fixture
-def hr_manager(settings: Settings) -> UserModel:
-    engine = create_database_engine(settings.database_url)
-    with create_session_factory(engine)() as db_session:
-        user = UserModel(email=HR_MANAGER_EMAIL, password_hash=hash_password(HR_MANAGER_PASSWORD))
-        db_session.add(user)
-        db_session.commit()
-    engine.dispose()
-    return user
+NOT_AUTHENTICATED_RESPONSE = {"error": NOT_AUTHENTICATED}
+# One route per protected router, so a router left unprotected fails here.
+PROTECTED_URLS = [
+    "/api/v1/employees",
+    "/api/v1/employee-options",
+    "/api/v1/salary-insights/overview",
+]
 
 
 def stored_sessions(settings: Settings) -> list[SessionModel]:
@@ -51,12 +43,6 @@ def client_with(settings: Settings, **overrides: object) -> TestClient:
 @pytest.fixture
 def secure_client(settings: Settings) -> Iterator[TestClient]:
     with client_with(settings, cookie_secure=True) as test_client:
-        yield test_client
-
-
-@pytest.fixture
-def local_client(settings: Settings) -> Iterator[TestClient]:
-    with client_with(settings, cookie_secure=False) as test_client:
         yield test_client
 
 
@@ -85,9 +71,9 @@ def test_login_sets_an_http_only_same_site_lax_session_cookie(secure_client: Tes
 
 @pytest.mark.usefixtures("hr_manager")
 def test_the_session_cookie_is_not_secure_when_disabled_for_local_development(
-    local_client: TestClient,
+    client: TestClient,
 ) -> None:
-    response = local_client.post(LOGIN_URL, json=login_payload())
+    response = client.post(LOGIN_URL, json=login_payload())
 
     attributes = {part.strip().lower() for part in response.headers["set-cookie"].split(";")}
     assert "secure" not in attributes
@@ -95,9 +81,9 @@ def test_the_session_cookie_is_not_secure_when_disabled_for_local_development(
 
 @pytest.mark.usefixtures("hr_manager")
 def test_the_database_keeps_only_a_hash_of_the_session_id(
-    local_client: TestClient, settings: Settings
+    client: TestClient, settings: Settings
 ) -> None:
-    response = local_client.post(LOGIN_URL, json=login_payload())
+    response = client.post(LOGIN_URL, json=login_payload())
 
     session_id = response.cookies[settings.session_cookie_name]
     [stored] = stored_sessions(settings)
@@ -106,9 +92,9 @@ def test_the_database_keeps_only_a_hash_of_the_session_id(
 
 
 @pytest.mark.usefixtures("hr_manager")
-def test_every_login_gets_a_new_session_id(local_client: TestClient, settings: Settings) -> None:
-    first = local_client.post(LOGIN_URL, json=login_payload())
-    second = local_client.post(LOGIN_URL, json=login_payload())
+def test_every_login_gets_a_new_session_id(client: TestClient, settings: Settings) -> None:
+    first = client.post(LOGIN_URL, json=login_payload())
+    second = client.post(LOGIN_URL, json=login_payload())
 
     name = settings.session_cookie_name
     assert first.cookies[name] != second.cookies[name]
@@ -137,3 +123,80 @@ def test_login_rejects_an_empty_password(client: TestClient) -> None:
 
     assert response.status_code == 422
     assert [detail["field"] for detail in response.json()["details"]] == ["password"]
+
+
+def add_session(settings: Settings, user: UserModel, expires_in: timedelta) -> str:
+    """Stores a session for the user directly, and returns the token its cookie would hold."""
+    token = generate_session_token()
+    engine = create_database_engine(settings.database_url)
+    with create_session_factory(engine)() as db_session:
+        db_session.add(
+            SessionModel(
+                token_hash=hash_session_token(token),
+                user_id=user.id,
+                expires_at=now_in_app_timezone() + expires_in,
+            )
+        )
+        db_session.commit()
+    engine.dispose()
+    return token
+
+
+@pytest.mark.parametrize("url", PROTECTED_URLS)
+def test_a_protected_route_returns_401_without_a_session_cookie(
+    client: TestClient, url: str
+) -> None:
+    response = client.get(url)
+
+    assert response.status_code == 401
+    assert response.json() == NOT_AUTHENTICATED_RESPONSE
+
+
+@pytest.mark.parametrize("url", PROTECTED_URLS)
+def test_a_protected_route_works_with_a_session(authenticated_client: TestClient, url: str) -> None:
+    assert authenticated_client.get(url).status_code == 200
+
+
+def test_an_unknown_session_id_returns_401(client: TestClient, settings: Settings) -> None:
+    client.cookies.set(settings.session_cookie_name, generate_session_token())
+
+    response = client.get(PROTECTED_URLS[0])
+
+    assert response.status_code == 401
+    assert response.json() == NOT_AUTHENTICATED_RESPONSE
+
+
+def test_an_expired_session_returns_401_and_is_deleted(
+    client: TestClient, settings: Settings, hr_manager: UserModel
+) -> None:
+    token = add_session(settings, hr_manager, expires_in=-timedelta(seconds=1))
+    client.cookies.set(settings.session_cookie_name, token)
+
+    response = client.get(PROTECTED_URLS[0])
+
+    assert response.status_code == 401
+    assert response.json() == NOT_AUTHENTICATED_RESPONSE
+    assert stored_sessions(settings) == []
+
+
+def test_a_session_works_until_it_expires(
+    client: TestClient, settings: Settings, hr_manager: UserModel
+) -> None:
+    token = add_session(settings, hr_manager, expires_in=timedelta(minutes=1))
+    client.cookies.set(settings.session_cookie_name, token)
+
+    assert client.get(PROTECTED_URLS[0]).status_code == 200
+
+
+def test_the_current_user_is_the_logged_in_hr_manager(authenticated_client: TestClient) -> None:
+    response = authenticated_client.get(CURRENT_USER_URL)
+
+    assert response.status_code == 200
+    assert response.json()["data"]["email"] == HR_MANAGER_EMAIL
+
+
+def test_the_current_user_returns_401_when_not_logged_in(client: TestClient) -> None:
+    response = client.get(CURRENT_USER_URL)
+
+    assert response.status_code == 401
+    assert response.json() == NOT_AUTHENTICATED_RESPONSE
