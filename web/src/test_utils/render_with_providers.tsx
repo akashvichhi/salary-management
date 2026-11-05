@@ -10,13 +10,20 @@ import type { RenderResult } from '@testing-library/react'
 import { theme } from '@src/styles/theme'
 
 interface IRenderOptions {
-  route?: string
+  route?:       string
+  // Passed in when a test needs to look at the cache (e.g. that logout clears it).
+  queryClient?: QueryClient
 }
 
 // A fresh QueryClient per test (no shared cache) that fails fast instead of retrying.
-export function renderWithProviders(ui: React.ReactElement, { route = '/' }: IRenderOptions = {}): RenderResult {
-  const queryClient: QueryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+export function createTestQueryClient(): QueryClient {
+  return new QueryClient({ defaultOptions: { queries: { retry: false } } })
+}
 
+export function renderWithProviders(
+  ui: React.ReactElement,
+  { route = '/', queryClient = createTestQueryClient() }: IRenderOptions = {},
+): RenderResult {
   return render(
     <QueryClientProvider client={queryClient}>
       <MantineProvider env="test" theme={theme}>
