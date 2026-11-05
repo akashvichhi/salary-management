@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.core.database import get_db
+from app.models.user_model import UserModel
 from app.repositories.employee_repository import EmployeeRepository
 from app.repositories.salary_insight_repository import SalaryInsightRepository
 from app.repositories.session_repository import SessionRepository
@@ -58,3 +59,12 @@ def get_auth_service(
 
 
 AuthServiceDependency = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_current_user(
+    request: Request, service: AuthServiceDependency, settings: SettingsDependency
+) -> UserModel:
+    return service.current_user(request.cookies.get(settings.session_cookie_name))
+
+
+CurrentUserDependency = Annotated[UserModel, Depends(get_current_user)]

@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from sqlalchemy.orm import Session
 
-from app.constants.messages import INVALID_CREDENTIALS
+from app.constants.messages import INVALID_CREDENTIALS, NOT_AUTHENTICATED
 from app.core.exceptions import UnauthenticatedError
 from app.core.security import (
     generate_session_token,
@@ -51,6 +51,20 @@ class AuthService:
         if user is None or not password_matches:
             raise UnauthenticatedError(INVALID_CREDENTIALS)
         return LoginResult(user=user, session_token=self._start_session(user))
+
+    def current_user(self, session_token: str | None) -> UserModel:
+        """The user of a live session. A missing, unknown or expired session is a 401."""
+        if not session_token:
+            raise UnauthenticatedError(NOT_AUTHENTICATED)
+        user_session = self.session_repository.find_by_token_hash(hash_session_token(session_token))
+        if user_session is None:
+            raise UnauthenticatedError(NOT_AUTHENTICATED)
+        if user_session.expires_at <= now_in_app_timezone():
+            # Expired sessions are cleaned up when they are used.
+            self.session_repository.delete(user_session)
+            self.session.commit()
+            raise UnauthenticatedError(NOT_AUTHENTICATED)
+        return user_session.user
 
     def _start_session(self, user: UserModel) -> str:
         # A new token on every login, so a session ID set before login is never reused.

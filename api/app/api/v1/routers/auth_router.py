@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Response
 
-from app.api.dependencies import AuthServiceDependency, SettingsDependency
+from app.api.dependencies import (
+    AuthServiceDependency,
+    CurrentUserDependency,
+    SettingsDependency,
+)
 from app.api.session_cookie import set_session_cookie
-from app.constants.route_constants import AUTH_PATH, LOGIN_PATH
+from app.constants.route_constants import AUTH_PATH, CURRENT_USER_PATH, LOGIN_PATH
 from app.schemas.common.response_schema import DataResponse
 from app.schemas.requests.login_request import LoginRequest
 from app.schemas.resources.user_resource import UserResource
@@ -20,3 +24,8 @@ def login(
     result = service.login(body)
     set_session_cookie(response, result.session_token, settings)
     return DataResponse(data=UserResource.model_validate(result.user))
+
+
+@auth_router.get(CURRENT_USER_PATH, response_model=DataResponse[UserResource])
+def current_user(user: CurrentUserDependency) -> DataResponse[UserResource]:
+    return DataResponse(data=UserResource.model_validate(user))
