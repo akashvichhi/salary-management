@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 
+import { DEFAULT_PAGE, DESCENDING_PREFIX } from '@src/constants/list_constants'
 import { toSnakeCase } from '@src/utils/case_converter'
 
 export interface IListUrlConfig<TFilterKey extends string> {
@@ -40,8 +41,6 @@ const PAGE_PARAM: string = 'page'
 const PER_PAGE_PARAM: string = 'per_page'
 const SEARCH_PARAM: string = 'search'
 const SORT_PARAM: string = 'sort'
-const DEFAULT_PAGE: number = 1
-const DESCENDING_PREFIX: string = '-'
 const POSITIVE_INTEGER_PATTERN: RegExp = /^[1-9]\d*$/
 
 function parsePage(value: string | null): number {

@@ -18,7 +18,6 @@ import {
   ROWS_PER_PAGE_LABEL,
 } from '@src/constants/employee_messages'
 import { TRY_AGAIN_LABEL } from '@src/constants/error_messages'
-import { APP_LOCALE } from '@src/constants/time_constants'
 import type { IListUrlState } from '@src/hooks/use_list_url_state'
 import { EmployeeTable } from '@src/pages/employee_list/components/employee_table'
 import type { IApiError } from '@src/types/api_response'
@@ -27,6 +26,7 @@ import type { IPaginatedResponse } from '@src/types/pagination'
 import { EmptyState } from '@src/ui/feedback/empty_state'
 import { ErrorState } from '@src/ui/feedback/error_state'
 import { TableSkeleton } from '@src/ui/skeletons/table_skeleton'
+import { formatCount } from '@src/utils/format_count'
 
 interface IEmployeeListContentProps {
   listState:         IListUrlState<TEmployeeFilterKey>
@@ -36,7 +36,6 @@ interface IEmployeeListContentProps {
   onDelete:          (employee: IEmployee) => void
 }
 
-const countFormatter: Intl.NumberFormat = new Intl.NumberFormat(APP_LOCALE)
 const PER_PAGE_SELECT_DATA: string[] = PER_PAGE_OPTIONS.map(String)
 const PER_PAGE_SELECT_WIDTH: number = 96
 
@@ -92,7 +91,7 @@ export function EmployeeListContent({
     <Stack gap="md">
       <Group gap="xs">
         <Text c="dimmed" size="sm">
-          {employeeCountLabel(data.meta.totalCount, countFormatter.format(data.meta.totalCount))}
+          {employeeCountLabel(data.meta.totalCount, formatCount(data.meta.totalCount))}
         </Text>
         {isPlaceholderData && (
           <Group gap="xs" role="status">

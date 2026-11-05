@@ -3,6 +3,8 @@ import { memo, useCallback } from 'react'
 import { Table, UnstyledButton } from '@mantine/core'
 import { IconArrowsSort, IconSortAscending, IconSortDescending } from '@tabler/icons-react'
 
+import { DESCENDING_PREFIX } from '@src/constants/list_constants'
+
 type TAriaSort = 'ascending' | 'descending' | 'none'
 
 interface ISortableHeaderProps {
@@ -14,8 +16,8 @@ interface ISortableHeaderProps {
   onClearSort: () => void
 }
 
-const DESCENDING_PREFIX: string = '-'
-const ICON_SIZE: number = 14
+// Smaller than ICON_SIZE, to sit beside the header's smaller text.
+const SORT_ICON_SIZE: number = 14
 
 function ariaSortFor(field: string, currentSort: string): TAriaSort {
   if (currentSort === field) return 'ascending'
@@ -24,9 +26,9 @@ function ariaSortFor(field: string, currentSort: string): TAriaSort {
 }
 
 const SORT_ICONS: Readonly<Record<TAriaSort, React.JSX.Element>> = {
-  ascending:  <IconSortAscending aria-hidden size={ICON_SIZE} />,
-  descending: <IconSortDescending aria-hidden size={ICON_SIZE} />,
-  none:       <IconArrowsSort aria-hidden size={ICON_SIZE} />,
+  ascending:  <IconSortAscending aria-hidden size={SORT_ICON_SIZE} />,
+  descending: <IconSortDescending aria-hidden size={SORT_ICON_SIZE} />,
+  none:       <IconArrowsSort aria-hidden size={SORT_ICON_SIZE} />,
 }
 
 // A column header that sorts by its field: the first click sorts ascending, the second reverses it,

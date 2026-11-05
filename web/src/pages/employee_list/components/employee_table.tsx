@@ -3,6 +3,7 @@ import { memo, useCallback } from 'react'
 import { ActionIcon, Group, Table, VisuallyHidden } from '@mantine/core'
 import { IconPencil, IconTrash } from '@tabler/icons-react'
 
+import { ICON_SIZE } from '@src/constants/app_constants'
 import { EMPLOYEE_COLUMN_LABELS, EMPLOYEE_SORT_FIELDS, EMPLOYEE_TABLE_MAX_HEIGHT } from '@src/constants/employee_constants'
 import { deleteEmployeeLabel, editEmployeeLabel, EMPLOYEE_ACTIONS_LABEL } from '@src/constants/employee_messages'
 import { SortableHeader } from '@src/pages/employee_list/components/sortable_header'
@@ -26,8 +27,6 @@ interface IEmployeeRowProps {
   onEdit:      (employee: IEmployee) => void
   onDelete:    (employee: IEmployee) => void
 }
-
-const ICON_SIZE: number = 16
 
 // Below this width the table scrolls sideways instead of squashing the columns.
 const TABLE_MIN_WIDTH: number = 900

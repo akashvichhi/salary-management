@@ -1,6 +1,5 @@
 import type { TEmployeeColumn } from '@src/types/employee'
 
-export const DEFAULT_PAGE: number = 1
 export const DEFAULT_PER_PAGE: number = 20
 
 export const EMPLOYEE_COLUMN_LABELS: Readonly<Record<TEmployeeColumn, string>> = {

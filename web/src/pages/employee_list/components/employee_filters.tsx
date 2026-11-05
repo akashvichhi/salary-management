@@ -4,6 +4,7 @@ import { Group, Select, TextInput } from '@mantine/core'
 import type { ComboboxData } from '@mantine/core'
 import { IconSearch } from '@tabler/icons-react'
 
+import { ICON_SIZE } from '@src/constants/app_constants'
 import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
 import { SEARCH_LABEL, SEARCH_PLACEHOLDER } from '@src/constants/employee_messages'
 import type { IListUrlState } from '@src/hooks/use_list_url_state'
@@ -21,8 +22,6 @@ interface IFilterSelectProps {
   value:     string | null
   onFilter:  (key: TEmployeeFilterKey, value: string | null) => void
 }
-
-const ICON_SIZE: number = 16
 
 function FilterSelect({ filterKey, data, value, onFilter }: IFilterSelectProps): React.JSX.Element {
   const handleChange: (nextValue: string | null) => void = useCallback((nextValue: string | null): void => {

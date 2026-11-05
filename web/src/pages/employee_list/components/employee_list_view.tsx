@@ -1,6 +1,7 @@
 import { Button, Stack } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
 
+import { ICON_SIZE } from '@src/constants/app_constants'
 import { ADD_EMPLOYEE_LABEL } from '@src/constants/employee_messages'
 import { EMPLOYEES_PAGE_TITLE } from '@src/constants/navigation_constants'
 import { EmployeeFilters } from '@src/pages/employee_list/components/employee_filters'
@@ -15,8 +16,6 @@ import { PageHeader } from '@src/ui/layout/page_header'
 interface IEmployeeListViewProps {
   options: IEmployeeSelectOptions
 }
-
-const ICON_SIZE: number = 16
 
 // The page once the dropdown lists have loaded: header action, filters, table and modals.
 export function EmployeeListView({ options }: IEmployeeListViewProps): React.JSX.Element {
