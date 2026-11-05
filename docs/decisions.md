@@ -177,4 +177,6 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `@mantine/notifications` | Toasts in the same design system, for mutation feedback and the global error listener |
 | `@mantine/form` | Form state, validation and per-field errors (including the API's `details`) in the same design system |
 | `@mantine/modals` | The delete confirmation, opened from a hook without placing a modal in every page |
+| `@mantine/dates` | The hire date picker (`DatePickerInput`), matching the other Mantine inputs; it returns the `YYYY-MM-DD` string the API takes |
+| `dayjs` | Required peer of `@mantine/dates`, which formats and parses dates with it |
 | `@tabler/icons-react` | The icon set Mantine's docs use; icons are imported by name, so only the ones used reach the bundle |

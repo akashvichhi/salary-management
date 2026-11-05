@@ -371,3 +371,14 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - a "Reset sort" button next to the employee count, shown only while a sort other than the default is applied, so the option can be seen without knowing the click cycle
 - **What I changed, rejected, or corrected, and why:** W5 only toggled between ascending and descending, so once a column was sorted the default could only be reached by editing the URL. "Clear filters" still keeps the sort, as before: the two are separate controls.
 - **How it was verified:** `npm run check` (116 tests); the red snapshot fails only the two new tests.
+
+## 2026-11-05 — Step W7.3: date picker for the hire date
+
+- **Prompt / instruction:** "Use date picker/input from mantine ui instead of native input"
+- **What the AI produced:**
+  - a chore commit adding `@mantine/dates` and its peer `dayjs`, with the dates stylesheet imported in `main.tsx`
+  - a red/green pair: the hire date is a Mantine `DatePickerInput`, shown as "Mar 15, 2024" like the table (`DATE_INPUT_FORMAT`), and still sent as `2025-01-06`
+- **What I changed, rejected, or corrected, and why:**
+  - This replaces W6's native `type="date"` input, which looks different in every browser and doesn't match the other Mantine inputs.
+  - The picker opens on the current month, so the form tests fake only `Date` (to January 2025): the calendar is the same on every run, and timers still run for the async waits.
+- **How it was verified:** `npm run check` (116 tests); the red snapshot fails only the tests that pick or show the hire date.
