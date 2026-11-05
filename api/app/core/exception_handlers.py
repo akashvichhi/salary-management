@@ -74,7 +74,8 @@ def handle_http_exception(_: Request, exc: Exception) -> JSONResponse:
 
 def handle_domain_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, DomainError)
-    return error_response(status_code_for(exc), exc.message)
+    details = [FieldError(field=exc.field, message=exc.message)] if exc.field else None
+    return error_response(status_code_for(exc), exc.message, details)
 
 
 def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:

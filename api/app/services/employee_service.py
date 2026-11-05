@@ -16,6 +16,9 @@ from app.schemas.requests.employee_request import (
 )
 from app.schemas.resources.employee_resource import EmployeeResource
 
+# The request field a taken email is reported on (its name in the JSON body).
+EMAIL_FIELD = "email"
+
 
 class EmployeeService:
     def __init__(self, session: Session, repository: EmployeeRepository) -> None:
@@ -60,7 +63,7 @@ class EmployeeService:
     def _ensure_email_is_free(self, email: str, allowed_owner: EmployeeModel | None = None) -> None:
         owner = self.repository.find_active_by_email(email)
         if owner is not None and owner is not allowed_owner:
-            raise ConflictError(EMPLOYEE_EMAIL_TAKEN)
+            raise ConflictError(EMPLOYEE_EMAIL_TAKEN, field=EMAIL_FIELD)
 
     @contextmanager
     def _saving(self) -> Generator[None]:
@@ -72,4 +75,4 @@ class EmployeeService:
             # The unique email index is the only constraint a valid request can break:
             # another request saved the same email after our check above.
             self.session.rollback()
-            raise ConflictError(EMPLOYEE_EMAIL_TAKEN) from error
+            raise ConflictError(EMPLOYEE_EMAIL_TAKEN, field=EMAIL_FIELD) from error
