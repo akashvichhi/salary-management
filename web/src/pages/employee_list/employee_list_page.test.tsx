@@ -2,8 +2,11 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getEmployees } from '@src/api/employee_api'
+import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
 import {
+  CLEAR_FILTERS_LABEL,
   EMPLOYEES_EMPTY_TITLE,
+  EMPLOYEES_FILTERED_EMPTY_TITLE,
   EMPLOYEES_LOAD_ERROR_TITLE,
   EMPLOYEES_LOADING_LABEL,
   EMPLOYEES_UPDATING_LABEL,
@@ -14,7 +17,7 @@ import { TRY_AGAIN_LABEL } from '@src/constants/error_messages'
 import EmployeeListPage from '@src/pages/employee_list/employee_list_page'
 import { buildEmployee, buildPage } from '@src/test_utils/employee_factory'
 import { renderWithProviders } from '@src/test_utils/render_with_providers'
-import type { IEmployee } from '@src/types/employee'
+import type { IEmployee, IEmployeeListParams } from '@src/types/employee'
 import type { IPaginatedResponse } from '@src/types/pagination'
 
 vi.mock('@src/api/employee_api')
@@ -24,6 +27,12 @@ const getEmployeesMock: ReturnType<typeof vi.mocked<typeof getEmployees>> = vi.m
 // The debounced search fires after SEARCH_DEBOUNCE_MS; under a loaded test run the re-render can
 // take longer than waitFor's 1 s default, so wait a little longer.
 const DEBOUNCED_SEARCH_TIMEOUT_MS: number = 3_000
+
+interface IFilterCase {
+  label:  string
+  option: string
+  param:  Partial<IEmployeeListParams>
+}
 
 function neverResolves(): Promise<IPaginatedResponse<IEmployee>> {
   return new Promise((): void => {})
@@ -149,5 +158,44 @@ describe('EmployeeListPage', (): void => {
 
     expect(await screen.findByRole('searchbox', { name: SEARCH_LABEL })).toHaveValue('rao')
     expect(getEmployeesMock).toHaveBeenCalledWith(expect.objectContaining({ search: 'rao' }))
+  })
+
+  it.each<IFilterCase>([
+    { label: EMPLOYEE_COLUMN_LABELS.country, option: 'India', param: { country: 'IN' } },
+    { label: EMPLOYEE_COLUMN_LABELS.jobTitle, option: 'Accountant', param: { jobTitle: 'Accountant' } },
+    { label: EMPLOYEE_COLUMN_LABELS.department, option: 'Finance', param: { department: 'Finance' } },
+  ])('filters by $label, from page 1', async ({ label, option, param }: IFilterCase): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()], { totalCount: 25, totalPages: 2, currentPage: 2 }))
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?page=2' })
+    await screen.findByText('Asha Rao')
+
+    fireEvent.click(screen.getByRole('combobox', { name: label }))
+    fireEvent.click(await screen.findByRole('option', { name: option }))
+
+    expect(getEmployeesMock).toHaveBeenLastCalledWith(expect.objectContaining({ ...param, page: 1 }))
+  })
+
+  it('shows the filters from the URL in the filter inputs', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))
+
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?country=IN&department=Finance' })
+
+    expect(await screen.findByRole('combobox', { name: EMPLOYEE_COLUMN_LABELS.country })).toHaveValue('India')
+    expect(screen.getByRole('combobox', { name: EMPLOYEE_COLUMN_LABELS.department })).toHaveValue('Finance')
+  })
+
+  it('shows a "no match" state when filters hide everyone, and clearing them keeps the sort', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValueOnce(buildPage([]))
+    getEmployeesMock.mockResolvedValueOnce(buildPage([buildEmployee()]))
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?country=IN&search=zzz&sort=-salary' })
+
+    expect(await screen.findByRole('heading', { name: EMPLOYEES_FILTERED_EMPTY_TITLE })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: CLEAR_FILTERS_LABEL }))
+
+    expect(await screen.findByText('Asha Rao')).toBeInTheDocument()
+    expect(getEmployeesMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ country: undefined, search: undefined, sort: '-salary', page: 1 }),
+    )
+    expect(screen.getByRole('searchbox', { name: SEARCH_LABEL })).toHaveValue('')
   })
 })

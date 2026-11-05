@@ -10,3 +10,6 @@ export function employeeCountLabel(count: number, formattedCount: string): strin
 export const ROWS_PER_PAGE_LABEL: string = 'Rows per page'
 export const SEARCH_LABEL: string = 'Search'
 export const SEARCH_PLACEHOLDER: string = 'Name or email'
+export const EMPLOYEES_FILTERED_EMPTY_TITLE: string = 'No employees match these filters'
+export const EMPLOYEES_FILTERED_EMPTY_MESSAGE: string = 'Try a different search, or clear the filters to see everyone.'
+export const CLEAR_FILTERS_LABEL: string = 'Clear filters'
