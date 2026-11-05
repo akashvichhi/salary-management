@@ -120,6 +120,12 @@ describe('adding an employee', { timeout: FORM_TEST_TIMEOUT_MS }, (): void => {
     expect(getEmployeesMock).toHaveBeenCalledTimes(2)
   })
 
+  it('opens with an empty hire date, not "Invalid date"', async (): Promise<void> => {
+    const dialog: HTMLElement = await openAddModal()
+
+    expect(within(dialog).getByLabelText(EMPLOYEE_COLUMN_LABELS.hireDate, { exact: false })).toHaveTextContent(/^$/)
+  })
+
   it('shows what is missing and sends nothing when the form is empty', async (): Promise<void> => {
     const dialog: HTMLElement = await openAddModal()
 
@@ -198,7 +204,7 @@ describe('editing an employee', { timeout: FORM_TEST_TIMEOUT_MS }, (): void => {
 
     expect(textbox(dialog, EMPLOYEE_COLUMN_LABELS.fullName)).toHaveValue('Asha Rao')
     expect(within(dialog).getByRole('combobox', { name: EMPLOYEE_COLUMN_LABELS.country })).toHaveValue('India')
-    expect(within(dialog).getByLabelText(EMPLOYEE_COLUMN_LABELS.hireDate, { exact: false })).toHaveTextContent('Mar 15, 2024')
+    expect(within(dialog).getByLabelText(EMPLOYEE_COLUMN_LABELS.hireDate, { exact: false })).toHaveTextContent('15/03/2024')
     expect(textbox(dialog, EMPLOYEE_COLUMN_LABELS.salary)).toHaveValue('85000.00')
 
     fireEvent.change(textbox(dialog, EMPLOYEE_COLUMN_LABELS.salary), { target: { value: '90000' } })

@@ -66,7 +66,7 @@ describe('EmployeeListPage', (): void => {
     expect(within(row).getByText('Finance')).toBeInTheDocument()
     expect(within(row).getByText('India')).toBeInTheDocument()
     expect(within(row).getByText('$85,000.00')).toBeInTheDocument()
-    expect(within(row).getByText('Mar 15, 2024')).toBeInTheDocument()
+    expect(within(row).getByText('15/03/2024')).toBeInTheDocument()
     expect(screen.getByText('25 employees')).toBeInTheDocument()
     expect(getEmployeesMock).toHaveBeenCalledWith(expect.objectContaining({ page: 1, perPage: 20 }))
   })
