@@ -8,7 +8,7 @@ import {
   getSalaryByDepartment,
   getSalaryByJobTitle,
 } from '@src/api/salary_insight_api'
-import { TRY_AGAIN_LABEL } from '@src/constants/error_messages'
+import { NETWORK_ERROR_MESSAGE, TRY_AGAIN_LABEL } from '@src/constants/error_messages'
 import {
   BY_COUNTRY_TITLE,
   BY_DEPARTMENT_TITLE,
@@ -145,5 +145,18 @@ describe('SalaryInsightsPage', (): void => {
 
     const byCountry: HTMLElement = await screen.findByRole('region', { name: BY_COUNTRY_TITLE })
     expect(await within(byCountry).findByRole('heading', { name: INSIGHTS_EMPTY_TITLE })).toBeInTheDocument()
+  })
+
+  it('shows an error with a retry in the job-title section when the country list fails', async (): Promise<void> => {
+    vi.mocked(getEmployeeOptions).mockRejectedValueOnce({ error: NETWORK_ERROR_MESSAGE })
+    renderWithProviders(<SalaryInsightsPage />)
+
+    const byJobTitle: HTMLElement = await screen.findByRole('region', { name: BY_JOB_TITLE_TITLE })
+    expect(await within(byJobTitle).findByText(NETWORK_ERROR_MESSAGE)).toBeInTheDocument()
+    expect(getSalaryByJobTitleMock).not.toHaveBeenCalled()
+
+    fireEvent.click(within(byJobTitle).getByRole('button', { name: TRY_AGAIN_LABEL }))
+
+    expect(await within(byJobTitle).findByText(buildJobTitleInsight().jobTitle)).toBeInTheDocument()
   })
 })
