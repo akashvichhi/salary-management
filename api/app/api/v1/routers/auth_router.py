@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, status
 
 from app.api.dependencies import (
     AuthServiceDependency,
     CurrentUserDependency,
+    SessionTokenDependency,
     SettingsDependency,
 )
-from app.api.session_cookie import set_session_cookie
-from app.constants.route_constants import AUTH_PATH, CURRENT_USER_PATH, LOGIN_PATH
+from app.api.session_cookie import clear_session_cookie, set_session_cookie
+from app.constants.route_constants import AUTH_PATH, CURRENT_USER_PATH, LOGIN_PATH, LOGOUT_PATH
 from app.schemas.common.response_schema import DataResponse
 from app.schemas.requests.login_request import LoginRequest
 from app.schemas.resources.user_resource import UserResource
@@ -29,3 +30,13 @@ def login(
 @auth_router.get(CURRENT_USER_PATH, response_model=DataResponse[UserResource])
 def current_user(user: CurrentUserDependency) -> DataResponse[UserResource]:
     return DataResponse(data=UserResource.model_validate(user))
+
+
+@auth_router.post(LOGOUT_PATH, status_code=status.HTTP_204_NO_CONTENT)
+def logout(
+    token: SessionTokenDependency, service: AuthServiceDependency, settings: SettingsDependency
+) -> Response:
+    service.logout(token)
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
+    clear_session_cookie(response, settings)
+    return response

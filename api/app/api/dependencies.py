@@ -61,10 +61,15 @@ def get_auth_service(
 AuthServiceDependency = Annotated[AuthService, Depends(get_auth_service)]
 
 
-def get_current_user(
-    request: Request, service: AuthServiceDependency, settings: SettingsDependency
-) -> UserModel:
-    return service.current_user(request.cookies.get(settings.session_cookie_name))
+def get_session_token(request: Request, settings: SettingsDependency) -> str | None:
+    return request.cookies.get(settings.session_cookie_name)
+
+
+SessionTokenDependency = Annotated[str | None, Depends(get_session_token)]
+
+
+def get_current_user(service: AuthServiceDependency, token: SessionTokenDependency) -> UserModel:
+    return service.current_user(token)
 
 
 CurrentUserDependency = Annotated[UserModel, Depends(get_current_user)]

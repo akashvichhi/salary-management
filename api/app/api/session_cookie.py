@@ -21,3 +21,14 @@ def set_session_cookie(response: Response, token: str, settings: Settings) -> No
         httponly=True,
         samesite=COOKIE_SAME_SITE,
     )
+
+
+def clear_session_cookie(response: Response, settings: Settings) -> None:
+    # The same attributes as when it was set, or the browser keeps the original cookie.
+    response.delete_cookie(
+        key=settings.session_cookie_name,
+        path=COOKIE_PATH,
+        secure=settings.cookie_secure,
+        httponly=True,
+        samesite=COOKIE_SAME_SITE,
+    )

@@ -52,6 +52,12 @@ class AuthService:
             raise UnauthenticatedError(INVALID_CREDENTIALS)
         return LoginResult(user=user, session_token=self._start_session(user))
 
+    def logout(self, session_token: str | None) -> None:
+        """Ends the session. Always succeeds, so logging out twice is harmless."""
+        if session_token:
+            self.session_repository.delete_by_token_hash(hash_session_token(session_token))
+            self.session.commit()
+
     def current_user(self, session_token: str | None) -> UserModel:
         """The user of a live session. A missing, unknown or expired session is a 401."""
         if not session_token:
