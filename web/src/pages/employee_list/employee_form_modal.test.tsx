@@ -1,6 +1,6 @@
 import { notifications } from '@mantine/notifications'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createEmployee, getEmployeeOptions, getEmployees, updateEmployee } from '@src/api/employee_api'
 import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
@@ -44,6 +44,11 @@ const NEW_EMPLOYEE: IEmployeeCreatePayload = {
   hireDate:   '2025-01-06',
 }
 
+// The picker opens on the current month, so "today" is fixed in the same month as the new hire date.
+const TODAY: Date = new Date('2025-01-15T12:00:00+05:30')
+// The date picker names each day button in full.
+const NEW_EMPLOYEE_HIRE_DATE_LABEL: string = '6 January 2025'
+
 function neverResolves(): Promise<IEmployee> {
   return new Promise((): void => {})
 }
@@ -81,16 +86,22 @@ async function fillNewEmployee(dialog: HTMLElement): Promise<void> {
   await chooseOption(dialog, EMPLOYEE_COLUMN_LABELS.department, NEW_EMPLOYEE.department)
   await chooseOption(dialog, EMPLOYEE_COLUMN_LABELS.country, 'India')
   fireEvent.change(textbox(dialog, EMPLOYEE_COLUMN_LABELS.salary), { target: { value: NEW_EMPLOYEE.salary } })
-  fireEvent.change(within(dialog).getByLabelText(EMPLOYEE_COLUMN_LABELS.hireDate, { exact: false }), {
-    target: { value: NEW_EMPLOYEE.hireDate },
-  })
+  fireEvent.click(within(dialog).getByLabelText(EMPLOYEE_COLUMN_LABELS.hireDate, { exact: false }))
+  fireEvent.click(await screen.findByRole('button', { name: NEW_EMPLOYEE_HIRE_DATE_LABEL }))
 }
 
 beforeEach((): void => {
+  // Only Date is faked, so the date picker opens on a known month and timers still run.
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(TODAY)
   vi.resetAllMocks()
   vi.mocked(getEmployeeOptions).mockResolvedValue(buildEmployeeOptions())
   notifications.clean()
   getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))
+})
+
+afterEach((): void => {
+  vi.useRealTimers()
 })
 
 describe('adding an employee', { timeout: FORM_TEST_TIMEOUT_MS }, (): void => {
@@ -187,7 +198,7 @@ describe('editing an employee', { timeout: FORM_TEST_TIMEOUT_MS }, (): void => {
 
     expect(textbox(dialog, EMPLOYEE_COLUMN_LABELS.fullName)).toHaveValue('Asha Rao')
     expect(within(dialog).getByRole('combobox', { name: EMPLOYEE_COLUMN_LABELS.country })).toHaveValue('India')
-    expect(within(dialog).getByLabelText(EMPLOYEE_COLUMN_LABELS.hireDate, { exact: false })).toHaveValue('2024-03-15')
+    expect(within(dialog).getByLabelText(EMPLOYEE_COLUMN_LABELS.hireDate, { exact: false })).toHaveTextContent('Mar 15, 2024')
     expect(textbox(dialog, EMPLOYEE_COLUMN_LABELS.salary)).toHaveValue('85000.00')
 
     fireEvent.change(textbox(dialog, EMPLOYEE_COLUMN_LABELS.salary), { target: { value: '90000' } })
