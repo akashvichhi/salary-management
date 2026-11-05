@@ -302,3 +302,19 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - A smoke run against the real API failed with a 500. The cause was the AI's own mistake: it passed a POSIX path as the SQLite URL on Windows. Rerun with a Windows path, the preflight and the list both returned `access-control-allow-origin: http://localhost:5173`.
   - A shell heredoc with many files failed to parse; the AI wrote the remaining files one at a time.
 - **How it was verified:** `make check` (151 tests, 100% coverage); `npm run check` (63 tests) and `npm run build`; each red snapshot fails before its green; CORS checked with curl against uvicorn on the 10,000-employee database.
+
+## 2026-11-04 — Step W5: search, filters, sort and page size in the URL
+
+- **Prompt / instruction:** part of "Start W4 to W7". Mid-step: "The employee table should have some fixed height and then scrollable."
+- **What the AI produced:**
+  - `use_list_url_state.ts`: the one hook that reads and writes page, page size, search, filters and sort in the URL. Values that aren't allowed fall back to the defaults, default values are left out of the URL, and any change other than the page goes back to page 1
+  - a chore commit adding `@tabler/icons-react`
+  - a debounced search box (300 ms); typing replaces the history entry, so each keystroke doesn't add a "back" step
+  - the table's height is capped at 560 px with a sticky header, so the pagination stays on screen; the skeleton draws only the rows that fit
+  - Selects for country, job title and department, and a "No employees match these filters" state with a "Clear filters" button that keeps the sort
+  - sortable column headers: the first click sorts ascending, the second reverses it; the direction is shown by an icon and announced with `aria-sort`
+- **What I changed, rejected, or corrected, and why:**
+  - The search uses Mantine's `useDebouncedValue` instead of our own `use_debounced_value.ts` hook, which `CLAUDE.md` listed; that is a library hook we already ship, so `CLAUDE.md` now points to it.
+  - Mantine's Select has the `combobox` role and the search input the `searchbox` role; the AI's first tests looked for `textbox` and were fixed in their red commits. The tests turn off Mantine's transitions (`env="test"`), so dropdown options are visible straight away.
+  - The debounced-search test failed once in a full run: under load the re-render took longer than `waitFor`'s 1 s default. Its wait is now 3 s, fixed in the red commit that added it.
+- **How it was verified:** `npm run check` (90 tests), run twice to check the timing fix; each red snapshot fails before its green.

@@ -168,3 +168,4 @@ Each runtime dependency gets one line here, with its reason, when it is added.
 | `react-error-boundary` | Error boundaries as components with reset support, so we write no class components (decision 13) |
 | `@tanstack/react-query` | Server-state cache: loading and error states, keeping the previous page while the next loads, and invalidation after edits |
 | `@mantine/notifications` | Toasts in the same design system, for mutation feedback and the global error listener |
+| `@tabler/icons-react` | The icon set Mantine's docs use; icons are imported by name, so only the ones used reach the bundle |

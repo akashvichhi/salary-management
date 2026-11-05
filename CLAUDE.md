@@ -399,7 +399,6 @@ web/src/
 │   ├── employee_queries.ts          useEmployeesQuery, useEmployeeQuery, useCreate/Update/DeleteEmployeeMutation
 │   └── query_client.ts              the one QueryClient, with the default staleTime and retry
 ├── hooks/                           shared business logic hooks, one hook per file
-│   ├── use_debounced_value.ts
 │   ├── use_global_error_listener.ts window error / unhandledrejection → log + one notification
 │   └── use_list_url_state.ts        page, filters, search, sort ↔ URL query string
 ├── constants/
@@ -452,8 +451,8 @@ web/src/
     │   └── login_page.tsx
     ├── employee_list/
     │   ├── employee_list_page.tsx
-    │   ├── components/              components used only by this page
-    │   └── hooks/                   logic used only by this page, one hook per file
+    │   ├── components/              components used only by this page: employee_table, sortable_header, employee_filters, ...
+    │   └── hooks/                   logic used only by this page, one hook per file: use_employee_list, use_search_input
     └── salary_insights/
         └── salary_insights_page.tsx
 ```
@@ -461,7 +460,7 @@ web/src/
 Auth files (`auth_api.ts`, `types/auth.ts`, `auth_queries.ts`, `login_form_validation.ts`, `protected_route.tsx`, `pages/login/`) are created when login is built, as the last feature. Until then, the full-screen loader isn't used.
 
 ### Naming
-- Files and folders: `snake_case` (`employee_table.tsx`, `use_debounced_value.ts`).
+- Files and folders: `snake_case` (`employee_table.tsx`, `use_list_url_state.ts`).
 - Components: `PascalCase` (`EmployeeTable`). Hooks: `camelCase` starting with `use` (`useEmployeesQuery`). Functions and variables: `camelCase`. Constants: `UPPER_SNAKE_CASE`.
 - Interfaces: `I` prefix + `PascalCase` (`IEmployee`, `IPaginatedResponse<T>`), with `camelCase` properties (`fullName`, `hireDate`).
 - Type aliases: `T` prefix + `PascalCase` (`TSortOrder = 'asc' | 'desc'`, `TEmployeeSortField`).
@@ -473,7 +472,7 @@ Auth files (`auth_api.ts`, `types/auth.ts`, `auth_queries.ts`, `login_form_valid
   - Every callback: `useCallback((id: number): void => { ... }, [...])`
   - Every component's props, through an `I<Component>Props` interface (`IEmployeeTableProps`)
   - Every API function and hook return type (`Promise<IEmployee>`, `UseQueryResult<IPaginatedResponse<IEmployee>>`)
-- Business logic hooks (`src/hooks/`, `pages/<page>/hooks/`): one hook per file, and the file name matches the hook (`use_debounced_value.ts` → `useDebouncedValue`).
+- Business logic hooks (`src/hooks/`, `pages/<page>/hooks/`): one hook per file, and the file name matches the hook (`use_list_url_state.ts` → `useListUrlState`).
 - React Query hooks (`src/queries/`): one file per resource, named `<resource>_queries.ts`. Read hooks end in `Query` (`useEmployeesQuery`); write hooks end in `Mutation` (`useDeleteEmployeeMutation`).
 - Pages use a `default` export (required by `React.lazy`). Everything else uses named exports.
 
@@ -776,7 +775,7 @@ Apply memoisation throughout the project, deliberately, following these rules:
 - `useMemo` for derived data (filtered, sorted, or mapped lists; table columns; chart data) and for any object or array passed as a prop.
 - `React.memo` for components that re-render often with the same props: table rows, list items, cards, form fields.
 - Don't wrap trivial values (a constant string, a primitive computed in one line); that adds cost and noise without benefit.
-- Search inputs are debounced (shared `use_debounced_value.ts` hook) before they trigger a query.
+- Search inputs are debounced (Mantine's `useDebouncedValue`, in `pages/employee_list/hooks/use_search_input.ts`) before they trigger a query.
 - Import icons and libraries by name (`import { IconCopy } from '@tabler/icons-react'`). **NEVER** `import * as Icons` or anything else that pulls a whole package into the bundle.
 
 ### Tooling
