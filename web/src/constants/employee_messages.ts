@@ -8,3 +8,5 @@ export function employeeCountLabel(count: number, formattedCount: string): strin
   return count === 1 ? `${formattedCount} employee` : `${formattedCount} employees`
 }
 export const ROWS_PER_PAGE_LABEL: string = 'Rows per page'
+export const SEARCH_LABEL: string = 'Search'
+export const SEARCH_PLACEHOLDER: string = 'Name or email'

@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getEmployees } from '@src/api/employee_api'
@@ -8,6 +8,7 @@ import {
   EMPLOYEES_LOADING_LABEL,
   EMPLOYEES_UPDATING_LABEL,
   ROWS_PER_PAGE_LABEL,
+  SEARCH_LABEL,
 } from '@src/constants/employee_messages'
 import { TRY_AGAIN_LABEL } from '@src/constants/error_messages'
 import EmployeeListPage from '@src/pages/employee_list/employee_list_page'
@@ -19,6 +20,10 @@ import type { IPaginatedResponse } from '@src/types/pagination'
 vi.mock('@src/api/employee_api')
 
 const getEmployeesMock: ReturnType<typeof vi.mocked<typeof getEmployees>> = vi.mocked(getEmployees)
+
+// The debounced search fires after SEARCH_DEBOUNCE_MS; under a loaded test run the re-render can
+// take longer than waitFor's 1 s default, so wait a little longer.
+const DEBOUNCED_SEARCH_TIMEOUT_MS: number = 3_000
 
 function neverResolves(): Promise<IPaginatedResponse<IEmployee>> {
   return new Promise((): void => {})
@@ -120,5 +125,29 @@ describe('EmployeeListPage', (): void => {
     fireEvent.click(await screen.findByRole('option', { name: '50' }))
 
     expect(getEmployeesMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, perPage: 50 }))
+  })
+
+  it('searches by name or email once the user stops typing, from page 1', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()], { totalCount: 25, totalPages: 2, currentPage: 2 }))
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?page=2' })
+    await screen.findByText('Asha Rao')
+    const searchInput: HTMLElement = screen.getByRole('searchbox', { name: SEARCH_LABEL })
+
+    fireEvent.change(searchInput, { target: { value: 'as' } })
+    fireEvent.change(searchInput, { target: { value: ' asha ' } })
+
+    await waitFor((): void => {
+      expect(getEmployeesMock).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'asha', page: 1 }))
+    }, { timeout: DEBOUNCED_SEARCH_TIMEOUT_MS })
+    expect(getEmployeesMock).not.toHaveBeenCalledWith(expect.objectContaining({ search: 'as' }))
+  })
+
+  it('shows the search from the URL in the search box', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))
+
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?search=rao' })
+
+    expect(await screen.findByRole('searchbox', { name: SEARCH_LABEL })).toHaveValue('rao')
+    expect(getEmployeesMock).toHaveBeenCalledWith(expect.objectContaining({ search: 'rao' }))
   })
 })
