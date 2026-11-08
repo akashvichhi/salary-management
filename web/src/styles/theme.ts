@@ -4,7 +4,8 @@ import { DateInput, DatePickerInput } from '@mantine/dates'
 
 import { APP_DATE_FORMAT } from '@src/constants/time_constants'
 
-// The same scale as the SCSS tokens in CLAUDE.md, so `gap="md"` equals `spacing.$md`.
+// The same scale as the SCSS tokens (docs/standards/react-typescript.md, Styling), so `gap="md"`
+// equals `spacing.$md`.
 // Change both together.
 export const theme: MantineThemeOverride = createTheme({
   fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
