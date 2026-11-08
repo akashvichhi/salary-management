@@ -452,3 +452,17 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - The email is trimmed before sending; the password is sent exactly as typed, since spaces can be part of it.
   - The tests find the password input with `selector: 'input'`, because Mantine's show/hide button is labelled "Toggle password visibility" and also matches "Password". That button is now reachable with Tab (Mantine skips it by default), so it works with the keyboard alone.
 - **How it was verified:** `npm run check` (142 tests); the red snapshot fails only the changed API client tests and the two new test files.
+
+## 2026-11-08 — Fix the full-code review comments
+
+- **Prompt / instruction:** "/code-review Please review the entire code", then "fix all review comments" without committing.
+- **What the AI produced:**
+  - the login rate limit keys on the last `X-Forwarded-For` entry (`client_ip.py`), and `start.sh` no longer passes `--proxy-headers --forwarded-allow-ips '*'`, which made uvicorn trust the client-written first entry
+  - `LoginRateLimiter` drops a key once its failures expire, and checking a key no longer creates one, so memory doesn't grow with every email and IP tried
+  - `parseSort` accepts a "-" only as the leading descending prefix, like the API (`salary-` now falls back to the default sort)
+  - `parsePage` caps the page at `MAX_PAGE` (1,000,000), the API's limit, so a huge `?page=` doesn't turn into a 422
+  - two comments that pointed to rules in `CLAUDE.md` now point to `docs/standards/react-typescript.md`
+- **What I changed, rejected, or corrected, and why:**
+  - The forged-header integration test passed before the fix, because the TestClient doesn't run uvicorn's proxy middleware; it stays as a guard. The real proof is the "other client" test and the start script change.
+  - Whether Render appends to a client's `X-Forwarded-For` or replaces it couldn't be confirmed; using the last entry is safe either way.
+- **How it was verified:** red run first (the new tests failed for the expected reasons), then `make check` (226 tests, 99.92% coverage) and `npm run check` (151 tests).
