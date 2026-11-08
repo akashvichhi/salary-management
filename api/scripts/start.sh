@@ -7,7 +7,7 @@ set -e
 alembic upgrade head
 python -m scripts.seed
 
-# --proxy-headers: behind Render's proxy, the client IP comes from X-Forwarded-For, which the login
-# rate limit needs (decision 23). Only Render's proxy can reach the container, so any forwarder is
-# trusted.
-exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --proxy-headers --forwarded-allow-ips '*'
+# No --proxy-headers: with every forwarder trusted, uvicorn would take the client IP from the first
+# X-Forwarded-For entry, which the caller writes. app/api/client_ip.py reads the last entry, the one
+# Render's proxy adds, for the login rate limit (decision 23).
+exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"

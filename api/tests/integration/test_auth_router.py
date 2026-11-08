@@ -238,10 +238,17 @@ def test_logout_without_a_session_still_succeeds(client: TestClient) -> None:
     assert client.post(LOGOUT_URL).status_code == 204
 
 
-def fail_logins(client: TestClient, times: int) -> None:
+def fail_logins(client: TestClient, times: int, headers: dict[str, str] | None = None) -> None:
     for _ in range(times):
-        response = client.post(LOGIN_URL, json=login_payload(password="wrong password"))
+        response = client.post(
+            LOGIN_URL, json=login_payload(password="wrong password"), headers=headers
+        )
         assert response.status_code == 401
+
+
+def forwarded_for(forged: str, real_client: str) -> dict[str, str]:
+    """What Render's proxy passes on: whatever the caller sent, then the address it saw."""
+    return {"X-Forwarded-For": f"{forged}, {real_client}"}
 
 
 @pytest.mark.usefixtures("hr_manager")
@@ -272,6 +279,33 @@ def test_a_successful_login_resets_the_failed_count(client: TestClient) -> None:
     fail_logins(client, MAX_FAILED_LOGINS - 1)
 
     assert client.post(LOGIN_URL, json=login_payload()).status_code == 200
+
+
+@pytest.mark.usefixtures("hr_manager")
+def test_a_forged_forwarded_for_address_does_not_escape_the_rate_limit(client: TestClient) -> None:
+    for attempt in range(MAX_FAILED_LOGINS):
+        fail_logins(client, 1, headers=forwarded_for(f"10.0.0.{attempt}", "203.0.113.7"))
+
+    response = client.post(
+        LOGIN_URL,
+        json=login_payload(password="wrong password"),
+        headers=forwarded_for("10.0.0.99", "203.0.113.7"),
+    )
+
+    assert response.status_code == 429
+
+
+@pytest.mark.usefixtures("hr_manager")
+def test_failed_logins_from_one_client_do_not_block_another_client(client: TestClient) -> None:
+    fail_logins(client, MAX_FAILED_LOGINS, headers=forwarded_for("10.0.0.1", "203.0.113.7"))
+
+    response = client.post(
+        LOGIN_URL,
+        json=login_payload(password="wrong password"),
+        headers=forwarded_for("10.0.0.1", "198.51.100.4"),
+    )
+
+    assert response.status_code == 401
 
 
 @pytest.mark.usefixtures("hr_manager")

@@ -183,7 +183,7 @@ flowchart LR
 
 Render's free tier has no persistent disk, so the database is recreated, and the seed runs again, on every restart. Edits made in the demo are lost when it restarts.
 
-The steps live in `api/scripts/start.sh`, the image's start command. uvicorn runs with `--proxy-headers`, so the login rate limit sees the caller's IP behind Render's proxy (decision 23).
+The steps live in `api/scripts/start.sh`, the image's start command. The login rate limit reads the caller's IP from the last `X-Forwarded-For` entry, the one Render's proxy appended, not from uvicorn's `--proxy-headers`, which trusts the client-written first entry (decision 23).
 
 ## Open questions
 

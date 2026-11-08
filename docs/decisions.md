@@ -161,7 +161,7 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Context:** failed logins are limited to 5 per email and IP in 15 minutes (decision 10), and the counts have to live somewhere (open question 8).
 - **Options:** a dictionary in the app's memory; a `login_attempts` table in SQLite.
 - **Decision:** in memory (`core/login_rate_limiter.py`), one limiter per app, with a lock because `def` endpoints run in a thread pool. The window slides: each failure counts for 15 minutes. A successful login clears the count.
-- **Consequences:** no table, migration or cleanup job. The counts are lost on restart and aren't shared between processes, which is fine for one container with one worker; more workers or instances would need the table (or Redis) instead. Behind Render's proxy the IP comes from `X-Forwarded-For` only if uvicorn runs with `--proxy-headers`; without it every request shares the proxy's IP and the limit is per email only.
+- **Consequences:** no table, migration or cleanup job. The counts are lost on restart and aren't shared between processes, which is fine for one container with one worker; more workers or instances would need the table (or Redis) instead. Behind Render's proxy the IP is the **last** `X-Forwarded-For` entry (`api/client_ip.py`), the one the proxy appended. The earlier entries are written by the client, so using the first (as uvicorn's `--proxy-headers` does) would let a forged header give every attempt a fresh key and skip the limit. Without the header (local runs, tests) the socket's IP is used.
 
 ## 24. Demo login prefilled from build variables
 
