@@ -94,4 +94,4 @@ docker run -p 8000:8000 -e HR_MANAGER_EMAIL=hr@example.com -e HR_MANAGER_PASSWOR
 | [Implementation plan](docs/plan.md) | The build order as small, test-first steps |
 | [Performance](docs/performance.md) | Measured seed and response times, query plans, bundle sizes, optimisations |
 | [AI prompts and workflow log](docs/ai-workflow.md) | How AI was used, every prompt, and what I changed |
-| [`CLAUDE.md`](CLAUDE.md) | The rules file the AI follows: structure, naming, API contract, testing and commits |
+| [`CLAUDE.md`](CLAUDE.md) | The rules the AI follows: the general rules in [`docs/standards/`](docs/standards/) plus this project's rules; backend and frontend rules in [`api/CLAUDE.md`](api/CLAUDE.md) and [`web/CLAUDE.md`](web/CLAUDE.md) |
