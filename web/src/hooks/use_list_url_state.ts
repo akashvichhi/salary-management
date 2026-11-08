@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 
-import { DEFAULT_PAGE, DESCENDING_PREFIX } from '@src/constants/list_constants'
+import { DEFAULT_PAGE, DESCENDING_PREFIX, MAX_PAGE } from '@src/constants/list_constants'
 import { toSnakeCase } from '@src/utils/case_converter'
 
 export interface IListUrlConfig<TFilterKey extends string> {
@@ -44,7 +44,8 @@ const SORT_PARAM: string = 'sort'
 const POSITIVE_INTEGER_PATTERN: RegExp = /^[1-9]\d*$/
 
 function parsePage(value: string | null): number {
-  return value !== null && POSITIVE_INTEGER_PATTERN.test(value) ? Number(value) : DEFAULT_PAGE
+  if (value === null || !POSITIVE_INTEGER_PATTERN.test(value)) return DEFAULT_PAGE
+  return Math.min(Number(value), MAX_PAGE)
 }
 
 function parsePerPage(value: string | null, options: readonly number[], fallback: number): number {
@@ -52,9 +53,11 @@ function parsePerPage(value: string | null, options: readonly number[], fallback
   return options.includes(perPage) ? perPage : fallback
 }
 
+// Only a leading "-" means descending, as in the API; "salary-" is not a sort it accepts.
 function parseSort(value: string | null, fields: readonly string[], fallback: string): string {
   if (value === null) return fallback
-  return fields.includes(value.replace(DESCENDING_PREFIX, '')) ? value : fallback
+  const field: string = value.startsWith(DESCENDING_PREFIX) ? value.slice(DESCENDING_PREFIX.length) : value
+  return fields.includes(field) ? value : fallback
 }
 
 function parseFilters<TFilterKey extends string>(

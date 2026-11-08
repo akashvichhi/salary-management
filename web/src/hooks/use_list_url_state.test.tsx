@@ -62,11 +62,18 @@ describe('useListUrlState', (): void => {
     ['a page that is not a positive whole number', 'page=-2', { page: 1 }],
     ['a page size that is not offered', 'per_page=7', { perPage: 20 }],
     ['an unknown sort field', 'sort=-password', { sort: 'full_name' }],
+    ['a sort with a "-" that is not its prefix', 'sort=salary-', { sort: 'full_name' }],
     ['a filter value outside its list', 'country=XX', { filters: { country: null, jobTitle: null } }],
   ])('falls back to the default for %s', (_name: string, query: string, expected: object): void => {
     const { result } = renderListUrlState(`/employees?${query}`)
 
     expect(result.current.state).toMatchObject(expected)
+  })
+
+  it('caps a page beyond the API\'s limit, so the list can step back to its last page', (): void => {
+    const { result } = renderListUrlState('/employees?page=99999999')
+
+    expect(result.current.state.page).toBe(1_000_000)
   })
 
   it('writes the page and keeps the rest of the state', (): void => {
