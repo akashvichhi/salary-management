@@ -5,7 +5,7 @@ so one counter is enough, and a restart forgetting the count is acceptable.
 """
 
 import threading
-from collections import defaultdict, deque
+from collections import deque
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
@@ -22,25 +22,37 @@ class LoginRateLimiter:
         self.max_failures = max_failures
         self.window = window
         self.clock = clock
-        self._failures: defaultdict[str, deque[datetime]] = defaultdict(deque)
+        self._failures: dict[str, deque[datetime]] = {}
         # Plain `def` endpoints run in a thread pool, so two logins can arrive at once.
         self._lock = threading.Lock()
 
+    def __len__(self) -> int:
+        """How many keys have failures still in the window."""
+        with self._lock:
+            return len(self._failures)
+
     def is_blocked(self, key: str) -> bool:
         with self._lock:
-            return len(self._recent_failures(key)) >= self.max_failures
+            return self._recent_failure_count(key) >= self.max_failures
 
     def record_failure(self, key: str) -> None:
         with self._lock:
-            self._recent_failures(key).append(self.clock())
+            self._recent_failure_count(key)
+            self._failures.setdefault(key, deque()).append(self.clock())
 
     def reset(self, key: str) -> None:
         with self._lock:
             self._failures.pop(key, None)
 
-    def _recent_failures(self, key: str) -> deque[datetime]:
-        failures = self._failures[key]
+    def _recent_failure_count(self, key: str) -> int:
+        # A key whose failures have all expired is dropped, so every email and IP ever tried
+        # doesn't stay in memory until the next restart.
+        failures = self._failures.get(key)
+        if failures is None:
+            return 0
         oldest_counted = self.clock() - self.window
         while failures and failures[0] <= oldest_counted:
             failures.popleft()
-        return failures
+        if not failures:
+            del self._failures[key]
+        return len(failures)

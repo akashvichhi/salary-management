@@ -73,6 +73,26 @@ def test_reset_forgets_the_failures_of_a_key() -> None:
     assert not limiter.is_blocked(KEY)
 
 
+def test_checking_a_key_without_failures_keeps_nothing_in_memory() -> None:
+    limiter = limiter_with(FakeClock())
+
+    assert not limiter.is_blocked(KEY)
+
+    assert len(limiter) == 0
+
+
+def test_a_key_is_forgotten_once_its_failures_expire() -> None:
+    clock = FakeClock()
+    limiter = limiter_with(clock)
+    fail(limiter, 1)
+    fail(limiter, 1, key=OTHER_KEY)
+
+    clock.advance(WINDOW)
+    limiter.is_blocked(KEY)
+
+    assert len(limiter) == 1
+
+
 def test_keys_are_counted_separately() -> None:
     limiter = limiter_with(FakeClock())
 
