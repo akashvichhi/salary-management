@@ -91,7 +91,7 @@ sequenceDiagram
 | Index | Reason |
 |---|---|
 | `email` (unique where `is_active = 1`) | Guarantees no two active employees share an email, while a deleted employee's email can be reused; also serves the duplicate-email check |
-| `full_name` | Default sort of the list (A–Z by name) |
+| `full_name` | Default sort of the list (A–Z by name, ignoring case: the column is `COLLATE NOCASE`) |
 | `country` | Country filter and per-country insights (`GROUP BY country`) |
 | `job_title` | Job title filter |
 | `department` | Department filter and per-department insights |
@@ -183,7 +183,7 @@ flowchart LR
 
 Render's free tier has no persistent disk, so the database is recreated, and the seed runs again, on every restart. Edits made in the demo are lost when it restarts.
 
-The steps live in `api/scripts/start.sh`, the image's start command. The login rate limit reads the caller's IP from the last `X-Forwarded-For` entry, the one Render's proxy appended, not from uvicorn's `--proxy-headers`, which trusts the client-written first entry (decision 23).
+The steps live in `api/scripts/start.sh`, the image's start command. With `TRUST_FORWARDED_FOR=true` (set on Render), the login rate limit reads the caller's IP from the last `X-Forwarded-For` entry, the one Render's proxy appended, not from uvicorn's `--proxy-headers`, which trusts the client-written first entry (decision 23).
 
 ## Open questions
 

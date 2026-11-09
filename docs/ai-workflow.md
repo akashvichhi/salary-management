@@ -466,3 +466,21 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - The forged-header integration test passed before the fix, because the TestClient doesn't run uvicorn's proxy middleware; it stays as a guard. The real proof is the "other client" test and the start script change.
   - Whether Render appends to a client's `X-Forwarded-For` or replaces it couldn't be confirmed; using the last entry is safe either way.
 - **How it was verified:** red run first (the new tests failed for the expected reasons), then `make check` (226 tests, 99.92% coverage) and `npm run check` (151 tests).
+
+## 2026-11-10 — Fix the second full-code review
+
+- **Prompt / instruction:** "please fix all", then commit, push `master`, and review again.
+- **What the AI produced:**
+  - the login rate limiter counts each attempt before its password is checked, in one locked step, so parallel guesses can't all slip through; it also sweeps keys untouched for a window
+  - `X-Forwarded-For` is read only when `TRUST_FORWARDED_FOR=true` (to be set on Render)
+  - insight sums add whole cents as integers in SQL, so totals are exact even for 10,000 salaries near the limit
+  - `full_name` is `COLLATE NOCASE` (a migration), so the name sort ignores case and still uses its index
+  - login deletes expired sessions
+  - queries never retry a 4xx
+  - the search box no longer copies the URL into state with an effect, and "Clear filters" drops a search still being typed
+  - the unused `APP_TIMEZONE` constant was removed
+- **What I changed, rejected, or corrected, and why:**
+  - The float-sum test first passed with 500 rows (SQLite 3.43+ sums with extra precision); it now uses 10,000 rows near the salary limit, where the float total is a cent off.
+  - The logout race (the cache cleared while the page was mounted) didn't reproduce: a test shows no extra request and no remembered page, so the test was kept and the code left as it was.
+  - The tests went into the same commits as the fixes, not separate red commits.
+- **How it was verified:** `make check` and `npm run check`; the migration was upgraded and downgraded on a scratch database.

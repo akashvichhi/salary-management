@@ -53,7 +53,7 @@ Every request is well under the 300 ms target. The slowest, `by-country`, reads 
 | Query | Plan |
 |---|---|
 | List, count | `SCAN employees USING COVERING INDEX uq_employees_active_email` |
-| List, default page | `SCAN employees USING INDEX ix_employees_full_name`: the rows come out in name order, so no sort step |
+| List, default page | `SCAN employees USING INDEX ix_employees_full_name`: the rows come out in name order, so no sort step. The index uses the column's `NOCASE` collation, so the name sort ignores case and still needs no sort step |
 | List, country + job title + department | `SEARCH employees USING INDEX ix_employees_country_job_title (country=? AND job_title=?)`, then `USE TEMP B-TREE FOR ORDER BY` |
 | List, `country=IN` | Count: `SEARCH ... ix_employees_country_job_title (country=?)`. Rows: `SEARCH ... ix_employees_country (country=?)`, then a temp B-tree for the order |
 | List, search | `SCAN employees`: a substring match (`LIKE '%kumar%'`) can't use an index |
