@@ -6,7 +6,7 @@ Measured numbers behind the performance targets in [`requirements.md`](requireme
 
 - **Data:** a fresh SQLite file, migrated with `alembic upgrade head` and filled by `python -m scripts.seed`: the full 10,000 employees.
 - **Requests:** FastAPI's `TestClient`, in process, logged in as the HR manager. Each request ran once to warm up, then 30 times; the tables show the median and the 95th percentile. This measures the app and the database, not the network.
-- **Machine:** a Windows 11 laptop, Python 3.13, SQLite in WAL mode. Measured on 2026-11-05.
+- **Machine:** a Windows 11 laptop, Python 3.13, SQLite in WAL mode. Measured on 2026-11-05; the default list and the insights were measured again on 2026-11-10, after the name index became `NOCASE` and the insight sums moved to whole cents.
 - **Bundle:** `npm run build` (Vite 8, Rolldown), sizes as Vite reports them.
 
 ## Seed
@@ -25,7 +25,7 @@ Target: under 30 seconds. The fixed random seed makes every run produce the same
 
 | Request | Median | p95 | Body |
 |---|---|---|---|
-| Default (page 1, sorted by name) | 11.6 ms | 14.2 ms | 5.8 kB |
+| Default (page 1, sorted by name) | 7.4 ms | 9.1 ms | 5.8 kB |
 | Page 250 (offset 4,980) | 15.0 ms | 17.5 ms | |
 | `per_page=100`, the maximum | 17.5 ms | 20.5 ms | 28.7 kB before gzip |
 | Filter `country=IN` | 16.1 ms | 19.3 ms | |
@@ -39,10 +39,10 @@ Target: under 30 seconds. The fixed random seed makes every run produce the same
 
 | Request | Median | p95 | Body |
 |---|---|---|---|
-| `overview` | 18.8 ms | 30.8 ms | 0.7 kB |
-| `by-country` (includes the median per country) | 86.5 ms | 99.3 ms | 1.4 kB |
-| `by-job-title?country=IN` | 13.8 ms | 16.7 ms | |
-| `by-department` | 19.5 ms | 21.9 ms | |
+| `overview` | 12.0 ms | 16.3 ms | 0.7 kB |
+| `by-country` (includes the median per country) | 52.7 ms | 82.0 ms | 1.4 kB |
+| `by-job-title?country=IN` | 9.8 ms | 20.2 ms | |
+| `by-department` | 29.5 ms | 76.0 ms | |
 
 Every request is well under the 300 ms target. The slowest, `by-country`, reads each country's salaries into Python for the median, which SQLite can't compute (decision 5).
 
@@ -132,7 +132,7 @@ The vendor chunks change only when a dependency changes, so after a deploy a ret
 |---|---|
 | List virtualisation | A page shows at most 100 rows, which the browser renders without trouble |
 | Keyset (cursor) pagination | Page 250 takes 15 ms with `OFFSET`. Keyset paging can't jump to a page number, which the paginator needs |
-| A cache for the insights | The slowest insight takes 87 ms, and a cache would have to be cleared on every edit |
+| A cache for the insights | The slowest insight takes 53 ms (median), and a cache would have to be cleared on every edit |
 | Full-text search (FTS5) | The substring scan takes under 60 ms at 10,000 rows; FTS5 needs a second table and triggers |
 | An index for the salary sort among active employees | The sort step costs a few milliseconds at this size (see the query plans) |
 | Splitting Mantine further | Its components are shared by every page, so splitting it would only add requests |

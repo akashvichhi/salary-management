@@ -91,7 +91,7 @@ sequenceDiagram
 | Index | Reason |
 |---|---|
 | `email` (unique where `is_active = 1`) | Guarantees no two active employees share an email, while a deleted employee's email can be reused; also serves the duplicate-email check |
-| `full_name` | Default sort of the list (A–Z by name, ignoring case: the column is `COLLATE NOCASE`) |
+| `full_name` | Default sort of the list (A–Z by name, ignoring case: the column is `COLLATE NOCASE`, which folds only A–Z, so an accented first letter like `É` still sorts after `Z`) |
 | `country` | Country filter and per-country insights (`GROUP BY country`) |
 | `job_title` | Job title filter |
 | `department` | Department filter and per-department insights |

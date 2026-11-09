@@ -28,6 +28,7 @@ class EmployeeModel(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     # NOCASE, so the name sort (and its index) puts "asha rao" next to "Asha", not after "Zara".
+    # It folds A-Z only: "Élodie" still sorts after "Zara" (docs/architecture.md).
     # The other text sort fields need none: emails are stored lowercase, the lists in one spelling.
     full_name: Mapped[str] = mapped_column(
         String(collation=NAME_COLLATION), nullable=False, index=True

@@ -484,3 +484,15 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - The logout race (the cache cleared while the page was mounted) didn't reproduce: a test shows no extra request and no remembered page, so the test was kept and the code left as it was.
   - The tests went into the same commits as the fixes, not separate red commits.
 - **How it was verified:** `make check` and `npm run check`; the migration was upgraded and downgraded on a scratch database.
+
+## 2026-11-10 — Fix the third full-code review
+
+- **Prompt / instruction:** "Please continue with rest" (after setting `TRUST_FORWARDED_FOR=true` on Render).
+- **What the AI produced:**
+  - a pending search no longer overrides the back button: it is sent only while the URL's search is still the one it was typed over
+  - the name sort's `NOCASE` limit (A–Z only, so `É` sorts after `Z`) is recorded in the model and `docs/architecture.md`
+  - `docs/performance.md`: the default list and the insights measured again on the 10,000-employee seed, with unchanged query plans
+- **What I changed, rejected, or corrected, and why:**
+  - Accented names keep the ASCII-only fold: a full Unicode sort would need a custom collation or Python-side sorting, too much for one HR manager's list.
+  - The user set `TRUST_FORWARDED_FOR=true` in Render themselves; the browser extension wasn't connected.
+- **How it was verified:** the new hook test fails without the fix and passes with it; `make check` and `npm run check`.
