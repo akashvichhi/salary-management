@@ -1,10 +1,11 @@
 from decimal import Decimal
 from typing import NamedTuple
 
-from sqlalchemy import ColumnElement, func, select
+from sqlalchemy import ColumnElement, Integer, cast, func, select
 from sqlalchemy.orm import InstrumentedAttribute, Session
 
 from app.constants.employee_constants import Country
+from app.core.money import CENTS_PER_UNIT, from_cents
 from app.models.employee_model import EmployeeModel
 from app.repositories.employee_repository import is_active_employee
 
@@ -22,6 +23,11 @@ class SalaryStats(NamedTuple):
 class GroupSalary(NamedTuple):
     group: str
     salary: Decimal
+
+
+# SQLite keeps NUMERIC values as floats, and a float sum of 10,000 large salaries can lose a cent.
+# Whole cents are exact integers, so SQL adds those up and the total converts back exactly.
+SALARY_IN_CENTS = cast(func.round(EmployeeModel.salary * CENTS_PER_UNIT), Integer)
 
 
 class SalaryInsightRepository:
@@ -55,10 +61,13 @@ class SalaryInsightRepository:
                 func.count(),
                 func.min(EmployeeModel.salary),
                 func.max(EmployeeModel.salary),
-                func.sum(EmployeeModel.salary),
+                func.sum(SALARY_IN_CENTS),
             )
             .where(is_active_employee(), *conditions)
             .group_by(group_column)
             .order_by(group_column)
         )
-        return [SalaryStats(*row) for row in self.session.execute(query)]
+        return [
+            SalaryStats(group, headcount, min_salary, max_salary, from_cents(total_cents))
+            for group, headcount, min_salary, max_salary, total_cents in self.session.execute(query)
+        ]

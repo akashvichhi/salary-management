@@ -2,9 +2,11 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
 from app.constants.employee_constants import Country
+from app.models.employee_model import EmployeeModel
 from app.repositories.salary_insight_repository import SalaryInsightRepository
 from app.schemas.resources.salary_insight_resource import (
     CountryPayrollResource,
@@ -14,7 +16,7 @@ from app.schemas.resources.salary_insight_resource import (
     PayrollOverviewResource,
 )
 from app.services.salary_insight_service import SalaryInsightService
-from tests.factories import build_employee
+from tests.factories import DEFAULT_EMPLOYEE_FIELDS, build_employee
 
 
 @pytest.fixture
@@ -188,3 +190,20 @@ def test_payroll_overview_of_an_empty_database_is_zeros(service: SalaryInsightSe
     assert service.payroll_overview() == PayrollOverviewResource(
         headcount=0, total_payroll=Decimal("0.00"), payroll_by_country=[]
     )
+
+
+def test_payroll_overview_adds_salaries_exactly_to_the_cent(
+    service: SalaryInsightService, session: Session
+) -> None:
+    # Near the largest salary allowed, 10,000 salaries added up as floats lose the last cent.
+    salaries = [Decimal("9999999999.99")] * 9_999 + [Decimal("9999999999.00")]
+    session.execute(
+        insert(EmployeeModel),
+        [
+            {**DEFAULT_EMPLOYEE_FIELDS, "email": f"employee{index}@acme.com", "salary": salary}
+            for index, salary in enumerate(salaries)
+        ],
+    )
+    session.commit()
+
+    assert service.payroll_overview().total_payroll == Decimal("99999999999899.01")
