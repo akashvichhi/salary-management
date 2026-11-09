@@ -69,6 +69,7 @@ The root `Dockerfile` builds one image: it builds `web/`, installs the API with 
    | Variable | Value |
    |---|---|
    | `HR_MANAGER_EMAIL`, `HR_MANAGER_PASSWORD` | The login the seed creates |
+   | `TRUST_FORWARDED_FOR` | `true`: Render's proxy appends the caller's IP to `X-Forwarded-For`, so the login rate limit can count per IP. Leave it unset anywhere without such a proxy |
    | `VITE_DEMO_LOGIN_EMAIL`, `VITE_DEMO_LOGIN_PASSWORD` | Optional: prefill the login form. Render passes them to the build, and they end up in the JavaScript, so use them only for a demo account |
 
    Leave `ALLOWED_ORIGINS`, `COOKIE_SECURE` and `VITE_API_URL` unset: the app and the API share one origin over https.

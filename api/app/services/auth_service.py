@@ -55,13 +55,13 @@ class AuthService:
         # Per email and IP, so guessing one account's password is slowed down without
         # letting someone else lock the HR manager out from their own address.
         rate_limit_key = f"{request.email}|{client_ip}"
-        if self.rate_limiter.is_blocked(rate_limit_key):
+        if not self.rate_limiter.start_attempt(rate_limit_key):
             raise TooManyRequestsError(TOO_MANY_LOGIN_ATTEMPTS)
         user = self.user_repository.find_by_email(request.email)
         password_hash = user.password_hash if user else UNKNOWN_USER_PASSWORD_HASH
         password_matches = verify_password(password_hash, request.password.get_secret_value())
         if user is None or not password_matches:
-            self.rate_limiter.record_failure(rate_limit_key)
+            # The attempt was already counted, so it stays counted as a failure.
             raise UnauthenticatedError(INVALID_CREDENTIALS)
         self.rate_limiter.reset(rate_limit_key)
         return LoginResult(user=user, session_token=self._start_session(user))
@@ -87,6 +87,9 @@ class AuthService:
         return user_session.user
 
     def _start_session(self, user: UserModel) -> str:
+        # Sessions whose cookie is never sent again (another browser, cleared cookies) would
+        # otherwise stay forever: they are only deleted when used. Logins are rare, so it's cheap.
+        self.session_repository.delete_expired(now_in_app_timezone())
         # A new token on every login, so a session ID set before login is never reused.
         token = generate_session_token()
         self.session_repository.add(

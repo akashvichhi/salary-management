@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     session_ttl_hours: int = DEFAULT_SESSION_TTL_HOURS
     # Browsers send a Secure cookie over HTTPS only; turned off only for local http development.
     cookie_secure: bool = True
+    # True only behind a proxy that appends the caller's IP to X-Forwarded-For (Render). Anywhere
+    # else the header comes straight from the caller, who could pick a new IP for every login.
+    trust_forwarded_for: bool = False
     # The HR manager the seed script creates. Read by the seed only, never by the running app.
     hr_manager_email: str | None = None
     hr_manager_password: SecretStr | None = None

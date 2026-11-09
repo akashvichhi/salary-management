@@ -47,6 +47,13 @@ def client_with(settings: Settings, **overrides: object) -> TestClient:
 
 
 @pytest.fixture
+def proxied_client(settings: Settings) -> Iterator[TestClient]:
+    """The app as deployed behind Render's proxy, which appends the caller's IP."""
+    with client_with(settings, trust_forwarded_for=True) as test_client:
+        yield test_client
+
+
+@pytest.fixture
 def secure_client(settings: Settings) -> Iterator[TestClient]:
     with client_with(settings, cookie_secure=True) as test_client:
         yield test_client
@@ -185,6 +192,19 @@ def test_an_expired_session_returns_401_and_is_deleted(
     assert stored_sessions(settings) == []
 
 
+def test_login_deletes_sessions_that_expired_without_being_used_again(
+    client: TestClient, settings: Settings, hr_manager: UserModel
+) -> None:
+    add_session(settings, hr_manager, expires_in=-timedelta(seconds=1))
+    live_token = add_session(settings, hr_manager, expires_in=timedelta(minutes=1))
+
+    assert client.post(LOGIN_URL, json=login_payload()).status_code == 200
+
+    remaining = {row.token_hash for row in stored_sessions(settings)}
+    assert len(remaining) == 2  # the live session and the new one
+    assert hash_session_token(live_token) in remaining
+
+
 def test_a_session_works_until_it_expires(
     client: TestClient, settings: Settings, hr_manager: UserModel
 ) -> None:
@@ -282,11 +302,13 @@ def test_a_successful_login_resets_the_failed_count(client: TestClient) -> None:
 
 
 @pytest.mark.usefixtures("hr_manager")
-def test_a_forged_forwarded_for_address_does_not_escape_the_rate_limit(client: TestClient) -> None:
+def test_a_forged_forwarded_for_address_does_not_escape_the_rate_limit(
+    proxied_client: TestClient,
+) -> None:
     for attempt in range(MAX_FAILED_LOGINS):
-        fail_logins(client, 1, headers=forwarded_for(f"10.0.0.{attempt}", "203.0.113.7"))
+        fail_logins(proxied_client, 1, headers=forwarded_for(f"10.0.0.{attempt}", "203.0.113.7"))
 
-    response = client.post(
+    response = proxied_client.post(
         LOGIN_URL,
         json=login_payload(password="wrong password"),
         headers=forwarded_for("10.0.0.99", "203.0.113.7"),
@@ -296,16 +318,32 @@ def test_a_forged_forwarded_for_address_does_not_escape_the_rate_limit(client: T
 
 
 @pytest.mark.usefixtures("hr_manager")
-def test_failed_logins_from_one_client_do_not_block_another_client(client: TestClient) -> None:
-    fail_logins(client, MAX_FAILED_LOGINS, headers=forwarded_for("10.0.0.1", "203.0.113.7"))
+def test_failed_logins_from_one_client_do_not_block_another_client(
+    proxied_client: TestClient,
+) -> None:
+    fail_logins(proxied_client, MAX_FAILED_LOGINS, headers=forwarded_for("10.0.0.1", "203.0.113.7"))
 
-    response = client.post(
+    response = proxied_client.post(
         LOGIN_URL,
         json=login_payload(password="wrong password"),
         headers=forwarded_for("10.0.0.1", "198.51.100.4"),
     )
 
     assert response.status_code == 401
+
+
+@pytest.mark.usefixtures("hr_manager")
+def test_forwarded_for_is_ignored_unless_a_trusted_proxy_is_in_front(client: TestClient) -> None:
+    for attempt in range(MAX_FAILED_LOGINS):
+        fail_logins(client, 1, headers={"X-Forwarded-For": f"10.0.0.{attempt}"})
+
+    response = client.post(
+        LOGIN_URL,
+        json=login_payload(password="wrong password"),
+        headers={"X-Forwarded-For": "10.0.0.99"},
+    )
+
+    assert response.status_code == 429
 
 
 @pytest.mark.usefixtures("hr_manager")

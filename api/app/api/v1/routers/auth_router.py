@@ -24,7 +24,7 @@ def login(
     service: AuthServiceDependency,
     settings: SettingsDependency,
 ) -> DataResponse[UserResource]:
-    result = service.login(body, client_ip(request))
+    result = service.login(body, client_ip(request, settings.trust_forwarded_for))
     set_session_cookie(response, result.session_token, settings)
     return DataResponse(data=UserResource.model_validate(result.user))
 

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -20,6 +22,9 @@ class SessionRepository:
     def delete(self, user_session: SessionModel) -> None:
         self.session.delete(user_session)
         self.session.flush()
+
+    def delete_expired(self, now: datetime) -> None:
+        self.session.execute(delete(SessionModel).where(SessionModel.expires_at <= now))
 
     def delete_by_token_hash(self, token_hash: str) -> None:
         self.session.execute(delete(SessionModel).where(SessionModel.token_hash == token_hash))

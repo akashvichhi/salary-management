@@ -26,30 +26,37 @@ def limiter_with(clock: FakeClock) -> LoginRateLimiter:
 
 def fail(limiter: LoginRateLimiter, times: int, key: str = KEY) -> None:
     for _ in range(times):
-        limiter.record_failure(key)
+        assert limiter.start_attempt(key)
 
 
-def test_a_key_is_blocked_only_once_it_reaches_the_maximum_failures() -> None:
+def test_attempts_are_allowed_until_the_maximum_then_refused() -> None:
     limiter = limiter_with(FakeClock())
 
-    fail(limiter, MAX_FAILURES - 1)
-    assert not limiter.is_blocked(KEY)
+    fail(limiter, MAX_FAILURES)
 
-    fail(limiter, 1)
-    assert limiter.is_blocked(KEY)
+    assert not limiter.start_attempt(KEY)
 
 
-def test_failures_older_than_the_window_no_longer_count() -> None:
+def test_an_attempt_counts_before_its_outcome_is_known() -> None:
+    # Logins checked in parallel: none has failed yet, and still only the maximum get through.
+    limiter = limiter_with(FakeClock())
+
+    allowed = [limiter.start_attempt(KEY) for _ in range(MAX_FAILURES + 2)]
+
+    assert allowed == [True] * MAX_FAILURES + [False, False]
+
+
+def test_attempts_older_than_the_window_no_longer_count() -> None:
     clock = FakeClock()
     limiter = limiter_with(clock)
     fail(limiter, MAX_FAILURES)
 
     clock.advance(WINDOW)
 
-    assert not limiter.is_blocked(KEY)
+    assert limiter.start_attempt(KEY)
 
 
-def test_the_window_slides_with_each_failure() -> None:
+def test_the_window_slides_with_each_attempt() -> None:
     clock = FakeClock()
     limiter = limiter_with(clock)
     fail(limiter, MAX_FAILURES - 1)
@@ -58,37 +65,40 @@ def test_the_window_slides_with_each_failure() -> None:
 
     clock.advance(WINDOW / 2)
 
-    # The first failures have expired; only the last one still counts.
-    assert not limiter.is_blocked(KEY)
-    fail(limiter, MAX_FAILURES - 2)
-    assert not limiter.is_blocked(KEY)
+    # The first attempts have expired; only the last one still counts.
+    fail(limiter, MAX_FAILURES - 1)
+    assert not limiter.start_attempt(KEY)
 
 
-def test_reset_forgets_the_failures_of_a_key() -> None:
+def test_reset_forgets_the_attempts_of_a_key() -> None:
     limiter = limiter_with(FakeClock())
     fail(limiter, MAX_FAILURES)
 
     limiter.reset(KEY)
 
-    assert not limiter.is_blocked(KEY)
+    assert limiter.start_attempt(KEY)
+    assert len(limiter) == 1
 
 
-def test_checking_a_key_without_failures_keeps_nothing_in_memory() -> None:
-    limiter = limiter_with(FakeClock())
+def test_a_refused_attempt_is_not_counted() -> None:
+    clock = FakeClock()
+    limiter = limiter_with(clock)
+    fail(limiter, MAX_FAILURES)
+    clock.advance(WINDOW / 2)
+    assert not limiter.start_attempt(KEY)
 
-    assert not limiter.is_blocked(KEY)
+    clock.advance(WINDOW / 2)
 
-    assert len(limiter) == 0
+    fail(limiter, MAX_FAILURES)
 
 
-def test_a_key_is_forgotten_once_its_failures_expire() -> None:
+def test_keys_that_are_never_tried_again_are_forgotten_after_a_window() -> None:
     clock = FakeClock()
     limiter = limiter_with(clock)
     fail(limiter, 1)
-    fail(limiter, 1, key=OTHER_KEY)
 
     clock.advance(WINDOW)
-    limiter.is_blocked(KEY)
+    fail(limiter, 1, key=OTHER_KEY)
 
     assert len(limiter) == 1
 
@@ -98,4 +108,4 @@ def test_keys_are_counted_separately() -> None:
 
     fail(limiter, MAX_FAILURES)
 
-    assert not limiter.is_blocked(OTHER_KEY)
+    assert limiter.start_attempt(OTHER_KEY)
