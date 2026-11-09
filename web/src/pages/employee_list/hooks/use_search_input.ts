@@ -28,8 +28,10 @@ type TSendSearch = ReturnType<typeof useDebouncedCallback<(search: string, typed
 export function useSearchInput(urlSearch: string, onSearch: (search: string) => void): ISearchInput {
   const [draft, setDraft] = useState<ISearchDraft | null>(null)
 
+  // Mantine calls the latest version of this callback, so `urlSearch` here is the URL's current
+  // search. If it moved since the typing (the back button), the URL wins and the text is dropped.
   const sendSearch: TSendSearch = useDebouncedCallback((search: string, typedOver: string): void => {
-    if (search !== typedOver) onSearch(search)
+    if (urlSearch === typedOver && search !== typedOver) onSearch(search)
   }, SEARCH_DEBOUNCE_MS)
 
   const onChange: (event: React.ChangeEvent<HTMLInputElement>) => void = useCallback(
