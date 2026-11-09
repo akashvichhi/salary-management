@@ -1,5 +1,5 @@
-// The app shows every date in IST, never in the browser's time zone.
-export const APP_TIMEZONE: string = 'Asia/Kolkata'
+// The UI shows dates only (no times), which no time zone can shift; formatDate explains why. The
+// first timestamp shown must be formatted in IST (the API's +05:30), never the browser's zone.
 export const APP_LOCALE: string = 'en-US'
 export const APP_CURRENCY: string = 'USD'
 // How every date is shown, in tables and date inputs alike (a dayjs format): "15/03/2024".

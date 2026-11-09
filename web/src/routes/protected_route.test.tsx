@@ -115,6 +115,24 @@ describe('Logout', (): void => {
     expect(queryClient.getQueryData(employeeKeys.options())).toBeUndefined()
   })
 
+  it('does not remember the page logged out of, so the next login starts afresh', async (): Promise<void> => {
+    vi.mocked(getCurrentUser).mockResolvedValue(buildUser())
+    vi.mocked(logout).mockResolvedValue(undefined)
+    vi.mocked(login).mockResolvedValue(buildUser())
+    renderApp()
+
+    vi.mocked(getCurrentUser).mockRejectedValue(NOT_LOGGED_IN_ERROR)
+    fireEvent.click(await screen.findByRole('button', { name: LOGOUT_BUTTON_LABEL }))
+    expect(await screen.findByRole('heading', { level: 1, name: LOGIN_PAGE_TITLE })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText(EMAIL_LABEL, { exact: false, selector: 'input' }), { target: { value: 'hr@acme.com' } })
+    fireEvent.change(screen.getByLabelText(PASSWORD_LABEL, { exact: false, selector: 'input' }), { target: { value: 'secret' } })
+    fireEvent.click(screen.getByRole('button', { name: LOGIN_BUTTON_LABEL }))
+
+    expect(await screen.findByText(ROUTE_PATHS.employees)).toBeInTheDocument()
+    // Only the login page's own session check, never the page just left asking again.
+    expect(getCurrentUser).toHaveBeenCalledTimes(2)
+  })
+
   it('stays on the page and shows the API message when logout fails', async (): Promise<void> => {
     vi.mocked(getCurrentUser).mockResolvedValue(buildUser())
     vi.mocked(logout).mockRejectedValue({ error: NETWORK_ERROR_MESSAGE })
