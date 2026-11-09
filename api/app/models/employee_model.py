@@ -9,6 +9,7 @@ from app.models.base_model import Base, TimestampMixin
 COUNTRY_CODE_LENGTH = 2
 SALARY_PRECISION = 12
 SALARY_SCALE = 2
+NAME_COLLATION = "NOCASE"
 
 
 class EmployeeModel(TimestampMixin, Base):
@@ -26,7 +27,11 @@ class EmployeeModel(TimestampMixin, Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    full_name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    # NOCASE, so the name sort (and its index) puts "asha rao" next to "Asha", not after "Zara".
+    # The other text sort fields need none: emails are stored lowercase, the lists in one spelling.
+    full_name: Mapped[str] = mapped_column(
+        String(collation=NAME_COLLATION), nullable=False, index=True
+    )
     email: Mapped[str] = mapped_column(String, nullable=False)
     job_title: Mapped[str] = mapped_column(String, nullable=False, index=True)
     department: Mapped[str] = mapped_column(String, nullable=False, index=True)

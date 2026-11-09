@@ -99,6 +99,21 @@ def test_list_sorts_by_full_name_by_default(session: Session) -> None:
     assert listed_names(session) == ["Asha", "Mira", "Zara"]
 
 
+def test_sorting_by_name_ignores_case(session: Session) -> None:
+    save_employees(session, {"full_name": "asha rao"}, {"full_name": "Zara"}, {"full_name": "Mira"})
+
+    assert listed_names(session) == ["asha rao", "Mira", "Zara"]
+    assert listed_names(session, sort="-full_name") == ["Zara", "Mira", "asha rao"]
+
+
+def test_the_default_sort_reads_names_in_order_from_the_name_index(session: Session) -> None:
+    query = active_employees().order_by(EmployeeModel.full_name, EmployeeModel.id)
+
+    # Without it, every page of the default list sorts all 10,000 rows first.
+    plan = query_plan(session, query)
+    assert plan.startswith("SCAN employees USING INDEX ix_employees_full_name")
+
+
 def test_list_sorts_by_salary_ascending_and_descending(session: Session) -> None:
     save_employees(
         session,
