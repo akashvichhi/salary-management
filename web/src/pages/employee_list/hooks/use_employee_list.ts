@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import type { UseQueryResult } from '@tanstack/react-query'
 
@@ -10,6 +10,8 @@ import {
 } from '@src/constants/employee_constants'
 import { useListUrlState } from '@src/hooks/use_list_url_state'
 import type { IListUrlConfig, IListUrlState } from '@src/hooks/use_list_url_state'
+import { useSearchInput } from '@src/pages/employee_list/hooks/use_search_input'
+import type { ISearchInput } from '@src/pages/employee_list/hooks/use_search_input'
 import { useEmployeesQuery } from '@src/queries/employee_queries'
 import type { IApiError } from '@src/types/api_response'
 import type { IEmployee, IEmployeeListParams, IEmployeeSelectOptions, TEmployeeFilterKey } from '@src/types/employee'
@@ -17,6 +19,7 @@ import type { IPaginatedResponse } from '@src/types/pagination'
 
 interface IEmployeeList {
   listState:      IListUrlState<TEmployeeFilterKey>
+  searchInput:    ISearchInput
   employeesQuery: UseQueryResult<IPaginatedResponse<IEmployee>, IApiError>
 }
 
@@ -39,8 +42,20 @@ export function useEmployeeList(options: IEmployeeSelectOptions): IEmployeeList 
     }),
     [options],
   )
-  const listState: IListUrlState<TEmployeeFilterKey> = useListUrlState(urlConfig)
-  const { page, perPage, search, sort, filters, setPage } = listState
+  const urlState: IListUrlState<TEmployeeFilterKey> = useListUrlState(urlConfig)
+  const { page, perPage, search, sort, filters, setPage, setSearch, clearFilters } = urlState
+  const searchInput: ISearchInput = useSearchInput(search, setSearch)
+  const { reset: resetSearchInput } = searchInput
+
+  // Clearing the filters also drops a search still being typed, or it would come back a moment later.
+  const clearFiltersAndSearch: () => void = useCallback((): void => {
+    resetSearchInput()
+    clearFilters()
+  }, [resetSearchInput, clearFilters])
+  const listState: IListUrlState<TEmployeeFilterKey> = useMemo<IListUrlState<TEmployeeFilterKey>>(
+    (): IListUrlState<TEmployeeFilterKey> => ({ ...urlState, clearFilters: clearFiltersAndSearch }),
+    [urlState, clearFiltersAndSearch],
+  )
 
   const params: IEmployeeListParams = useMemo<IEmployeeListParams>((): IEmployeeListParams => ({
     page,
@@ -63,5 +78,5 @@ export function useEmployeeList(options: IEmployeeSelectOptions): IEmployeeList 
     if (totalPages > 0 && page > totalPages) setPage(totalPages, { replace: true })
   }, [data, page, setPage])
 
-  return { listState, employeesQuery }
+  return { listState, searchInput, employeesQuery }
 }

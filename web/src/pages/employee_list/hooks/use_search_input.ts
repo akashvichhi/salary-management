@@ -1,43 +1,52 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 
-import { useDebouncedValue } from '@mantine/hooks'
+import { useDebouncedCallback } from '@mantine/hooks'
 
 import { SEARCH_DEBOUNCE_MS } from '@src/constants/employee_constants'
 
-interface ISearchInput {
+export interface ISearchInput {
   value:    string
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  // Drops the text being typed and the search still waiting for the user to stop typing.
+  reset:    () => void
 }
+
+interface ISearchDraft {
+  text:      string
+  // The URL's search when this text was typed.
+  urlSearch: string
+}
+
+type TSendSearch = ReturnType<typeof useDebouncedCallback<(search: string, typedOver: string) => void>>
 
 /**
  * The search box's text, sent to the URL only after the user stops typing.
- * The URL stays the source of truth: when it changes elsewhere (clear filters, the back button),
- * the box shows the new value.
+ * The URL stays the source of truth: typed text is shown only while it still belongs to the URL's
+ * search (the one it was typed over, or the one it became), so a change made elsewhere, like the
+ * back button, shows the URL's value instead.
  */
 export function useSearchInput(urlSearch: string, onSearch: (search: string) => void): ISearchInput {
-  const [value, setValue] = useState<string>(urlSearch)
-  const [debouncedValue] = useDebouncedValue<string>(value.trim(), SEARCH_DEBOUNCE_MS)
+  const [draft, setDraft] = useState<ISearchDraft | null>(null)
 
-  // Read through a ref, so only a new debounced value sends a search, never a URL change.
-  const latest: React.RefObject<{ urlSearch: string, onSearch: (search: string) => void }> = useRef({ urlSearch, onSearch })
-  useEffect((): void => {
-    latest.current = { urlSearch, onSearch }
-  }, [urlSearch, onSearch])
-
-  useEffect((): void => {
-    setValue((current: string): string => (current.trim() === urlSearch ? current : urlSearch))
-  }, [urlSearch])
-
-  useEffect((): void => {
-    if (debouncedValue !== latest.current.urlSearch) latest.current.onSearch(debouncedValue)
-  }, [debouncedValue])
+  const sendSearch: TSendSearch = useDebouncedCallback((search: string, typedOver: string): void => {
+    if (search !== typedOver) onSearch(search)
+  }, SEARCH_DEBOUNCE_MS)
 
   const onChange: (event: React.ChangeEvent<HTMLInputElement>) => void = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>): void => {
-      setValue(event.currentTarget.value)
+      const text: string = event.currentTarget.value
+      setDraft({ text, urlSearch })
+      sendSearch(text.trim(), urlSearch)
     },
-    [],
+    [urlSearch, sendSearch],
   )
 
-  return { value, onChange }
+  const reset: () => void = useCallback((): void => {
+    sendSearch.cancel()
+    setDraft(null)
+  }, [sendSearch])
+
+  const showsDraft: boolean = draft !== null && (draft.urlSearch === urlSearch || draft.text.trim() === urlSearch)
+
+  return { value: showsDraft && draft ? draft.text : urlSearch, onChange, reset }
 }

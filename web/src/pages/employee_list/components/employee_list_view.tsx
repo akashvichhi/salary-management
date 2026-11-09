@@ -19,7 +19,7 @@ interface IEmployeeListViewProps {
 
 // The page once the dropdown lists have loaded: header action, filters, table and modals.
 export function EmployeeListView({ options }: IEmployeeListViewProps): React.JSX.Element {
-  const { listState, employeesQuery } = useEmployeeList(options)
+  const { listState, searchInput, employeesQuery } = useEmployeeList(options)
   const formModal: ReturnType<typeof useEmployeeFormModal> = useEmployeeFormModal()
   const openDeleteModal: (employee: IEmployee) => void = useDeleteEmployeeModal()
 
@@ -34,7 +34,7 @@ export function EmployeeListView({ options }: IEmployeeListViewProps): React.JSX
         title={EMPLOYEES_PAGE_TITLE}
       />
       <Stack gap="lg">
-        <EmployeeFilters listState={listState} options={options} />
+        <EmployeeFilters listState={listState} options={options} searchInput={searchInput} />
         <EmployeeListContent
           countryNameByCode={options.countryNameByCode}
           employeesQuery={employeesQuery}

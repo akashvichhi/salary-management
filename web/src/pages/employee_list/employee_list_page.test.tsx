@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getEmployeeOptions, getEmployees } from '@src/api/employee_api'
-import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
+import { EMPLOYEE_COLUMN_LABELS, SEARCH_DEBOUNCE_MS } from '@src/constants/employee_constants'
 import {
   CLEAR_FILTERS_LABEL,
   EMPLOYEES_EMPTY_TITLE,
@@ -200,6 +200,23 @@ describe('EmployeeListPage', (): void => {
       expect.objectContaining({ country: undefined, search: undefined, sort: '-salary', page: 1 }),
     )
     expect(screen.getByRole('searchbox', { name: SEARCH_LABEL })).toHaveValue('')
+  })
+
+  it('drops a search still being typed when the filters are cleared', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValueOnce(buildPage([]))
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))
+    renderWithProviders(<EmployeeListPage />, { route: '/employees?country=IN' })
+
+    expect(await screen.findByRole('heading', { name: EMPLOYEES_FILTERED_EMPTY_TITLE })).toBeInTheDocument()
+    const searchInput: HTMLElement = screen.getByRole('searchbox', { name: SEARCH_LABEL })
+    fireEvent.change(searchInput, { target: { value: 'ab' } })
+    fireEvent.click(screen.getByRole('button', { name: CLEAR_FILTERS_LABEL }))
+
+    expect(searchInput).toHaveValue('')
+    await new Promise((resolve: (value: unknown) => void): void => {
+      setTimeout(resolve, SEARCH_DEBOUNCE_MS * 2)
+    })
+    expect(getEmployeesMock).not.toHaveBeenCalledWith(expect.objectContaining({ search: 'ab' }))
   })
 
   it('marks the table as sorted by name, ascending, by default', async (): Promise<void> => {
