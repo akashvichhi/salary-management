@@ -516,3 +516,10 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - The browser extension wasn't connected, so the rates came from web search instead of Chrome.
   - The tests were written first and seen failing, but went into the same commits as the code, not separate red commits.
 - **How it was verified:** the new tests failed before the code and pass after; the migration round-trip test; `make check` and `npm run check`; the endpoints measured again on a fresh 10,000-employee seed.
+
+## 2026-11-13 — Review today's commits
+
+- **Prompt / instruction:** "/code-review Please review commits we made today", then "Yes" to the fixes offered.
+- **What the AI produced:** a review of the three local-currency commits (all checks green): decision 4 counted nine countries instead of ten, the settings comment showed the old INR rate, the commits had no `Co-Authored-By:` trailer, and a question on whether the salary column should say it sorts by USD.
+- **What I changed, rejected, or corrected, and why:** fixed the count and the comment; reworded the unpushed commits to add the trailer. The red → green split was not rebuilt: the tests were written first, and rewriting the history into pairs isn't worth it. The salary-sort hint is left open.
+- **How it was verified:** `ruff check` and `ruff format --check` on the changed file; the docs read back.

@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     # The React build (web/dist) to serve, set in the Docker image. Unset in local development,
     # where Vite serves the web app and FastAPI only the API.
     web_dist_dir: Path | None = None
-    # Units of each currency per US dollar, as JSON: {"INR": "88.50", ...}. Fixed, not a live feed
+    # Units of each currency per US dollar, as JSON: {"INR": "94.16", ...}. Fixed, not a live feed
     # (decision 4), and checked at startup, so a missing rate never surfaces as a failed request.
     exchange_rates: dict[Currency, Decimal] = Field(
         default_factory=lambda: dict(DEFAULT_EXCHANGE_RATES)

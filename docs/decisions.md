@@ -36,7 +36,7 @@ Short architecture decision records. Each one says what was decided and what it 
   - the overview totals each country in its currency, converts each total, and adds the rounded USD totals, so the overall total equals the sum of its rows
   - the department average is the sum of each country's converted total, divided by the department's headcount, rounded once
   - the salary sort compares USD values, in SQL (salary ÷ the country's rate)
-- **Consequences:** every salary is what the employee is really paid, and no figure ever adds up two currencies. One country can't have two currencies, which is true for all nine. The rates are fixed, so cross-country figures drift from reality until `EXCHANGE_RATES` is updated; no figure is stored converted, so a new rate applies at once. The salary sort is on an expression no column index can serve, so `ix_employees_salary` was dropped (`docs/performance.md`). Migration `e5a9c2d7f310` converted the stored USD salaries with the rates of that day, copied into it so it always converts the same way.
+- **Consequences:** every salary is what the employee is really paid, and no figure ever adds up two currencies. One country can't have two currencies, which is true for all ten. The rates are fixed, so cross-country figures drift from reality until `EXCHANGE_RATES` is updated; no figure is stored converted, so a new rate applies at once. The salary sort is on an expression no column index can serve, so `ix_employees_salary` was dropped (`docs/performance.md`). Migration `e5a9c2d7f310` converted the stored USD salaries with the rates of that day, copied into it so it always converts the same way.
 
 ## 5. Aggregation in SQL, median in Python
 
