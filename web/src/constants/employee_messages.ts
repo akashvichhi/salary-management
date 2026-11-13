@@ -15,6 +15,7 @@ export const EMPLOYEES_FILTERED_EMPTY_TITLE: string = 'No employees match these 
 export const EMPLOYEES_FILTERED_EMPTY_MESSAGE: string = 'Try a different search, or clear the filters to see everyone.'
 export const CLEAR_FILTERS_LABEL: string = 'Clear filters'
 export const RESET_SORT_LABEL: string = 'Reset sort'
+export const SALARY_SORT_HINT: string = 'Sorts by the salary in USD, so amounts in different currencies compare fairly'
 
 export const ADD_EMPLOYEE_LABEL: string = 'Add employee'
 export const EDIT_EMPLOYEE_TITLE: string = 'Edit employee'

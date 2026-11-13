@@ -12,6 +12,7 @@ import {
   EMPLOYEES_UPDATING_LABEL,
   RESET_SORT_LABEL,
   ROWS_PER_PAGE_LABEL,
+  SALARY_SORT_HINT,
   SEARCH_LABEL,
 } from '@src/constants/employee_messages'
 import { TRY_AGAIN_LABEL } from '@src/constants/error_messages'
@@ -227,6 +228,15 @@ describe('EmployeeListPage', (): void => {
     expect(await screen.findByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.fullName }))
       .toHaveAttribute('aria-sort', 'ascending')
     expect(screen.getByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.salary })).toHaveAttribute('aria-sort', 'none')
+  })
+
+  it('explains that the salary column sorts by the USD value, not the amount shown', async (): Promise<void> => {
+    getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()]))
+
+    renderWithProviders(<EmployeeListPage />)
+
+    const header: HTMLElement = await screen.findByRole('columnheader', { name: EMPLOYEE_COLUMN_LABELS.salary })
+    expect(within(header).getByRole('button')).toHaveAccessibleDescription(SALARY_SORT_HINT)
   })
 
   it('sorts by a column on click, then reverses it on a second click, from page 1', async (): Promise<void> => {
