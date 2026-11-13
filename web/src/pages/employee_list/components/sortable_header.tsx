@@ -20,9 +20,9 @@ interface ISortableHeaderProps {
 
 // Smaller than ICON_SIZE, to sit beside the header's smaller text.
 const SORT_ICON_SIZE: number = 14
-// Shown on keyboard focus too, not only on hover, so the hint reaches every user who can see it.
 // Wraps the hint onto a few lines instead of one very wide one.
 const TOOLTIP_WIDTH: number = 240
+// Shown on keyboard focus too, not only on hover, so the hint reaches every user who can see it.
 const TOOLTIP_EVENTS: { hover: boolean, focus: boolean, touch: boolean } = { hover: true, focus: true, touch: true }
 
 function ariaSortFor(field: string, currentSort: string): TAriaSort {
