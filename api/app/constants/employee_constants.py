@@ -3,6 +3,8 @@ and the web app's dropdowns, which load them from GET /api/v1/employee-options (
 
 from enum import StrEnum
 
+from app.constants.currency_constants import Currency
+
 FULL_NAME_MAX_LENGTH = 100
 SALARY_MAX_DIGITS = 12
 SALARY_DECIMAL_PLACES = 2
@@ -34,6 +36,20 @@ COUNTRY_NAMES: dict[Country, str] = {
     Country.UNITED_ARAB_EMIRATES: "United Arab Emirates",
     Country.UNITED_KINGDOM: "United Kingdom",
     Country.UNITED_STATES: "United States",
+}
+
+# The currency an employee's salary is stored in: their country's (decision 4).
+COUNTRY_CURRENCIES: dict[Country, Currency] = {
+    Country.AUSTRALIA: Currency.AUD,
+    Country.CANADA: Currency.CAD,
+    Country.FRANCE: Currency.EUR,
+    Country.GERMANY: Currency.EUR,
+    Country.INDIA: Currency.INR,
+    Country.NETHERLANDS: Currency.EUR,
+    Country.SINGAPORE: Currency.SGD,
+    Country.UNITED_ARAB_EMIRATES: Currency.AED,
+    Country.UNITED_KINGDOM: Currency.GBP,
+    Country.UNITED_STATES: Currency.USD,
 }
 
 

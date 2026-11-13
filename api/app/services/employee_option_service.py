@@ -1,4 +1,10 @@
-from app.constants.employee_constants import COUNTRY_NAMES, Country, Department, JobTitle
+from app.constants.employee_constants import (
+    COUNTRY_CURRENCIES,
+    COUNTRY_NAMES,
+    Country,
+    Department,
+    JobTitle,
+)
 from app.schemas.resources.employee_option_resource import (
     CountryOptionResource,
     EmployeeOptionsResource,
@@ -11,7 +17,11 @@ class EmployeeOptionService:
     def get_options(self) -> EmployeeOptionsResource:
         return EmployeeOptionsResource(
             countries=[
-                CountryOptionResource(code=country, name=COUNTRY_NAMES[country])
+                CountryOptionResource(
+                    code=country,
+                    name=COUNTRY_NAMES[country],
+                    currency=COUNTRY_CURRENCIES[country],
+                )
                 for country in Country
             ],
             departments=list(Department),

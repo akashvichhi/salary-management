@@ -20,11 +20,13 @@ def test_salary_by_country_returns_an_array_with_money_as_strings(
         "data": [
             {
                 "country": "IN",
+                "currency": "INR",
                 "headcount": 2,
                 "min_salary": "20000.00",
                 "max_salary": "30000.50",
                 "average_salary": "25000.25",
                 "median_salary": "25000.25",
+                "average_salary_usd": "312.50",  # at the test rate of 80 INR to the dollar
             }
         ]
     }
@@ -49,7 +51,14 @@ def test_salary_by_job_title_reads_the_country_ignoring_case(
 
     assert response.status_code == 200
     assert response.json() == {
-        "data": [{"job_title": "Accountant", "headcount": 1, "average_salary": "85000.00"}]
+        "data": [
+            {
+                "job_title": "Accountant",
+                "currency": "INR",
+                "headcount": 1,
+                "average_salary": "85000.00",
+            }
+        ]
     }
 
 
@@ -67,13 +76,15 @@ def test_salary_by_job_title_needs_a_known_country(
 def test_salary_by_department_returns_an_array_with_money_as_strings(
     authenticated_client: TestClient,
 ) -> None:
-    create_employee(authenticated_client, email="a@acme.com", department="Legal", salary="70000")
+    create_employee(
+        authenticated_client, email="a@acme.com", department="Legal", country="US", salary="70000"
+    )
 
     response = authenticated_client.get(f"{INSIGHTS_URL}/by-department")
 
     assert response.status_code == 200
     assert response.json() == {
-        "data": [{"department": "Legal", "headcount": 1, "average_salary": "70000.00"}]
+        "data": [{"department": "Legal", "headcount": 1, "average_salary_usd": "70000.00"}]
     }
 
 
@@ -89,10 +100,22 @@ def test_payroll_overview_returns_totals_with_money_as_strings(
     assert response.json() == {
         "data": {
             "headcount": 2,
-            "total_payroll": "100000.50",
+            "total_payroll_usd": "80250.50",
             "payroll_by_country": [
-                {"country": "IN", "headcount": 1, "total_payroll": "20000.00"},
-                {"country": "US", "headcount": 1, "total_payroll": "80000.50"},
+                {
+                    "country": "IN",
+                    "currency": "INR",
+                    "headcount": 1,
+                    "total_payroll": "20000.00",
+                    "total_payroll_usd": "250.00",
+                },
+                {
+                    "country": "US",
+                    "currency": "USD",
+                    "headcount": 1,
+                    "total_payroll": "80000.50",
+                    "total_payroll_usd": "80000.50",
+                },
             ],
         }
     }
@@ -102,5 +125,5 @@ def test_payroll_overview_of_an_empty_database_is_zeros(authenticated_client: Te
     response = authenticated_client.get(f"{INSIGHTS_URL}/overview")
 
     assert response.json() == {
-        "data": {"headcount": 0, "total_payroll": "0.00", "payroll_by_country": []}
+        "data": {"headcount": 0, "total_payroll_usd": "0.00", "payroll_by_country": []}
     }

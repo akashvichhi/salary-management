@@ -5,6 +5,7 @@ from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
+from app.core.currency_converter import CurrencyConverter
 from app.core.database import get_db
 from app.core.login_rate_limiter import LoginRateLimiter
 from app.models.user_model import UserModel
@@ -18,8 +19,26 @@ from app.services.employee_service import EmployeeService
 from app.services.salary_insight_service import SalaryInsightService
 
 
-def get_employee_service(session: Annotated[Session, Depends(get_db)]) -> EmployeeService:
-    return EmployeeService(session, EmployeeRepository(session))
+def get_app_settings(request: Request) -> Settings:
+    """The settings the app was created with (tests pass their own)."""
+    settings: Settings = request.app.state.settings
+    return settings
+
+
+SettingsDependency = Annotated[Settings, Depends(get_app_settings)]
+
+
+def get_currency_converter(settings: SettingsDependency) -> CurrencyConverter:
+    return CurrencyConverter(settings.exchange_rates)
+
+
+CurrencyConverterDependency = Annotated[CurrencyConverter, Depends(get_currency_converter)]
+
+
+def get_employee_service(
+    session: Annotated[Session, Depends(get_db)], converter: CurrencyConverterDependency
+) -> EmployeeService:
+    return EmployeeService(session, EmployeeRepository(session, converter))
 
 
 EmployeeServiceDependency = Annotated[EmployeeService, Depends(get_employee_service)]
@@ -29,23 +48,14 @@ EmployeeOptionServiceDependency = Annotated[EmployeeOptionService, Depends(Emplo
 
 
 def get_salary_insight_service(
-    session: Annotated[Session, Depends(get_db)],
+    session: Annotated[Session, Depends(get_db)], converter: CurrencyConverterDependency
 ) -> SalaryInsightService:
-    return SalaryInsightService(SalaryInsightRepository(session))
+    return SalaryInsightService(SalaryInsightRepository(session), converter)
 
 
 SalaryInsightServiceDependency = Annotated[
     SalaryInsightService, Depends(get_salary_insight_service)
 ]
-
-
-def get_app_settings(request: Request) -> Settings:
-    """The settings the app was created with (tests pass their own)."""
-    settings: Settings = request.app.state.settings
-    return settings
-
-
-SettingsDependency = Annotated[Settings, Depends(get_app_settings)]
 
 
 def get_login_rate_limiter(request: Request) -> LoginRateLimiter:

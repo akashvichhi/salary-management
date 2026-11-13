@@ -1,4 +1,4 @@
-from app.constants.employee_constants import Country, Department, JobTitle
+from app.constants.employee_constants import COUNTRY_CURRENCIES, Country, Department, JobTitle
 from app.services.employee_option_service import EmployeeOptionService
 
 
@@ -14,3 +14,11 @@ def test_departments_and_job_titles_keep_the_order_of_their_lists() -> None:
 
     assert options.departments == list(Department)
     assert options.job_titles == list(JobTitle)
+
+
+def test_every_country_lists_the_currency_its_salaries_are_in() -> None:
+    countries = EmployeeOptionService().get_options().countries
+
+    assert all(
+        country.currency == COUNTRY_CURRENCIES[Country(country.code)] for country in countries
+    )

@@ -1,7 +1,8 @@
 """What the seed data looks like: who works where, and what each role is paid.
 
-Salaries are annual USD. A job title has one base range (US pay); a country's pay factor
-scales it, so the insights show real differences by country and by job title.
+A job title has one base range in USD (US pay); a country's pay factor scales it, so the
+insights show real differences by country and by job title. The seed then converts each salary
+to the country's own currency (decision 18).
 """
 
 from dataclasses import dataclass

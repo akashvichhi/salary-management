@@ -20,6 +20,15 @@ class SalaryStats(NamedTuple):
     total_salary: Decimal
 
 
+class GroupCountryTotal(NamedTuple):
+    """One group's salaries within one country, all in that country's currency."""
+
+    group: str
+    country: str
+    headcount: int
+    total_salary: Decimal
+
+
 class GroupSalary(NamedTuple):
     group: str
     salary: Decimal
@@ -40,8 +49,23 @@ class SalaryInsightRepository:
     def salary_stats_by_job_title(self, country: Country) -> list[SalaryStats]:
         return self._salary_stats(EmployeeModel.job_title, EmployeeModel.country == country)
 
-    def salary_stats_by_department(self) -> list[SalaryStats]:
-        return self._salary_stats(EmployeeModel.department)
+    def salary_totals_by_department_and_country(self) -> list[GroupCountryTotal]:
+        """Split by country too, because one total may only add up salaries in one currency."""
+        query = (
+            select(
+                EmployeeModel.department,
+                EmployeeModel.country,
+                func.count(),
+                func.sum(SALARY_IN_CENTS),
+            )
+            .where(is_active_employee())
+            .group_by(EmployeeModel.department, EmployeeModel.country)
+            .order_by(EmployeeModel.department, EmployeeModel.country)
+        )
+        return [
+            GroupCountryTotal(department, country, headcount, from_cents(total_cents))
+            for department, country, headcount, total_cents in self.session.execute(query)
+        ]
 
     def salaries_by_country(self) -> list[GroupSalary]:
         """One column per row, for the median, which SQLite can't compute."""

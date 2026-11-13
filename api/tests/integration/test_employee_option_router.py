@@ -11,8 +11,8 @@ def test_employee_options_list_every_allowed_value_for_the_dropdowns(
     assert response.status_code == 200
     options = response.json()["data"]
     assert options["countries"][:2] == [
-        {"code": "AU", "name": "Australia"},
-        {"code": "CA", "name": "Canada"},
+        {"code": "AU", "name": "Australia", "currency": "AUD"},
+        {"code": "CA", "name": "Canada", "currency": "CAD"},
     ]
     assert len(options["countries"]) == 10
     assert options["departments"][:2] == ["Customer Support", "Design"]

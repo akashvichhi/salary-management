@@ -3,6 +3,7 @@ from decimal import Decimal
 import pytest
 from sqlalchemy.orm import Session
 
+from app.core.currency_converter import CurrencyConverter
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.employee_model import EmployeeModel
 from app.repositories.employee_repository import EmployeeRepository
@@ -12,19 +13,21 @@ from tests.factories import build_create_request, build_employee
 
 
 @pytest.fixture
-def service(session: Session) -> EmployeeService:
-    return EmployeeService(session, EmployeeRepository(session))
+def service(session: Session, converter: CurrencyConverter) -> EmployeeService:
+    return EmployeeService(session, EmployeeRepository(session, converter))
 
 
 def test_create_employee_saves_and_returns_the_employee(
-    service: EmployeeService, session: Session
+    service: EmployeeService, session: Session, converter: CurrencyConverter
 ) -> None:
     created = service.create_employee(build_create_request(email="new.person@acme.com"))
 
     assert created.id is not None
     assert created.email == "new.person@acme.com"
     assert created.salary == Decimal("85000.00")
-    assert EmployeeRepository(session).find_active_by_email("new.person@acme.com") is not None
+    assert created.currency == "INR"  # India's currency, from the country
+    repository = EmployeeRepository(session, converter)
+    assert repository.find_active_by_email("new.person@acme.com") is not None
 
 
 def test_create_employee_rejects_duplicate_email(
@@ -44,10 +47,12 @@ class RepositoryThatMissesTheDuplicate(EmployeeRepository):
         return None
 
 
-def test_create_employee_turns_a_unique_index_violation_into_a_conflict(session: Session) -> None:
+def test_create_employee_turns_a_unique_index_violation_into_a_conflict(
+    session: Session, converter: CurrencyConverter
+) -> None:
     session.add(build_employee(email="asha.rao@acme.com"))
     session.commit()
-    service = EmployeeService(session, RepositoryThatMissesTheDuplicate(session))
+    service = EmployeeService(session, RepositoryThatMissesTheDuplicate(session, converter))
 
     with pytest.raises(ConflictError):
         service.create_employee(build_create_request(email="asha.rao@acme.com"))

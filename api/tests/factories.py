@@ -4,10 +4,18 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
+from app.constants.currency_constants import Currency
 from app.core.security import hash_password
 from app.models.employee_model import EmployeeModel
 from app.models.user_model import UserModel
 from app.schemas.requests.employee_request import EmployeeCreateRequest
+
+# Round numbers, so a test's expected USD amounts can be worked out by hand: 1 USD = 80 INR or
+# 0.5 EUR; every other currency is 1 to 1.
+TEST_EXCHANGE_RATES: dict[Currency, Decimal] = {currency: Decimal(1) for currency in Currency} | {
+    Currency.INR: Decimal(80),
+    Currency.EUR: Decimal("0.5"),
+}
 
 DEFAULT_EMPLOYEE_FIELDS: dict[str, Any] = {
     "full_name": "Asha Rao",

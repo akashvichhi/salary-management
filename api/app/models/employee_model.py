@@ -37,9 +37,9 @@ class EmployeeModel(TimestampMixin, Base):
     job_title: Mapped[str] = mapped_column(String, nullable=False, index=True)
     department: Mapped[str] = mapped_column(String, nullable=False, index=True)
     country: Mapped[str] = mapped_column(String(COUNTRY_CODE_LENGTH), nullable=False, index=True)
-    salary: Mapped[Decimal] = mapped_column(
-        Numeric(SALARY_PRECISION, SALARY_SCALE), nullable=False, index=True
-    )
+    # In the country's currency (decision 4). Not indexed: the salary sort compares USD values,
+    # an expression no column index can serve (docs/architecture.md).
+    salary: Mapped[Decimal] = mapped_column(Numeric(SALARY_PRECISION, SALARY_SCALE), nullable=False)
     hire_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     # Soft delete: a deleted employee keeps their row but is hidden everywhere.
     is_active: Mapped[bool] = mapped_column(

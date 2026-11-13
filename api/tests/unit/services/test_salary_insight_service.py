@@ -6,6 +6,7 @@ from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
 from app.constants.employee_constants import Country
+from app.core.currency_converter import CurrencyConverter
 from app.models.employee_model import EmployeeModel
 from app.repositories.salary_insight_repository import SalaryInsightRepository
 from app.schemas.resources.salary_insight_resource import (
@@ -20,8 +21,8 @@ from tests.factories import DEFAULT_EMPLOYEE_FIELDS, build_employee
 
 
 @pytest.fixture
-def service(session: Session) -> SalaryInsightService:
-    return SalaryInsightService(SalaryInsightRepository(session))
+def service(session: Session, converter: CurrencyConverter) -> SalaryInsightService:
+    return SalaryInsightService(SalaryInsightRepository(session), converter)
 
 
 def save_employees(session: Session, *employees_fields: dict[str, Any]) -> None:
@@ -49,20 +50,24 @@ def test_salary_by_country_gives_headcount_min_max_average_and_median(
     assert service.salary_by_country() == [
         CountrySalaryInsightResource(
             country="IN",
+            currency="INR",
             headcount=3,
             min_salary=Decimal("10000.00"),
             max_salary=Decimal("60000.00"),
             average_salary=Decimal("30000.00"),
             median_salary=Decimal("20000.00"),  # odd count: the middle value
+            average_salary_usd=Decimal("375.00"),  # 30,000 INR at 80 to the dollar
         ),
         CountrySalaryInsightResource(
             country="US",
+            currency="USD",
             headcount=2,
             min_salary=Decimal("100000.00"),
             max_salary=Decimal("100000.01"),
             # 100000.005 rounds half-up to the cent.
             average_salary=Decimal("100000.01"),
             median_salary=Decimal("100000.01"),  # even count: the mean of the middle two
+            average_salary_usd=Decimal("100000.01"),
         ),
     ]
 
@@ -79,6 +84,20 @@ def test_salary_by_country_median_of_an_even_count_is_the_mean_of_the_middle_two
 
     assert india.median_salary == Decimal("25000.00")
     assert india.average_salary == Decimal("40000.00")
+
+
+def test_salary_by_country_converts_the_average_from_the_exact_total(
+    service: SalaryInsightService, session: Session
+) -> None:
+    # At 0.5 EUR to the dollar, the 200.01 EUR total is 400.02 USD. The exact total is
+    # converted and divided, and only the result is rounded.
+    save_employees(session, paid("100.00", country="FR"), paid("100.01", country="FR"))
+
+    [france] = service.salary_by_country()
+
+    assert france.currency == "EUR"
+    assert france.average_salary == Decimal("100.01")  # 100.005 rounds half-up
+    assert france.average_salary_usd == Decimal("200.01")
 
 
 def test_salary_by_country_rounds_an_unending_average_to_the_cent(
@@ -122,10 +141,16 @@ def test_salary_by_job_title_counts_only_the_chosen_country(
 
     assert service.salary_by_job_title(Country.INDIA) == [
         JobTitleSalaryInsightResource(
-            job_title="Accountant", headcount=1, average_salary=Decimal("40000.00")
+            job_title="Accountant",
+            currency="INR",
+            headcount=1,
+            average_salary=Decimal("40000.00"),
         ),
         JobTitleSalaryInsightResource(
-            job_title="Software Engineer", headcount=2, average_salary=Decimal("75000.01")
+            job_title="Software Engineer",
+            currency="INR",
+            headcount=2,
+            average_salary=Decimal("75000.01"),
         ),
     ]
 
@@ -138,23 +163,26 @@ def test_salary_by_job_title_of_a_country_with_no_employees_is_an_empty_list(
     assert service.salary_by_job_title(Country.FRANCE) == []
 
 
-def test_salary_by_department_gives_headcount_and_average_across_countries(
+def test_salary_by_department_gives_headcount_and_average_in_usd_across_countries(
     service: SalaryInsightService, session: Session
 ) -> None:
     save_employees(
         session,
         paid("90000", department="Engineering", country="US"),
-        paid("30000", department="Engineering", country="IN"),
-        paid("45000", department="Sales"),
+        paid("8000", department="Engineering", country="IN"),  # 100 USD
+        paid("8000", department="Engineering", country="IN"),  # 100 USD
+        paid("4000", department="Sales", country="IN"),  # 50 USD
         paid("999999", department="Sales", is_active=False),
     )
 
     assert service.salary_by_department() == [
+        # Every employee counts once: (90,000 + 100 + 100) / 3, not the mean of the
+        # two countries' averages (45,050).
         DepartmentSalaryInsightResource(
-            department="Engineering", headcount=2, average_salary=Decimal("60000.00")
+            department="Engineering", headcount=3, average_salary_usd=Decimal("30066.67")
         ),
         DepartmentSalaryInsightResource(
-            department="Sales", headcount=1, average_salary=Decimal("45000.00")
+            department="Sales", headcount=1, average_salary_usd=Decimal("50.00")
         ),
     ]
 
@@ -165,7 +193,7 @@ def test_salary_by_department_of_an_empty_database_is_an_empty_list(
     assert service.salary_by_department() == []
 
 
-def test_payroll_overview_gives_headcount_total_and_payroll_by_country(
+def test_payroll_overview_gives_headcount_usd_total_and_payroll_by_country(
     service: SalaryInsightService, session: Session
 ) -> None:
     save_employees(
@@ -178,17 +206,30 @@ def test_payroll_overview_gives_headcount_total_and_payroll_by_country(
 
     assert service.payroll_overview() == PayrollOverviewResource(
         headcount=3,
-        total_payroll=Decimal("150000.50"),
+        # The sum of the rows' USD figures, so the total always matches the table.
+        total_payroll_usd=Decimal("100625.01"),
         payroll_by_country=[
-            CountryPayrollResource(country="IN", headcount=2, total_payroll=Decimal("50000.50")),
-            CountryPayrollResource(country="US", headcount=1, total_payroll=Decimal("100000.00")),
+            CountryPayrollResource(
+                country="IN",
+                currency="INR",
+                headcount=2,
+                total_payroll=Decimal("50000.50"),
+                total_payroll_usd=Decimal("625.01"),  # 625.00625 rounds half-up
+            ),
+            CountryPayrollResource(
+                country="US",
+                currency="USD",
+                headcount=1,
+                total_payroll=Decimal("100000.00"),
+                total_payroll_usd=Decimal("100000.00"),
+            ),
         ],
     )
 
 
 def test_payroll_overview_of_an_empty_database_is_zeros(service: SalaryInsightService) -> None:
     assert service.payroll_overview() == PayrollOverviewResource(
-        headcount=0, total_payroll=Decimal("0.00"), payroll_by_country=[]
+        headcount=0, total_payroll_usd=Decimal("0.00"), payroll_by_country=[]
     )
 
 
@@ -206,4 +247,5 @@ def test_payroll_overview_adds_salaries_exactly_to_the_cent(
     )
     session.commit()
 
-    assert service.payroll_overview().total_payroll == Decimal("99999999999899.01")
+    [india] = service.payroll_overview().payroll_by_country
+    assert india.total_payroll == Decimal("99999999999899.01")

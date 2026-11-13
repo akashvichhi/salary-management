@@ -6,11 +6,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
+from app.core.currency_converter import CurrencyConverter
 from app.core.database import create_database_engine, create_session_factory
 from app.main import create_app
 from app.models.base_model import Base
 from app.models.user_model import UserModel
-from tests.factories import build_user, login_payload
+from tests.factories import TEST_EXCHANGE_RATES, build_user, login_payload
 
 IN_MEMORY_DATABASE_URL = "sqlite://"
 LOGIN_URL = "/api/v1/auth/login"
@@ -28,6 +29,11 @@ def session() -> Iterator[Session]:
 
 
 @pytest.fixture
+def converter() -> CurrencyConverter:
+    return CurrencyConverter(TEST_EXCHANGE_RATES)
+
+
+@pytest.fixture
 def settings(tmp_path: Path) -> Settings:
     # A file, not memory: the app opens connections from several threads, and each
     # would otherwise get its own empty in-memory database.
@@ -36,7 +42,12 @@ def settings(tmp_path: Path) -> Settings:
     Base.metadata.create_all(engine)
     engine.dispose()
     # The test client talks plain http, where a Secure cookie would never be sent back.
-    return Settings(_env_file=None, database_url=database_url, cookie_secure=False)
+    return Settings(
+        _env_file=None,
+        database_url=database_url,
+        cookie_secure=False,
+        exchange_rates=TEST_EXCHANGE_RATES,
+    )
 
 
 @pytest.fixture

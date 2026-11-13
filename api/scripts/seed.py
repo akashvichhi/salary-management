@@ -13,7 +13,10 @@ from pathlib import Path
 from sqlalchemy import func, insert, select
 from sqlalchemy.orm import Session
 
+from app.constants.currency_constants import DEFAULT_EXCHANGE_RATES
+from app.constants.employee_constants import Country
 from app.core.config import Settings, get_settings
+from app.core.currency_converter import currency_of
 from app.core.database import create_database_engine, create_session_factory
 from app.core.security import hash_password
 from app.models.employee_model import EmployeeModel
@@ -49,10 +52,12 @@ def unique_email(first_name: str, last_name: str, taken: dict[str, int]) -> str:
     return f"{local_part}{suffix}@{SEED_EMAIL_DOMAIN}"
 
 
-def random_salary(rng: random.Random, job: JobProfile, pay_factor: Decimal) -> Decimal:
-    base = rng.randint(job.min_salary, job.max_salary) * pay_factor
+def random_salary(rng: random.Random, job: JobProfile, country: Country) -> Decimal:
+    usd = rng.randint(job.min_salary, job.max_salary) * COUNTRY_PROFILES[country].pay_factor
+    # The default rates, not the configured ones, so the seed is the same on every machine.
+    local = usd * DEFAULT_EXCHANGE_RATES[currency_of(country)]
     # Rounding down keeps the salary inside the scaled range.
-    rounded = (base // SALARY_ROUNDING) * SALARY_ROUNDING
+    rounded = (local // SALARY_ROUNDING) * SALARY_ROUNDING
     return Decimal(rounded).quantize(Decimal("0.01"))
 
 
@@ -85,7 +90,7 @@ def build_employees(count: int, random_seed: int) -> list[EmployeeCreateRequest]
                 job_title=job_title,
                 department=job.department,
                 country=country,
-                salary=random_salary(rng, job, COUNTRY_PROFILES[country].pay_factor),
+                salary=random_salary(rng, job, country),
                 hire_date=random_hire_date(rng),
             )
         )

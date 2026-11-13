@@ -35,6 +35,8 @@ def test_create_employee_returns_201_with_the_employee(authenticated_client: Tes
     assert employee["id"] > 0
     assert employee["full_name"] == "Asha Rao"
     assert employee["salary"] == "85000.00"
+    # The salary is in the currency of the employee's country.
+    assert employee["currency"] == "INR"
     assert employee["hire_date"] == "2024-03-18"
     assert employee["created_at"].endswith(IST_OFFSET_SUFFIX)
     assert employee["updated_at"].endswith(IST_OFFSET_SUFFIX)

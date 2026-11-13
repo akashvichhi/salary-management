@@ -8,10 +8,15 @@ from sqlalchemy.dialects import sqlite
 from sqlalchemy.orm import Session
 
 from app.constants.employee_constants import EmployeeSortField
+from app.core.currency_converter import CurrencyConverter
 from app.models.employee_model import EmployeeModel
 from app.repositories.employee_repository import EmployeeRepository, active_employees
 from app.schemas.requests.employee_request import EmployeeListRequest
-from tests.factories import build_employee
+from tests.factories import TEST_EXCHANGE_RATES, build_employee
+
+
+def employee_repository(session: Session) -> EmployeeRepository:
+    return EmployeeRepository(session, CurrencyConverter(TEST_EXCHANGE_RATES))
 
 
 def save_employees(session: Session, *employees_fields: dict[str, Any]) -> None:
@@ -25,21 +30,21 @@ def list_request(**params: Any) -> EmployeeListRequest:
 
 
 def listed_names(session: Session, **params: Any) -> list[str]:
-    items, _ = EmployeeRepository(session).list_active(list_request(**params))
+    items, _ = employee_repository(session).list_active(list_request(**params))
     return [employee.full_name for employee in items]
 
 
 def test_list_returns_one_page_and_the_total_count(session: Session) -> None:
     save_employees(session, *({"full_name": f"Person {number:02}"} for number in range(25)))
 
-    items, total_count = EmployeeRepository(session).list_active(list_request(page=2, per_page=10))
+    items, total_count = employee_repository(session).list_active(list_request(page=2, per_page=10))
 
     assert total_count == 25
     assert [employee.full_name for employee in items] == [f"Person {n:02}" for n in range(10, 20)]
 
 
 def test_list_of_an_empty_table_is_empty(session: Session) -> None:
-    items, total_count = EmployeeRepository(session).list_active(list_request())
+    items, total_count = employee_repository(session).list_active(list_request())
 
     assert items == []
     assert total_count == 0
@@ -48,7 +53,7 @@ def test_list_of_an_empty_table_is_empty(session: Session) -> None:
 def test_list_leaves_out_deleted_employees(session: Session) -> None:
     save_employees(session, {"full_name": "Active"}, {"full_name": "Deleted", "is_active": False})
 
-    items, total_count = EmployeeRepository(session).list_active(list_request())
+    items, total_count = employee_repository(session).list_active(list_request())
 
     assert [employee.full_name for employee in items] == ["Active"]
     assert total_count == 1
@@ -124,6 +129,20 @@ def test_list_sorts_by_salary_ascending_and_descending(session: Session) -> None
 
     assert listed_names(session, sort="salary") == ["Low", "Mid", "High"]
     assert listed_names(session, sort="-salary") == ["High", "Mid", "Low"]
+
+
+def test_salary_sort_compares_salaries_in_usd_across_currencies(session: Session) -> None:
+    # At 80 INR to the dollar, 4,000,000 INR is 50,000 USD: between the two US salaries,
+    # although as a bare number it is the largest.
+    save_employees(
+        session,
+        {"full_name": "India", "country": "IN", "salary": Decimal("4000000.00")},
+        {"full_name": "US high", "country": "US", "salary": Decimal("90000.00")},
+        {"full_name": "US low", "country": "US", "salary": Decimal("10000.00")},
+    )
+
+    assert listed_names(session, sort="salary") == ["US low", "India", "US high"]
+    assert listed_names(session, sort="-salary") == ["US high", "India", "US low"]
 
 
 def test_equal_sort_values_keep_a_stable_order_by_id(session: Session) -> None:

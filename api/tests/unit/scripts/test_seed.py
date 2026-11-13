@@ -5,8 +5,10 @@ from pydantic import SecretStr
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.constants.currency_constants import DEFAULT_EXCHANGE_RATES
 from app.constants.employee_constants import Country, JobTitle
 from app.core.config import Settings
+from app.core.currency_converter import currency_of
 from app.core.database import create_database_engine, create_session_factory
 from app.core.security import verify_password
 from app.models.employee_model import EmployeeModel
@@ -14,7 +16,7 @@ from app.models.user_model import UserModel
 from app.schemas.requests.employee_request import EmployeeCreateRequest
 from scripts import seed
 from scripts.seed import build_employees, run_seed, seed_employees, unique_email
-from scripts.seed_constants import COUNTRY_PROFILES, JOB_PROFILES
+from scripts.seed_constants import COUNTRY_PROFILES, JOB_PROFILES, SALARY_ROUNDING
 from tests.factories import HR_MANAGER_EMAIL, HR_MANAGER_PASSWORD, build_employee, build_user
 
 SMALL_SEED_COUNT = 300
@@ -62,11 +64,26 @@ def test_every_seeded_employee_passes_the_api_validation() -> None:
 def test_department_and_salary_follow_the_job_title_and_country() -> None:
     for employee in build_employees(SMALL_SEED_COUNT, TEST_RANDOM_SEED):
         job = JOB_PROFILES[employee.job_title]
-        pay_factor = COUNTRY_PROFILES[employee.country].pay_factor
+        # The USD range, scaled by the country's pay factor, in the country's own currency.
+        scale = (
+            COUNTRY_PROFILES[employee.country].pay_factor
+            * DEFAULT_EXCHANGE_RATES[currency_of(employee.country)]
+        )
 
         assert employee.department == job.department
-        assert job.min_salary * pay_factor <= employee.salary <= job.max_salary * pay_factor
-        assert employee.salary % 100 == 0
+        # Rounding down to a whole SALARY_ROUNDING can take a salary just below the range.
+        assert job.min_salary * scale - SALARY_ROUNDING < employee.salary
+        assert employee.salary <= job.max_salary * scale
+        assert employee.salary % SALARY_ROUNDING == 0
+
+
+def test_seeded_salaries_are_in_local_currency() -> None:
+    employees = build_employees(SMALL_SEED_COUNT, TEST_RANDOM_SEED)
+    lowest_indian_salary = min(e.salary for e in employees if e.country == Country.INDIA)
+    highest_us_salary = max(e.salary for e in employees if e.country == Country.UNITED_STATES)
+
+    # Rupees: even the lowest Indian salary is a larger number than any US salary in dollars.
+    assert lowest_indian_salary > highest_us_salary
 
 
 def test_every_job_title_and_country_has_a_profile() -> None:
