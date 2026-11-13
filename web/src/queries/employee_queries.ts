@@ -41,6 +41,7 @@ function toSelectOptions(options: IEmployeeOptions): IEmployeeSelectOptions {
     jobTitles:         options.jobTitles,
     countryCodes:      options.countries.map(({ code }: ICountryOption): string => code),
     countryNameByCode: new Map(options.countries.map(({ code, name }: ICountryOption): [string, string] => [code, name])),
+    currencyByCountry: new Map(options.countries.map(({ code, currency }: ICountryOption): [string, string] => [code, currency])),
   }
 }
 

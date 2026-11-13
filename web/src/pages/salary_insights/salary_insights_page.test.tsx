@@ -14,6 +14,7 @@ import {
   BY_DEPARTMENT_TITLE,
   BY_JOB_TITLE_TITLE,
   COUNTRY_PICKER_LABEL,
+  CURRENCY_NOTE,
   INSIGHT_LOAD_ERROR_TITLE,
   INSIGHT_LOADING_LABEL,
   INSIGHTS_EMPTY_TITLE,
@@ -59,7 +60,13 @@ beforeEach((): void => {
 })
 
 describe('SalaryInsightsPage', (): void => {
-  it('shows the headcount, the total payroll and the payroll per country', async (): Promise<void> => {
+  it('explains which figures are in local currency and which are converted to USD', (): void => {
+    renderWithProviders(<SalaryInsightsPage />)
+
+    expect(screen.getByText(CURRENCY_NOTE)).toBeInTheDocument()
+  })
+
+  it('shows the headcount, the USD total payroll and the payroll per country', async (): Promise<void> => {
     renderWithProviders(<SalaryInsightsPage />)
 
     const overview: HTMLElement = await screen.findByRole('region', { name: OVERVIEW_TITLE })
@@ -68,19 +75,21 @@ describe('SalaryInsightsPage', (): void => {
     expect(within(overview).getByText('$987,654,321.50')).toBeInTheDocument()
     const row: HTMLElement = rowOf(overview, 'India')
     expect(within(row).getByText('4,000')).toBeInTheDocument()
-    expect(within(row).getByText('$120,000,000.25')).toBeInTheDocument()
+    expect(within(row).getByText('₹120,000,000.25')).toBeInTheDocument()
+    expect(within(row).getByText('$1,355,932.21')).toBeInTheDocument()
   })
 
-  it('shows min, max, average and median pay per country, as the API sends them', async (): Promise<void> => {
+  it('shows pay per country in its own currency, and the average in USD', async (): Promise<void> => {
     renderWithProviders(<SalaryInsightsPage />)
 
     const byCountry: HTMLElement = await screen.findByRole('region', { name: BY_COUNTRY_TITLE })
     await within(byCountry).findByText('India')
     const row: HTMLElement = rowOf(byCountry, 'India')
-    expect(within(row).getByText('$20,000.00')).toBeInTheDocument()
-    expect(within(row).getByText('$250,000.00')).toBeInTheDocument()
-    expect(within(row).getByText('$85,000.50')).toBeInTheDocument()
-    expect(within(row).getByText('$80,000.00')).toBeInTheDocument()
+    expect(within(row).getByText('₹20,000.00')).toBeInTheDocument()
+    expect(within(row).getByText('₹250,000.00')).toBeInTheDocument()
+    expect(within(row).getByText('₹85,000.50')).toBeInTheDocument()
+    expect(within(row).getByText('₹80,000.00')).toBeInTheDocument()
+    expect(within(row).getByText('$960.46')).toBeInTheDocument()
   })
 
   it('shows average pay per job title in the first country, and in the one picked', async (): Promise<void> => {
@@ -88,7 +97,7 @@ describe('SalaryInsightsPage', (): void => {
 
     const byJobTitle: HTMLElement = await screen.findByRole('region', { name: BY_JOB_TITLE_TITLE })
     const row: HTMLElement = (await within(byJobTitle).findByText('Accountant')).closest('tr') as HTMLElement
-    expect(within(row).getByText('$70,000.00')).toBeInTheDocument()
+    expect(within(row).getByText('₹70,000.00')).toBeInTheDocument()
     expect(getSalaryByJobTitleMock).toHaveBeenCalledWith('IN')
 
     getSalaryByJobTitleMock.mockResolvedValue([buildJobTitleInsight({ jobTitle: 'Software Engineer' })])

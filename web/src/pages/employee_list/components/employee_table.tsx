@@ -51,7 +51,7 @@ const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function
       <Table.Td>{employee.jobTitle}</Table.Td>
       <Table.Td>{employee.department}</Table.Td>
       <Table.Td>{countryName}</Table.Td>
-      <Table.Td ta="right">{formatCurrency(employee.salary)}</Table.Td>
+      <Table.Td ta="right">{formatCurrency(employee.salary, employee.currency)}</Table.Td>
       <Table.Td>{formatDate(employee.hireDate)}</Table.Td>
       <Table.Td>
         <Group gap="xs" wrap="nowrap">

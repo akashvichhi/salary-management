@@ -1,5 +1,6 @@
 import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
-import { AVERAGE_SALARY_LABEL, BY_DEPARTMENT_TITLE, HEADCOUNT_LABEL } from '@src/constants/salary_insight_messages'
+import { AVERAGE_SALARY_USD_LABEL, BY_DEPARTMENT_TITLE, HEADCOUNT_LABEL } from '@src/constants/salary_insight_messages'
+import { REPORTING_CURRENCY } from '@src/constants/time_constants'
 import { InsightSection } from '@src/pages/salary_insights/components/insight_section'
 import { InsightTable } from '@src/pages/salary_insights/components/insight_table'
 import type { IInsightColumn } from '@src/pages/salary_insights/components/insight_table'
@@ -13,8 +14,8 @@ const DEPARTMENT_COLUMNS: IInsightColumn<IDepartmentSalaryInsight>[] = [
   { label: EMPLOYEE_COLUMN_LABELS.department, render: (row: IDepartmentSalaryInsight): string => row.department },
   { label: HEADCOUNT_LABEL, render: (row: IDepartmentSalaryInsight): string => formatCount(row.headcount), isNumeric: true },
   {
-    label:     AVERAGE_SALARY_LABEL,
-    render:    (row: IDepartmentSalaryInsight): string => formatCurrency(row.averageSalary),
+    label:     AVERAGE_SALARY_USD_LABEL,
+    render:    (row: IDepartmentSalaryInsight): string => formatCurrency(row.averageSalaryUsd, REPORTING_CURRENCY),
     isNumeric: true,
   },
 ]

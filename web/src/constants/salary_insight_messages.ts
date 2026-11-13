@@ -4,13 +4,17 @@ export const BY_JOB_TITLE_TITLE: string = 'Pay by job title'
 export const BY_DEPARTMENT_TITLE: string = 'Pay by department'
 
 export const HEADCOUNT_LABEL: string = 'Headcount'
-export const TOTAL_PAYROLL_LABEL: string = 'Total payroll'
+export const TOTAL_PAYROLL_LABEL: string = 'Total payroll (USD)'
 export const PAYROLL_LABEL: string = 'Payroll'
+export const PAYROLL_USD_LABEL: string = 'Payroll (USD)'
 export const MIN_SALARY_LABEL: string = 'Lowest'
 export const MAX_SALARY_LABEL: string = 'Highest'
 export const AVERAGE_SALARY_LABEL: string = 'Average'
+export const AVERAGE_SALARY_USD_LABEL: string = 'Average (USD)'
 export const MEDIAN_SALARY_LABEL: string = 'Median'
 export const COUNTRY_PICKER_LABEL: string = 'Country'
+export const CURRENCY_NOTE: string =
+  'Pay within one country is in that country’s currency. Totals and averages across countries are converted to USD at fixed exchange rates.'
 
 export const INSIGHT_LOADING_LABEL: string = 'Loading this section'
 export const INSIGHT_LOAD_ERROR_TITLE: string = 'This section could not be loaded'

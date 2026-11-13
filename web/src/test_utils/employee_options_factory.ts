@@ -4,8 +4,8 @@ import type { IEmployeeOptions } from '@src/types/employee'
 export function buildEmployeeOptions(overrides: Partial<IEmployeeOptions> = {}): IEmployeeOptions {
   return {
     countries: [
-      { code: 'IN', name: 'India' },
-      { code: 'US', name: 'United States' },
+      { code: 'IN', name: 'India', currency: 'INR' },
+      { code: 'US', name: 'United States', currency: 'USD' },
     ],
     departments: ['Engineering', 'Finance'],
     jobTitles:   ['Accountant', 'Software Engineer'],

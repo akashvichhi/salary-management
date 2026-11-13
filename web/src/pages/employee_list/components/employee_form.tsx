@@ -2,7 +2,7 @@ import { Button, Group, Select, SimpleGrid, Stack, TextInput } from '@mantine/co
 import { DatePickerInput } from '@mantine/dates'
 
 import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
-import { CANCEL_LABEL, SAVE_EMPLOYEE_LABEL } from '@src/constants/employee_messages'
+import { CANCEL_LABEL, SALARY_CURRENCY_HINT, salaryCurrencyDescription, SAVE_EMPLOYEE_LABEL } from '@src/constants/employee_messages'
 import { useEmployeeForm } from '@src/pages/employee_list/hooks/use_employee_form'
 import type { IEmployee, IEmployeeSelectOptions } from '@src/types/employee'
 
@@ -13,8 +13,13 @@ interface IEmployeeFormProps {
   onDone:   () => void
 }
 
-const CURRENCY_SYMBOL: string = '$'
 const FORM_COLUMNS: { base: number, sm: number } = { base: 1, sm: 2 }
+
+// The salary is in the country's currency, so the field names it once a country is chosen.
+function salaryDescription(country: string | null, currencyByCountry: ReadonlyMap<string, string>): string {
+  const currency: string | undefined = country === null ? undefined : currencyByCountry.get(country)
+  return currency === undefined ? SALARY_CURRENCY_HINT : salaryCurrencyDescription(currency)
+}
 
 export function EmployeeForm({ employee, options, onDone }: IEmployeeFormProps): React.JSX.Element {
   const { form, isSaving, handleSubmit } = useEmployeeForm(employee, onDone)
@@ -48,9 +53,9 @@ export function EmployeeForm({ employee, options, onDone }: IEmployeeFormProps):
           />
           <TextInput
             withAsterisk
+            description={salaryDescription(form.values.country, options.currencyByCountry)}
             inputMode="decimal"
             label={EMPLOYEE_COLUMN_LABELS.salary}
-            leftSection={CURRENCY_SYMBOL}
             {...form.getInputProps('salary')}
           />
           {/* Mantine 9 gives the date as a "YYYY-MM-DD" string, the shape the API takes, with no time zone. */}

@@ -23,7 +23,7 @@ const JOB_TITLE_COLUMNS: IInsightColumn<IJobTitleSalaryInsight>[] = [
   { label: HEADCOUNT_LABEL, render: (row: IJobTitleSalaryInsight): string => formatCount(row.headcount), isNumeric: true },
   {
     label:     AVERAGE_SALARY_LABEL,
-    render:    (row: IJobTitleSalaryInsight): string => formatCurrency(row.averageSalary),
+    render:    (row: IJobTitleSalaryInsight): string => formatCurrency(row.averageSalary, row.currency),
     isNumeric: true,
   },
 ]

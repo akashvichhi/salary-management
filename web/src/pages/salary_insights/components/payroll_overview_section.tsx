@@ -8,8 +8,10 @@ import {
   INSIGHT_LOADING_LABEL,
   OVERVIEW_TITLE,
   PAYROLL_LABEL,
+  PAYROLL_USD_LABEL,
   TOTAL_PAYROLL_LABEL,
 } from '@src/constants/salary_insight_messages'
+import { REPORTING_CURRENCY } from '@src/constants/time_constants'
 import { InsightSection } from '@src/pages/salary_insights/components/insight_section'
 import { InsightTable } from '@src/pages/salary_insights/components/insight_table'
 import type { IInsightColumn } from '@src/pages/salary_insights/components/insight_table'
@@ -53,7 +55,12 @@ export function PayrollOverviewSection(): React.JSX.Element {
     (): IInsightColumn<ICountryPayroll>[] => [
       { label: EMPLOYEE_COLUMN_LABELS.country, render: (row: ICountryPayroll): string => countryName(row.country) },
       { label: HEADCOUNT_LABEL, render: (row: ICountryPayroll): string => formatCount(row.headcount), isNumeric: true },
-      { label: PAYROLL_LABEL, render: (row: ICountryPayroll): string => formatCurrency(row.totalPayroll), isNumeric: true },
+      { label: PAYROLL_LABEL, render: (row: ICountryPayroll): string => formatCurrency(row.totalPayroll, row.currency), isNumeric: true },
+      {
+        label:     PAYROLL_USD_LABEL,
+        render:    (row: ICountryPayroll): string => formatCurrency(row.totalPayrollUsd, REPORTING_CURRENCY),
+        isNumeric: true,
+      },
     ],
     [countryName],
   )
@@ -69,7 +76,7 @@ export function PayrollOverviewSection(): React.JSX.Element {
         <Stack gap="md">
           <SimpleGrid cols={STAT_GRID_COLUMNS} spacing="md">
             <StatCard label={HEADCOUNT_LABEL} value={formatCount(overview.headcount)} />
-            <StatCard label={TOTAL_PAYROLL_LABEL} value={formatCurrency(overview.totalPayroll)} />
+            <StatCard label={TOTAL_PAYROLL_LABEL} value={formatCurrency(overview.totalPayrollUsd, REPORTING_CURRENCY)} />
           </SimpleGrid>
           <InsightTable columns={columns} rowKey={countryPayrollKey} rows={overview.payrollByCountry} />
         </Stack>

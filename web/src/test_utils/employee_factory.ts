@@ -10,6 +10,7 @@ export function buildEmployee(overrides: Partial<IEmployee> = {}): IEmployee {
     department: 'Finance',
     country:    'IN',
     salary:     '85000.00',
+    currency:   'INR',
     hireDate:   '2024-03-15',
     createdAt:  '2024-03-15T10:00:00+05:30',
     updatedAt:  '2024-03-15T10:00:00+05:30',

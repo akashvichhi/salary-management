@@ -55,7 +55,7 @@ describe('EmployeeListPage', (): void => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
-  it('renders a row per employee, with salary in USD and the country name', async (): Promise<void> => {
+  it('renders a row per employee, with salary in its local currency and the country name', async (): Promise<void> => {
     getEmployeesMock.mockResolvedValue(buildPage([buildEmployee()], { totalCount: 25, totalPages: 2 }))
 
     renderWithProviders(<EmployeeListPage />)
@@ -65,7 +65,7 @@ describe('EmployeeListPage', (): void => {
     expect(within(row).getByText('Accountant')).toBeInTheDocument()
     expect(within(row).getByText('Finance')).toBeInTheDocument()
     expect(within(row).getByText('India')).toBeInTheDocument()
-    expect(within(row).getByText('$85,000.00')).toBeInTheDocument()
+    expect(within(row).getByText('₹85,000.00')).toBeInTheDocument()
     expect(within(row).getByText('15/03/2024')).toBeInTheDocument()
     expect(screen.getByText('25 employees')).toBeInTheDocument()
     expect(getEmployeesMock).toHaveBeenCalledWith(expect.objectContaining({ page: 1, perPage: 20 }))

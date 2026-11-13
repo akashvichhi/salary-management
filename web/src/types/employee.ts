@@ -9,6 +9,8 @@ export interface IEmployee {
   country:    string
   // A decimal string ("85000.00"): money is never parsed into a number.
   salary:     string
+  // The salary's currency: always its country's, so the API derives it and never stores it.
+  currency:   string
   hireDate:   string
   createdAt:  string
   updatedAt:  string
@@ -53,8 +55,9 @@ export interface IEmployeeFormValues {
 
 // GET /employee-options: the allowed values of the fields picked from a list.
 export interface ICountryOption {
-  code: string
-  name: string
+  code:     string
+  name:     string
+  currency: string
 }
 
 export interface IEmployeeOptions {
@@ -75,4 +78,5 @@ export interface IEmployeeSelectOptions {
   jobTitles:         string[]
   countryCodes:      string[]
   countryNameByCode: ReadonlyMap<string, string>
+  currencyByCountry: ReadonlyMap<string, string>
 }

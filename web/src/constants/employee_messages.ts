@@ -47,5 +47,10 @@ export const EMAIL_INVALID_MESSAGE: string = 'Enter a valid email address'
 export const JOB_TITLE_REQUIRED_MESSAGE: string = 'Choose a job title'
 export const DEPARTMENT_REQUIRED_MESSAGE: string = 'Choose a department'
 export const COUNTRY_REQUIRED_MESSAGE: string = 'Choose a country'
-export const SALARY_INVALID_MESSAGE: string = 'Enter an amount in USD greater than 0, with at most 2 decimals'
+export const SALARY_INVALID_MESSAGE: string = 'Enter an amount greater than 0, with at most 2 decimals'
+export const SALARY_CURRENCY_HINT: string = 'Choose a country first: the salary is in its currency'
+
+export function salaryCurrencyDescription(currency: string): string {
+  return `In ${currency}, the currency of the employee’s country`
+}
 export const HIRE_DATE_REQUIRED_MESSAGE: string = 'Enter the hire date'

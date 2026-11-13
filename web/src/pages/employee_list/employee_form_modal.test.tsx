@@ -17,7 +17,9 @@ import {
   FULL_NAME_REQUIRED_MESSAGE,
   HIRE_DATE_REQUIRED_MESSAGE,
   JOB_TITLE_REQUIRED_MESSAGE,
+  SALARY_CURRENCY_HINT,
   SALARY_INVALID_MESSAGE,
+  salaryCurrencyDescription,
   SAVE_EMPLOYEE_LABEL,
 } from '@src/constants/employee_messages'
 import { salaryInsightKeys } from '@src/constants/query_keys'
@@ -147,6 +149,15 @@ describe('adding an employee', { timeout: FORM_TEST_TIMEOUT_MS }, (): void => {
     await expectInsightsOutOfDate(queryClient)
   })
 
+  it('asks for a country before naming the salary currency, then names it', async (): Promise<void> => {
+    const dialog: HTMLElement = await openAddModal()
+
+    expect(within(dialog).getByText(SALARY_CURRENCY_HINT)).toBeInTheDocument()
+    await chooseOption(dialog, EMPLOYEE_COLUMN_LABELS.country, 'United States')
+
+    expect(within(dialog).getByText(salaryCurrencyDescription('USD'))).toBeInTheDocument()
+  })
+
   it('opens with an empty hire date, not "Invalid date"', async (): Promise<void> => {
     const dialog: HTMLElement = await openAddModal()
 
@@ -250,6 +261,15 @@ describe('editing an employee', { timeout: FORM_TEST_TIMEOUT_MS }, (): void => {
     fireEvent.click(saveButton(dialog))
 
     await expectInsightsOutOfDate(queryClient)
+  })
+
+  it('names the currency of the employee’s country, and follows a change of country', async (): Promise<void> => {
+    const dialog: HTMLElement = await openEditModal()
+
+    expect(within(dialog).getByText(salaryCurrencyDescription('INR'))).toBeInTheDocument()
+    await chooseOption(dialog, EMPLOYEE_COLUMN_LABELS.country, 'United States')
+
+    expect(within(dialog).getByText(salaryCurrencyDescription('USD'))).toBeInTheDocument()
   })
 
   it('closes without a request when nothing changed', async (): Promise<void> => {

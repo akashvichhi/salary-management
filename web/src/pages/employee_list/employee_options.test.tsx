@@ -22,7 +22,7 @@ const getEmployeeOptionsMock: ReturnType<typeof vi.mocked<typeof getEmployeeOpti
 
 // Values only the API knows about, so a copy kept in the web app could not pass these tests.
 const API_OPTIONS: IEmployeeOptions = buildEmployeeOptions({
-  countries:   [{ code: 'NZ', name: 'New Zealand' }],
+  countries:   [{ code: 'NZ', name: 'New Zealand', currency: 'NZD' }],
   departments: ['Research'],
   jobTitles:   ['Researcher'],
 })

@@ -3,12 +3,14 @@ import { useMemo } from 'react'
 import { EMPLOYEE_COLUMN_LABELS } from '@src/constants/employee_constants'
 import {
   AVERAGE_SALARY_LABEL,
+  AVERAGE_SALARY_USD_LABEL,
   BY_COUNTRY_TITLE,
   HEADCOUNT_LABEL,
   MAX_SALARY_LABEL,
   MEDIAN_SALARY_LABEL,
   MIN_SALARY_LABEL,
 } from '@src/constants/salary_insight_messages'
+import { REPORTING_CURRENCY } from '@src/constants/time_constants'
 import { InsightSection } from '@src/pages/salary_insights/components/insight_section'
 import { InsightTable } from '@src/pages/salary_insights/components/insight_table'
 import type { IInsightColumn } from '@src/pages/salary_insights/components/insight_table'
@@ -31,16 +33,21 @@ export function CountryInsightSection(): React.JSX.Element {
     (): IInsightColumn<ICountrySalaryInsight>[] => [
       { label: EMPLOYEE_COLUMN_LABELS.country, render: (row: ICountrySalaryInsight): string => countryName(row.country) },
       { label: HEADCOUNT_LABEL, render: (row: ICountrySalaryInsight): string => formatCount(row.headcount), isNumeric: true },
-      { label: MIN_SALARY_LABEL, render: (row: ICountrySalaryInsight): string => formatCurrency(row.minSalary), isNumeric: true },
-      { label: MAX_SALARY_LABEL, render: (row: ICountrySalaryInsight): string => formatCurrency(row.maxSalary), isNumeric: true },
+      { label: MIN_SALARY_LABEL, render: (row: ICountrySalaryInsight): string => formatCurrency(row.minSalary, row.currency), isNumeric: true },
+      { label: MAX_SALARY_LABEL, render: (row: ICountrySalaryInsight): string => formatCurrency(row.maxSalary, row.currency), isNumeric: true },
       {
         label:     AVERAGE_SALARY_LABEL,
-        render:    (row: ICountrySalaryInsight): string => formatCurrency(row.averageSalary),
+        render:    (row: ICountrySalaryInsight): string => formatCurrency(row.averageSalary, row.currency),
         isNumeric: true,
       },
       {
         label:     MEDIAN_SALARY_LABEL,
-        render:    (row: ICountrySalaryInsight): string => formatCurrency(row.medianSalary),
+        render:    (row: ICountrySalaryInsight): string => formatCurrency(row.medianSalary, row.currency),
+        isNumeric: true,
+      },
+      {
+        label:     AVERAGE_SALARY_USD_LABEL,
+        render:    (row: ICountrySalaryInsight): string => formatCurrency(row.averageSalaryUsd, REPORTING_CURRENCY),
         isNumeric: true,
       },
     ],
