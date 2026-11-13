@@ -17,7 +17,7 @@
 
 | Item | Why |
 |---|---|
-| Multi-currency, exchange rates | One currency keeps every figure comparable; rates add complexity without adding a feature |
+| Live exchange rates | Incubyte allowed fixed, configurable rates; a live feed adds an outside dependency for figures that are estimates anyway |
 | Payroll processing | This app records salaries; it doesn't pay them |
 | Salary history | No listed insight needs it; first improvement to add next |
 | Bonus and allowances | Need their own rules and schedules; base pay answers the core questions |
@@ -29,9 +29,9 @@
 
 ## Assumptions
 
-Incubyte had not replied when this was written, so these are **Assumed** (details in `docs/clarifications.md`):
+Incubyte answered the product questions on 12 Nov 2026 (details in `docs/clarifications.md`):
 
-- **Assumed:** all salaries are annual base pay in USD.
+- **Answered:** salaries are annual base pay in each country's local currency; figures across countries are in USD at fixed, configurable exchange rates.
 - **Assumed:** one employee has one record and one current salary.
 - **Assumed:** one HR manager uses the app at a time.
 - **Assumed:** the deployed demo may reset to seed data on restart.

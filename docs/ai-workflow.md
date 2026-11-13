@@ -496,3 +496,23 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
   - Accented names keep the ASCII-only fold: a full Unicode sort would need a custom collation or Python-side sorting, too much for one HR manager's list.
   - The user set `TRUST_FORWARDED_FOR=true` in Render themselves; the browser extension wasn't connected.
 - **How it was verified:** the new hook test fails without the fix and passes with it; `make check` and `npm run check`.
+
+## 2026-11-13 — Store salaries in local currency
+
+- **Prompt / instruction:** Incubyte's answers of 12 Nov 2026 arrived after the app was built. "let's use salary in local currency which email answers my questions. Also update the docs whenever needed and make code changes." Then: "please check today's rate and keep those default ... Do the same for all currencies we used."
+- **What the AI produced:**
+  - read the email and the docs, and found that only the currency answer changes code; the other answers confirm the assumptions
+  - the currency follows the country (`COUNTRY_CURRENCIES`), so it is never stored; `CurrencyConverter` converts to USD at fixed rates from `EXCHANGE_RATES`, checked at startup
+  - the insights keep one-country figures in local currency and convert only figures that add up countries; the salary sort compares USD in SQL
+  - a data migration that converts the stored USD salaries with frozen rates, and drops the salary index the new sort can't use
+  - the seed converts its USD ranges at the default rates
+  - the web app formats each amount in its own currency, names the salary's currency in the form, and explains the currencies on the insights page
+  - default rates searched on the web for 13 Nov 2026 (mid-market): INR 94.16, EUR 0.904, GBP 0.756, AUD 1.471, CAD 1.426, AED 3.6725 (pegged), SGD 1.278 (10 Nov, the latest found)
+  - docs: clarifications (Incubyte's answers), decisions 4, 18 and 19, requirements, architecture, README, the CLAUDE files, and new timings in `docs/performance.md`
+- **What I changed, rejected, or corrected, and why:**
+  - Chose the currency from the country over a free currency column: every country here has one currency, and a column could disagree with it.
+  - The migration first bound the rates as Python floats; changed to text, so no money passes through a float.
+  - The overview total is the sum of the rounded per-country USD totals, so it equals the rows shown under it.
+  - The browser extension wasn't connected, so the rates came from web search instead of Chrome.
+  - The tests were written first and seen failing, but went into the same commits as the code, not separate red commits.
+- **How it was verified:** the new tests failed before the code and pass after; the migration round-trip test; `make check` and `npm run check`; the endpoints measured again on a fresh 10,000-employee seed.

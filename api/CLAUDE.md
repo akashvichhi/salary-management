@@ -9,6 +9,8 @@
 - **Files beyond the shared folder tree:**
   - `core/logging_filters.py`: drops query strings (search text) from access logs
   - `core/money.py`: money rounding, half-up to the cent
+  - `core/currency_converter.py`: a country's currency and conversion to USD at the configured rates (decision 4)
+  - `constants/currency_constants.py`: the currencies and the default exchange rates
   - `core/login_rate_limiter.py`: failed logins per email and IP, in memory (decision 23)
   - `core/origin_check_middleware.py`: the CSRF origin check
   - `core/web_app.py`: serves the web build from `WEB_DIST_DIR`
@@ -16,9 +18,10 @@
   - `scripts/seed.py`, `scripts/start.sh` (the container's start command: migrate, seed, then uvicorn), `scripts/data/` (name lists)
 - **Aggregates computed in Python, not SQL:** the median, because SQLite has none (decision 5). One endpoint per insight (decision 19).
 - **Fixed lists:** country, department, and job title are `StrEnum`s in `constants/employee_constants.py`, matched ignoring case and spaces and stored in the list's spelling (decision 17). The frontend gets them from `GET /api/v1/employee-options` (decision 21).
-- **Indexes:** `country`, `job_title`, `department`, `salary`, `full_name`, `hire_date`, `email` (unique among active employees), and a composite `(country, job_title)` for "average salary per job title within a country". Reasons in `docs/architecture.md`.
+- **Indexes:** `country`, `job_title`, `department`, `full_name`, `hire_date`, `email` (unique among active employees), and a composite `(country, job_title)` for "average salary per job title within a country". Reasons in `docs/architecture.md`.
 - **Timestamps** are stored in IST (`APP_TIMEZONE` in `constants/time_constants.py`).
 - **Public endpoints (no auth):** `POST /api/v1/auth/login`, `GET /api/health` (Render's health check path).
+- **Exchange rates** (`core/config.py`): `EXCHANGE_RATES`, JSON of units per US dollar for every currency; defaults in `constants/currency_constants.py`.
 - **Session settings** (`core/config.py`): `SESSION_COOKIE_NAME`, `SESSION_TTL_HOURS` (default 8), `COOKIE_SECURE`, `ALLOWED_ORIGINS`.
 - **Login rate limit:** 5 failures per email and IP within 15 minutes; the sixth gets a 429 (`constants/auth_constants.py`).
 - **Seed:** `make seed` (after `uv run alembic upgrade head`) creates 10,000 employees, with title ranges scaled by country (decision 18), and the HR manager user from `HR_MANAGER_EMAIL` / `HR_MANAGER_PASSWORD`.

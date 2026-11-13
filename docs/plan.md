@@ -133,7 +133,7 @@ Review checkpoints: after A10 (review `api/`) and after W8 (review `web/`).
 ### W4. Employee list
 - **Goal:** the table with pagination, a skeleton while loading, and empty and error states.
 - **Tests first:** rows render from a mocked API; moving to the next page requests page 2 and keeps the current rows visible meanwhile; an error shows the retry state; no results show the empty state.
-- **Done when:** salaries are formatted as USD and never parsed as numbers.
+- **Done when:** salaries are formatted in their currency and never parsed as numbers.
 - **Commits:** `test(web/employees): add failing test for employee table` → `feat(web/employees): show paginated employee list`
 
 ### W5. Search, filters and sort

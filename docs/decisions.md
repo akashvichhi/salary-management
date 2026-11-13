@@ -23,12 +23,20 @@ Short architecture decision records. Each one says what was decided and what it 
 - **Decision:** Mantine, with `@mantine/form`, `@mantine/notifications` and `@mantine/modals`.
 - **Consequences:** layout components (`Group`, `Stack`, `SimpleGrid`) cover most styling, which is what makes decision 12 possible.
 
-## 4. Currency: USD only
+## 4. Currency: local currency, USD for cross-country figures
 
-- **Context:** employees are in several countries. Incubyte had not answered the currency question (`docs/clarifications.md`).
-- **Options:** local currency per employee; local currency plus fixed-rate USD for comparisons; USD only.
-- **Decision:** every salary is annual base pay in USD. No currency column, exchange rates or conversion.
-- **Consequences:** every figure can be compared, sorted and totalled across countries directly. Real multi-country payroll runs in local currencies; supporting them later needs a currency column, a rates table and conversion in the insights.
+- **Context:** employees are in several countries. The app was first built with every salary in USD, an assumption while Incubyte hadn't answered. On 12 Nov 2026 they answered: store salaries in local currency; comparing in one currency is optional, with fixed, configurable rates (`docs/clarifications.md`).
+- **Options:**
+  - (a) the currency follows the country, with fixed rates to USD for figures that add up countries
+  - (b) a currency column on each employee, chosen freely
+  - (c) local currency only, with no cross-country totals
+- **Decision:** (a). Each country has one currency (`COUNTRY_CURRENCIES` in `constants/employee_constants.py`), so it is derived, never stored, and the API returns it beside every salary. Rates are units per US dollar, defaulting to the mid-market rates of 13 Nov 2026 (`DEFAULT_EXCHANGE_RATES` in `constants/currency_constants.py`) and overridden with the `EXCHANGE_RATES` environment variable, checked at startup (every currency present, all above 0, USD exactly 1). `CurrencyConverter` is injected wherever a figure crosses countries:
+  - per-country and per-job-title figures stay in local currency, because a job title is picked within one country
+  - the by-country table adds the average in USD
+  - the overview totals each country in its currency, converts each total, and adds the rounded USD totals, so the overall total equals the sum of its rows
+  - the department average is the sum of each country's converted total, divided by the department's headcount, rounded once
+  - the salary sort compares USD values, in SQL (salary ÷ the country's rate)
+- **Consequences:** every salary is what the employee is really paid, and no figure ever adds up two currencies. One country can't have two currencies, which is true for all nine. The rates are fixed, so cross-country figures drift from reality until `EXCHANGE_RATES` is updated; no figure is stored converted, so a new rate applies at once. The salary sort is on an expression no column index can serve, so `ix_employees_salary` was dropped (`docs/performance.md`). Migration `e5a9c2d7f310` converted the stored USD salaries with the rates of that day, copied into it so it always converts the same way.
 
 ## 5. Aggregation in SQL, median in Python
 
@@ -125,14 +133,14 @@ Short architecture decision records. Each one says what was decided and what it 
 
 - **Context:** the insights are only worth showing if the seed data has real patterns; the seed must also be identical on every run and fast.
 - **Options:** one salary range for everyone; one range per job title; a range per job title scaled by a per-country pay factor. Names from the Faker library, or from our own name lists.
-- **Decision:** each job title has a USD range, a department and a weight (how common it is); each country has a pay factor (US 1.00, India 0.30, ...) and a weight. Names come from `scripts/data/*.txt`. All of it is in `scripts/seed_constants.py`, drawn with a fixed `random.Random(42)`, and fixed hire-date bounds instead of today's date. Every employee is built through `EmployeeCreateRequest`, then bulk-inserted in one statement. The seed is skipped when the table already has rows.
+- **Decision:** each job title has a USD range, a department and a weight (how common it is); each country has a pay factor (US 1.00, India 0.30, ...) and a weight. A salary is drawn from the scaled USD range, converted at the default rate (decision 4, not `EXCHANGE_RATES`, so the seed never changes with configuration), and rounded down to 100 units of the local currency. Names come from `scripts/data/*.txt`. All of it is in `scripts/seed_constants.py`, drawn with a fixed `random.Random(42)`, and fixed hire-date bounds instead of today's date. Every employee is built through `EmployeeCreateRequest`, then bulk-inserted in one statement. The seed is skipped when the table already has rows.
 - **Consequences:** country and job-title insights differ in believable ways. No Faker, whose output can change between versions and break "identical on every run". Emails use the reserved `example.com` domain, so no real inbox is ever named. 10,000 employees seed in about 1.5 seconds.
 
 ## 19. One endpoint per insight; money rounded half-up to the cent
 
 - **Context:** the insights page shows four independent sections, and the job-title section changes with a country picker.
 - **Options:** one combined endpoint returning every section; one endpoint per insight.
-- **Decision:** four `GET` endpoints under `/salary-insights` (`overview`, `by-country`, `by-job-title?country=`, `by-department`), each `{ "data": ... }` with arrays of objects sorted by their group. Headcount, min, max and sum come from SQL `GROUP BY`; the sum adds whole cents as integers (SQLite keeps `NUMERIC` as floats, and a float sum of 10,000 large salaries can lose a cent), and the average is that exact sum divided by the headcount, not SQLite's `AVG` (a float); the median is computed in Python (decision 5). Averages and medians are rounded **half-up** to the cent (`100000.005` → `100000.01`).
+- **Decision:** four `GET` endpoints under `/salary-insights` (`overview`, `by-country`, `by-job-title?country=`, `by-department`), each `{ "data": ... }` with arrays of objects sorted by their group. Headcount, min, max and sum come from SQL `GROUP BY`; the sum adds whole cents as integers (SQLite keeps `NUMERIC` as floats, and a float sum of 10,000 large salaries can lose a cent), and the average is that exact sum divided by the headcount, not SQLite's `AVG` (a float); the median is computed in Python (decision 5). Averages and medians are rounded **half-up** to the cent (`100000.005` → `100000.01`). Figures that add up several countries are converted to USD first (decision 4).
 - **Consequences:** each section loads, caches and fails on its own, and changing the job-title country reloads only that table. Four requests instead of one, which is cheap on the same origin. On the 10,000 seed every endpoint answers in under 61 ms; `by-country` is the slowest because it reads one salary column for the median.
 
 ## 20. Frontend tool versions held back for plugin support

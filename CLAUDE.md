@@ -23,7 +23,7 @@ salary-management/
 ## Project rules
 
 - **Time zone and formats:** IST (UTC+05:30, a fixed offset; decision 15) everywhere: stored, sent by the API with the `+05:30` offset, and shown in the UI. Every date is shown as `DD/MM/YYYY`, in tables and date inputs alike.
-- **Currency:** every salary is USD, so there is no currency field (decision 4). Money columns are `Numeric(12, 2)`, rounded half-up to the cent (decision 19).
+- **Currency:** every salary is in its country's local currency, which the country sets (`COUNTRY_CURRENCIES`), so there is no currency column (decision 4). Figures that add up several countries are converted to USD with `CurrencyConverter`, at the fixed `EXCHANGE_RATES`; never add up salaries of two countries without it. Money columns are `Numeric(12, 2)`, rounded half-up to the cent (decision 19).
 - **Personal data in this app:** salaries, emails, and names. Never logged or echoed in errors (see common rules).
 - **Soft-deleted tables:** `employees` (`is_active` flag), filtered through `active_employees()` in `employee_repository.py` (decision 16). Email is unique only among active employees (a partial unique index).
 - **Auth scope:** one HR manager, created by the seed script. No roles, sign-up, or password reset; 403 stays reserved for when roles exist.

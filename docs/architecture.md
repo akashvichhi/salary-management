@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-One web app for one HR manager. A React single-page app (TypeScript, Vite, Mantine) talks to a FastAPI backend over a JSON API under `/api/v1`. The backend stores employees in SQLite and computes salary insights with SQL aggregation. In production, both run in **one Docker container on Render**: FastAPI serves the built React files and the API from the same origin. On startup the container migrates the database and seeds 10,000 employees if it is empty. All salaries are annual base pay in USD.
+One web app for one HR manager. A React single-page app (TypeScript, Vite, Mantine) talks to a FastAPI backend over a JSON API under `/api/v1`. The backend stores employees in SQLite and computes salary insights with SQL aggregation. In production, both run in **one Docker container on Render**: FastAPI serves the built React files and the API from the same origin. On startup the container migrates the database and seeds 10,000 employees if it is empty. Salaries are annual base pay in each country's local currency; figures that add up several countries are converted to USD at fixed rates (decision 4).
 
 ## 2. System
 
@@ -83,7 +83,7 @@ sequenceDiagram
 | `job_title` | String | Not null, from the allowed list (`JobTitle` in `constants/employee_constants.py`) |
 | `department` | String | Not null, from the allowed list (`Department`) |
 | `country` | String(2) | Not null, ISO 3166-1 alpha-2, uppercase, from the allowed list |
-| `salary` | Numeric(12, 2) | Not null, greater than 0, annual USD |
+| `salary` | Numeric(12, 2) | Not null, greater than 0, annual, in the country's currency (no currency column: the country sets it) |
 | `hire_date` | Date | Not null |
 | `is_active` | Boolean | Not null, default true. False = deleted (soft delete); hidden from every query |
 | `created_at`, `updated_at` | DateTime | Not null, IST (UTC+05:30), set by the database layer |
@@ -95,7 +95,6 @@ sequenceDiagram
 | `country` | Country filter and per-country insights (`GROUP BY country`) |
 | `job_title` | Job title filter |
 | `department` | Department filter and per-department insights |
-| `salary` | Sorting the list by salary across all employees |
 | `hire_date` | Sorting the list by hire date |
 | `(country, job_title)` | Average salary per job title within a country, and the two filters combined |
 
@@ -115,10 +114,10 @@ sequenceDiagram
 | `POST /api/v1/employees` | Create | 201 |
 | `PATCH /api/v1/employees/{id}` | Partial update | 200 |
 | `DELETE /api/v1/employees/{id}` | Soft delete (sets `is_active` to false) | 204 |
-| `GET /api/v1/salary-insights/overview` | Org headcount, total payroll, and payroll and headcount per country | 200 |
-| `GET /api/v1/salary-insights/by-country` | Per country: headcount, min, max, average and median salary | 200 |
-| `GET /api/v1/salary-insights/by-job-title?country=IN` | Per job title within one country (required): headcount and average salary | 200 |
-| `GET /api/v1/salary-insights/by-department` | Per department: headcount and average salary | 200 |
+| `GET /api/v1/salary-insights/overview` | Org headcount, total payroll in USD, and per country its headcount and payroll in its currency and in USD | 200 |
+| `GET /api/v1/salary-insights/by-country` | Per country, in its currency: headcount, min, max, average and median salary; plus the average in USD | 200 |
+| `GET /api/v1/salary-insights/by-job-title?country=IN` | Per job title within one country (required): headcount and average salary, in that country's currency | 200 |
+| `GET /api/v1/salary-insights/by-department` | Per department: headcount and average salary in USD (a department spans countries) | 200 |
 | `POST /api/v1/auth/login` | Log in, set the session cookie | 200 |
 | `POST /api/v1/auth/logout` | Log out, delete the session | 204 |
 | `GET /api/v1/auth/me` | Current user | 200 |

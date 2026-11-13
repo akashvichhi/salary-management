@@ -12,7 +12,7 @@ A web app where an HR manager manages salary data for 10,000 employees across co
 - **Seed data:** a script that creates 10,000 realistic employees.
 - **Login:** one HR manager account.
 
-All salaries are annual base pay in USD. What is deliberately left out, and why, is listed in [`docs/requirements.md`](docs/requirements.md).
+Salaries are annual base pay in each country's local currency; totals and averages across countries are converted to USD at fixed exchange rates, set with `EXCHANGE_RATES` (decision 4). What is deliberately left out, and why, is listed in [`docs/requirements.md`](docs/requirements.md).
 
 ## Stack
 
@@ -69,6 +69,7 @@ The root `Dockerfile` builds one image: it builds `web/`, installs the API with 
    | Variable | Value |
    |---|---|
    | `HR_MANAGER_EMAIL`, `HR_MANAGER_PASSWORD` | The login the seed creates |
+   | `EXCHANGE_RATES` | Optional: units of each currency per US dollar, as JSON (see `api/.env.example`). Defaults to the rates of 13 Nov 2026 |
    | `TRUST_FORWARDED_FOR` | `true`: Render's proxy appends the caller's IP to `X-Forwarded-For`, so the login rate limit can count per IP. Leave it unset anywhere without such a proxy |
    | `VITE_DEMO_LOGIN_EMAIL`, `VITE_DEMO_LOGIN_PASSWORD` | Optional: prefill the login form. Render passes them to the build, and they end up in the JavaScript, so use them only for a demo account |
 

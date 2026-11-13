@@ -6,7 +6,7 @@ Measured numbers behind the performance targets in [`requirements.md`](requireme
 
 - **Data:** a fresh SQLite file, migrated with `alembic upgrade head` and filled by `python -m scripts.seed`: the full 10,000 employees.
 - **Requests:** FastAPI's `TestClient`, in process, logged in as the HR manager. Each request ran once to warm up, then 30 times; the tables show the median and the 95th percentile. This measures the app and the database, not the network.
-- **Machine:** a Windows 11 laptop, Python 3.13, SQLite in WAL mode. Measured on 2026-11-05; the default list and the insights were measured again on 2026-11-10, after the name index became `NOCASE` and the insight sums moved to whole cents.
+- **Machine:** a Windows 11 laptop, Python 3.13, SQLite in WAL mode. Measured on 2026-11-05; the default list and the insights were measured again on 2026-11-10, after the name index became `NOCASE` and the insight sums moved to whole cents, and once more on 2026-11-13, after salaries moved to local currency (section below).
 - **Bundle:** `npm run build` (Vite 8, Rolldown), sizes as Vite reports them.
 
 ## Seed
@@ -46,6 +46,21 @@ Target: under 30 seconds. The fixed random seed makes every run produce the same
 
 Every request is well under the 300 ms target. The slowest, `by-country`, reads each country's salaries into Python for the median, which SQLite can't compute (decision 5).
 
+**After salaries moved to local currency** (2026-11-13, decision 4). The salary sort now divides by the country's rate in SQL, and the overview and department insights convert per-country totals to USD. Measured the same way, on the same laptop under more load: the unchanged default list took 17.7 ms instead of 7.4, so compare the rows with that baseline, not with the tables above.
+
+| Request | Median | p95 |
+|---|---|---|
+| Default list (unchanged, the baseline) | 17.7 ms | 20.5 ms |
+| List, filter `country=IN` | 18.3 ms | 23.9 ms |
+| List, sort `-salary` (in USD) | 25.2 ms | 31.1 ms |
+| List, sort `salary` + filter `country=US` | 18.8 ms | 25.4 ms |
+| `overview` | 20.2 ms | 26.1 ms |
+| `by-country` | 80.9 ms | 113.1 ms |
+| `by-job-title?country=IN` | 15.3 ms | 20.3 ms |
+| `by-department` (now grouped by department and country) | 26.0 ms | 33.1 ms |
+
+The USD sort costs about 8 ms over the baseline, and every request stays under the target. A first run, with the laptop busier still, had `by-country` at a 317 ms p95; the second run above is the one recorded.
+
 ## Query plans
 
 `EXPLAIN QUERY PLAN` for the SQL each endpoint runs:
@@ -57,12 +72,12 @@ Every request is well under the 300 ms target. The slowest, `by-country`, reads 
 | List, country + job title + department | `SEARCH employees USING INDEX ix_employees_country_job_title (country=? AND job_title=?)`, then `USE TEMP B-TREE FOR ORDER BY` |
 | List, `country=IN` | Count: `SEARCH ... ix_employees_country_job_title (country=?)`. Rows: `SEARCH ... ix_employees_country (country=?)`, then a temp B-tree for the order |
 | List, search | `SCAN employees`: a substring match (`LIKE '%kumar%'`) can't use an index |
-| List, sort `-salary` | `SCAN employees USING INDEX uq_employees_active_email`, then a temp B-tree for the order |
+| List, sort `-salary` | `SCAN employees USING INDEX uq_employees_active_email`, then `USE TEMP B-TREE FOR ORDER BY` on salary ÷ the country's rate |
 | Insights `overview`, `by-country` | `SCAN employees USING INDEX ix_employees_country` |
 | Insights `by-job-title` | `SEARCH employees USING INDEX ix_employees_country_job_title (country=?)` |
 | Insights `by-department` | `SCAN employees USING INDEX ix_employees_department` |
 
-**The salary sort doesn't use `ix_employees_salary`.** Only active employees are listed, and the planner prefers the partial unique index on `email` (`WHERE is_active = 1`), which holds exactly those rows, then sorts them. Sorting 10,000 rows takes a few milliseconds, so the result is still 24 ms. An index on `(is_active, salary, id)` would remove the sort step; it isn't worth an extra index at this size.
+**The salary sort has no index.** It orders by the salary in USD, an expression of two columns (salary ÷ a `CASE` on country, decision 4), which no column index can serve, so `ix_employees_salary` was dropped. Even before, the planner never used it: it preferred the partial unique index on `email` (`WHERE is_active = 1`), which holds exactly the listed rows, then sorted them. Sorting 10,000 rows takes a few milliseconds. An expression index would have to change with every new exchange rate.
 
 **Search scans the table** (open question 5). It is the slowest list request, at 40 to 58 ms, and still about a sixth of the target. Full-text search (SQLite FTS5) would avoid the scan, but it needs a second table kept in sync with triggers. It is worth it only with far more rows.
 
@@ -134,5 +149,5 @@ The vendor chunks change only when a dependency changes, so after a deploy a ret
 | Keyset (cursor) pagination | Page 250 takes 15 ms with `OFFSET`. Keyset paging can't jump to a page number, which the paginator needs |
 | A cache for the insights | The slowest insight takes 53 ms (median), and a cache would have to be cleared on every edit |
 | Full-text search (FTS5) | The substring scan takes under 60 ms at 10,000 rows; FTS5 needs a second table and triggers |
-| An index for the salary sort among active employees | The sort step costs a few milliseconds at this size (see the query plans) |
+| An index for the salary sort | It sorts by salary in USD, an expression that changes with the exchange rates; the sort step costs a few milliseconds at this size (see the query plans) |
 | Splitting Mantine further | Its components are shared by every page, so splitting it would only add requests |
