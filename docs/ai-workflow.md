@@ -523,3 +523,10 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
 - **What the AI produced:** a review of the three local-currency commits (all checks green): decision 4 counted nine countries instead of ten, the settings comment showed the old INR rate, the commits had no `Co-Authored-By:` trailer, and a question on whether the salary column should say it sorts by USD.
 - **What I changed, rejected, or corrected, and why:** fixed the count and the comment; reworded the unpushed commits to add the trailer. The red → green split was not rebuilt: the tests were written first, and rewriting the history into pairs isn't worth it. The salary-sort hint is left open.
 - **How it was verified:** `ruff check` and `ruff format --check` on the changed file; the docs read back.
+
+## 2026-11-13 — Explain the salary sort
+
+- **Prompt / instruction:** "Address #4 also" (the review's question: the salary column sorts by USD but shows local amounts).
+- **What the AI produced:** a failing test first (the salary sort button describes how it sorts), then an optional `hint` on `SortableHeader`: a tooltip on hover, focus and touch, and a hidden copy linked with `aria-describedby` for screen readers, passed for the salary column only.
+- **What I changed, rejected, or corrected, and why:** chose the tooltip on the header over an always-visible info icon, to keep the header row clean. Checked it in the UI before the green commit.
+- **How it was verified:** the new test failed before the change and passes after; `npm run check`; tried in the browser.

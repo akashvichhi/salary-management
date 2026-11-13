@@ -5,7 +5,12 @@ import { IconPencil, IconTrash } from '@tabler/icons-react'
 
 import { ICON_SIZE } from '@src/constants/app_constants'
 import { EMPLOYEE_COLUMN_LABELS, EMPLOYEE_SORT_FIELDS, EMPLOYEE_TABLE_MAX_HEIGHT } from '@src/constants/employee_constants'
-import { deleteEmployeeLabel, editEmployeeLabel, EMPLOYEE_ACTIONS_LABEL } from '@src/constants/employee_messages'
+import {
+  deleteEmployeeLabel,
+  editEmployeeLabel,
+  EMPLOYEE_ACTIONS_LABEL,
+  SALARY_SORT_HINT,
+} from '@src/constants/employee_messages'
 import { SortableHeader } from '@src/pages/employee_list/components/sortable_header'
 import type { IEmployee, TEmployeeColumn } from '@src/types/employee'
 import { formatCurrency } from '@src/utils/format_currency'
@@ -34,6 +39,8 @@ const TABLE_MIN_WIDTH: number = 900
 // Column order; salary is right-aligned so the amounts line up.
 const COLUMNS: readonly TEmployeeColumn[] = ['fullName', 'email', 'jobTitle', 'department', 'country', 'salary', 'hireDate']
 const RIGHT_ALIGNED_COLUMN: TEmployeeColumn = 'salary'
+// Salaries are in each country's currency, but sort by their USD value (decision 4).
+const COLUMN_SORT_HINTS: Readonly<Partial<Record<TEmployeeColumn, string>>> = { salary: SALARY_SORT_HINT }
 
 const EmployeeRow: React.NamedExoticComponent<IEmployeeRowProps> = memo(function EmployeeRow({
   employee,
@@ -87,6 +94,7 @@ export function EmployeeTable({
                 alignRight={column === RIGHT_ALIGNED_COLUMN}
                 currentSort={sort}
                 field={EMPLOYEE_SORT_FIELDS[column]}
+                hint={COLUMN_SORT_HINTS[column]}
                 label={EMPLOYEE_COLUMN_LABELS[column]}
                 onClearSort={onClearSort}
                 onSort={onSort}

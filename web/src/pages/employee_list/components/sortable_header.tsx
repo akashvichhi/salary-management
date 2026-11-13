@@ -1,6 +1,6 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useId } from 'react'
 
-import { Table, UnstyledButton } from '@mantine/core'
+import { Table, Tooltip, UnstyledButton } from '@mantine/core'
 import { IconArrowsSort, IconSortAscending, IconSortDescending } from '@tabler/icons-react'
 
 import { DESCENDING_PREFIX } from '@src/constants/list_constants'
@@ -12,12 +12,18 @@ interface ISortableHeaderProps {
   field:       string
   currentSort: string
   alignRight?: boolean
+  // Explains how the column sorts, when that isn't what it shows.
+  hint?:       string
   onSort:      (sort: string) => void
   onClearSort: () => void
 }
 
 // Smaller than ICON_SIZE, to sit beside the header's smaller text.
 const SORT_ICON_SIZE: number = 14
+// Shown on keyboard focus too, not only on hover, so the hint reaches every user who can see it.
+// Wraps the hint onto a few lines instead of one very wide one.
+const TOOLTIP_WIDTH: number = 240
+const TOOLTIP_EVENTS: { hover: boolean, focus: boolean, touch: boolean } = { hover: true, focus: true, touch: true }
 
 function ariaSortFor(field: string, currentSort: string): TAriaSort {
   if (currentSort === field) return 'ascending'
@@ -39,21 +45,30 @@ export const SortableHeader: React.NamedExoticComponent<ISortableHeaderProps> = 
   field,
   currentSort,
   alignRight = false,
+  hint,
   onSort,
   onClearSort,
 }: ISortableHeaderProps): React.JSX.Element {
   const ariaSort: TAriaSort = ariaSortFor(field, currentSort)
+  const hintId: string = useId()
 
   const handleClick: () => void = useCallback((): void => {
     if (ariaSort === 'descending') onClearSort()
     else onSort(ariaSort === 'ascending' ? `${DESCENDING_PREFIX}${field}` : field)
   }, [ariaSort, field, onSort, onClearSort])
 
+  const button: React.JSX.Element = (
+    <UnstyledButton aria-describedby={hint ? hintId : undefined} fw="bold" fz="sm" onClick={handleClick}>
+      {label} {SORT_ICONS[ariaSort]}
+    </UnstyledButton>
+  )
+
   return (
     <Table.Th aria-sort={ariaSort} ta={alignRight ? 'right' : undefined}>
-      <UnstyledButton fw="bold" fz="sm" onClick={handleClick}>
-        {label} {SORT_ICONS[ariaSort]}
-      </UnstyledButton>
+      {hint ? <Tooltip multiline events={TOOLTIP_EVENTS} label={hint} w={TOOLTIP_WIDTH}>{button}</Tooltip> : button}
+      {/* The hint for screen readers, always present: the tooltip is only rendered while open.
+          Hidden, so it stays out of the header's name ("Salary"), which aria-describedby still reads. */}
+      {hint ? <span hidden id={hintId}>{hint}</span> : null}
     </Table.Th>
   )
 })
