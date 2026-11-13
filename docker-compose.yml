@@ -1,0 +1,63 @@
+# Runs the whole app locally with one command: `docker compose up --build`, then open
+# http://localhost:8000.
+#   web       nginx: the built React app, forwarding /api to the API (web/Dockerfile)
+#   api       FastAPI: migrates and seeds the database on start, then serves the API (api/Dockerfile)
+#   database  the SQLite file, on a named volume (SQLite is a file, not a server; decision 2)
+#
+# Settings come from the same files as local development: api/.env for the API (copy
+# api/.env.example), including the HR manager's login, and web/.env for the optional login prefill.
+# The data survives `docker compose down`; `docker compose down -v` deletes it, and the next start
+# seeds 10,000 employees again.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    # The API's own settings, the same file `make seed` and the dev server read: the HR manager's
+    # login, and EXCHANGE_RATES if set. The image never contains it (.dockerignore), so it is
+    # passed in here. Copy api/.env.example to api/.env first.
+    env_file:
+      - path: api/.env
+        required: true
+    # Only what has to differ inside the container; these win over api/.env.
+    environment:
+      # The file on the database volume, not in the image's api/ folder.
+      - DATABASE_URL=sqlite:////app/data/salary_management.db
+      # Plain http on localhost: a Secure cookie would never be sent back.
+      - COOKIE_SECURE=false
+      # nginx appends the caller's IP to X-Forwarded-For, for the login rate limit.
+      - TRUST_FORWARDED_FOR=true
+    volumes:
+      - database:/app/data
+    healthcheck:
+      # The slim image has no curl, so Python asks the health endpoint.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      # web/ again, for its .env: the login prefill (VITE_DEMO_LOGIN_*), as `npm run dev` uses it.
+      additional_contexts:
+        web_env: ./web
+    ports:
+      - "8000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      # 127.0.0.1, not localhost: in Alpine localhost can resolve to IPv6, where nginx doesn't listen.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  database:

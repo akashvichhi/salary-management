@@ -58,6 +58,24 @@ Copy `web/.env.example` to `web/.env` to point the app at the local API. Log in 
 
 After pulling changes, run `uv run alembic upgrade head` again: a database left on an older migration fails with errors such as `no such column`.
 
+### With Docker Compose
+
+One command runs the whole app, with no Python or Node.js installed:
+
+```bash
+docker compose up -d --build   # build and start, then open http://localhost:8000
+docker compose down            # stop; the data is kept
+docker compose down -v         # stop and delete the data; the next start seeds again
+```
+
+It reads the same files as local development: copy `api/.env.example` to `api/.env` (required: it holds the HR manager's login) and, for the login prefill, `web/.env.example` to `web/.env`. [`docker-compose.yml`](docker-compose.yml) runs:
+
+- `web`: nginx serving the built app ([`web/Dockerfile`](web/Dockerfile), [`web/nginx.conf`](web/nginx.conf)), forwarding `/api` to the API, so both share one origin as in production
+- `api`: FastAPI, which migrates and seeds the database on start ([`api/Dockerfile`](api/Dockerfile))
+- `database`: a named volume holding the SQLite file. SQLite is a file, not a server (decision 2), so there is no database container
+
+The seed never changes an existing HR manager: after changing the password in `api/.env`, run `docker compose down -v` to seed again. Render doesn't use these files; it builds the root `Dockerfile` (below).
+
 ## Deployment (Render)
 
 The root `Dockerfile` builds one image: it builds `web/`, installs the API with `uv sync --frozen`, and serves both from FastAPI. Its start command (`api/scripts/start.sh`) migrates the database, seeds it, then runs uvicorn on Render's `$PORT`.

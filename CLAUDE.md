@@ -16,7 +16,8 @@ salary-management/
 ├── web/            React project (TypeScript + Vite + Mantine)
 ├── docs/           requirements, clarifications, architecture, decisions, plan, performance, AI workflow
 │   └── standards/  general rules: common, FastAPI, React + TypeScript
-├── Dockerfile      one image: builds web/, serves it from FastAPI (decision 8)
+├── Dockerfile      one image: builds web/, serves it from FastAPI (decision 8); Render builds this
+├── docker-compose.yml  local run: web (nginx), api, and the SQLite volume (api/ and web/ Dockerfiles)
 └── CLAUDE.md
 ```
 

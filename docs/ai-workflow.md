@@ -530,3 +530,16 @@ The log has one entry per step, oldest first, in the format `CLAUDE.md` sets.
 - **What the AI produced:** a failing test first (the salary sort button describes how it sorts), then an optional `hint` on `SortableHeader`: a tooltip on hover, focus and touch, and a hidden copy linked with `aria-describedby` for screen readers, passed for the salary column only.
 - **What I changed, rejected, or corrected, and why:** chose the tooltip on the header over an always-visible info icon, to keep the header row clean. Checked it in the UI before the green commit.
 - **How it was verified:** the new test failed before the change and passes after; `npm run check`; tried in the browser.
+
+## 2026-11-13 — Run the app with Docker Compose
+
+- **Prompt / instruction:** "there is no docker config yml file. Please write that file so i can run the app using docker command", then "Also add database and frontend. So by running just one command `docker compose up` it starts all 3", and "The system should get default HR manager email and password from api .env file not from docker compose".
+- **What the AI produced:** `docker-compose.yml` with `web` (nginx serving the build and forwarding `/api`), `api` (migrate, seed, serve), and a `database` volume for the SQLite file; `api/Dockerfile`, `web/Dockerfile` and `web/nginx.conf`; a README section.
+- **What I changed, rejected, or corrected, and why:**
+  - Kept SQLite on a volume instead of adding PostgreSQL: a database server would mean new migrations and SQL for no feature (decision 2).
+  - The HR manager's login first came from the compose file; moved to `api/.env` through `env_file`, the same file local development uses.
+  - The login prefill was missing: `.dockerignore` keeps `web/.env` out of the build. The web build now reads only the `VITE_DEMO_LOGIN_*` lines from it, so the dev-only `VITE_API_URL` is never built in.
+  - The first login failed: the database volume came from the AI's own test run, seeded with its test password. Fixed by deleting the volume; the README notes that the seed never changes an existing HR manager.
+  - The web health check used `localhost`, which can resolve to IPv6 in Alpine where nginx doesn't listen; it uses `127.0.0.1`.
+  - Kept the root `Dockerfile`: Render deploys from it.
+- **How it was verified:** `docker compose config`; `docker compose up --build`: both containers healthy, 10,000 employees and the HR manager seeded from `api/.env`, login through nginx returned 200, the prefill found in the built JavaScript, and the dev API URL not in it.
